@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
-import { taskApi, projectApi, userApi } from '../services/api';
 import '../styles/TaskList.css';
 
 function TaskList() {
@@ -23,13 +22,13 @@ function TaskList() {
     try {
       setLoading(true);
       const [tasksRes, projectsRes, usersRes] = await Promise.all([
-        taskApi.list(),
-        projectApi.list(),
-        userApi.list(),
+        fetch('/api/tasks/').then(r => r.json()),
+        fetch('/api/projects/').then(r => r.json()),
+        fetch('/api/users/').then(r => r.json()),
       ]);
-      setTasks(tasksRes.data);
-      setProjects(projectsRes.data);
-      setUsers(usersRes.data);
+      setTasks(tasksRes);
+      setProjects(projectsRes);
+      setUsers(usersRes);
       setError(null);
     } catch (err) {
       setError('Failed to load data: ' + err.message);
@@ -41,8 +40,12 @@ function TaskList() {
 
   const handleCreateTask = async (formData) => {
     try {
-      const res = await taskApi.create(formData);
-      setTasks([...tasks, res.data]);
+      const res = await fetch('/api/tasks/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      }).then(r => r.json());
+      setTasks([...tasks, res]);
       setShowForm(false);
       setError(null);
     } catch (err) {
@@ -52,8 +55,12 @@ function TaskList() {
 
   const handleUpdateTask = async (formData) => {
     try {
-      const res = await taskApi.update(selectedTask.id, formData);
-      setTasks(tasks.map((t) => (t.id === selectedTask.id ? res.data : t)));
+      const res = await fetch(`/api/tasks/${selectedTask.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      }).then(r => r.json());
+      setTasks(tasks.map((t) => (t.id === selectedTask.id ? res : t)));
       setSelectedTask(null);
       setShowForm(false);
       setError(null);
@@ -65,7 +72,7 @@ function TaskList() {
   const handleDeleteTask = async (taskId) => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
     try {
-      await taskApi.delete(taskId);
+      await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
       setTasks(tasks.filter((t) => t.id !== taskId));
       setError(null);
     } catch (err) {
