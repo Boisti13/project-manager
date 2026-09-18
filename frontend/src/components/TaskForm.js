@@ -38,7 +38,10 @@ function TaskForm({ task, projects, users, onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      deadline: formData.deadline ? formData.deadline : null,
+    });
   };
 
   return (

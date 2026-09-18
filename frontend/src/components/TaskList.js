@@ -38,13 +38,27 @@ function TaskList() {
     }
   };
 
+  const parseApiError = async (response) => {
+    try {
+      const data = await response.json();
+      if (Array.isArray(data.detail)) {
+        return data.detail.map((d) => `${d.loc[d.loc.length - 1]}: ${d.msg}`).join(', ');
+      }
+      return data.detail || `HTTP ${response.status}`;
+    } catch {
+      return `HTTP ${response.status}`;
+    }
+  };
+
   const handleCreateTask = async (formData) => {
     try {
-      const res = await fetch('/api/tasks/', {
+      const response = await fetch('/api/tasks/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
-      }).then(r => r.json());
+      });
+      if (!response.ok) throw new Error(await parseApiError(response));
+      const res = await response.json();
       setTasks([...tasks, res]);
       setShowForm(false);
       setError(null);
@@ -55,11 +69,13 @@ function TaskList() {
 
   const handleUpdateTask = async (formData) => {
     try {
-      const res = await fetch(`/api/tasks/${selectedTask.id}`, {
+      const response = await fetch(`/api/tasks/${selectedTask.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
-      }).then(r => r.json());
+      });
+      if (!response.ok) throw new Error(await parseApiError(response));
+      const res = await response.json();
       setTasks(tasks.map((t) => (t.id === selectedTask.id ? res : t)));
       setSelectedTask(null);
       setShowForm(false);
