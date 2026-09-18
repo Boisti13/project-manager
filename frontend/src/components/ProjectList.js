@@ -3,24 +3,6 @@ import ProjectForm from './ProjectForm';
 import '../styles/TaskList.css';
 import '../styles/ProjectList.css';
 
-const parseApiError = async (response) => {
-  try {
-    const data = await response.json();
-    if (Array.isArray(data.detail)) {
-      return data.detail.map((d) => `${d.loc[d.loc.length - 1]}: ${d.msg}`).join(', ');
-    }
-    return data.detail || `HTTP ${response.status}`;
-  } catch {
-    return `HTTP ${response.status}`;
-  }
-};
-
-const fetchJson = async (url, options) => {
-  const response = await fetch(url, options);
-  if (!response.ok) throw new Error(await parseApiError(response));
-  return response.json();
-};
-
 function ProjectList() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +13,24 @@ function ProjectList() {
   useEffect(() => {
     loadProjects();
   }, []);
+
+  const parseApiError = async (response) => {
+    try {
+      const data = await response.json();
+      if (Array.isArray(data.detail)) {
+        return data.detail.map((d) => `${d.loc[d.loc.length - 1]}: ${d.msg}`).join(', ');
+      }
+      return data.detail || `HTTP ${response.status}`;
+    } catch {
+      return `HTTP ${response.status}`;
+    }
+  };
+
+  const fetchJson = async (url, options) => {
+    const response = await fetch(url, options);
+    if (!response.ok) throw new Error(await parseApiError(response));
+    return response.json();
+  };
 
   const loadProjects = async () => {
     try {
@@ -77,7 +77,7 @@ function ProjectList() {
   };
 
   const handleDelete = async (projectId) => {
-    if (!window.confirm('Delete this project? Tasks assigned to it will remain but become unassigned from any project.')) return;
+    if (!window.confirm('Delete this project? Tasks assigned to it will keep their reference but the project will be gone.')) return;
     try {
       const response = await fetch(`/api/projects/${projectId}`, { method: 'DELETE' });
       if (!response.ok) throw new Error(await parseApiError(response));
@@ -122,32 +122,28 @@ function ProjectList() {
 
       {showForm && (
         <div className="form-container">
-          <ProjectForm
-            project={selectedProject}
-            onSubmit={selectedProject ? handleUpdate : handleCreate}
-            onCancel={handleCancel}
-          />
+          <ProjectForm project={selectedProject} onSubmit={selectedProject ? handleUpdate : handleCreate} onCancel={handleCancel} />
         </div>
       )}
 
       <div className="project-list">
         {projects.length === 0 ? (
-          <p className="no-tasks">No projects found</p>
+          <p className="no-tasks">No projects yet</p>
         ) : (
           projects.map((project) => (
             <div className="project-item" key={project.id}>
-              <div className="project-header">
-                <span className="project-name">{project.name}</span>
-                <div className="project-actions">
-                  <button className="task-action-btn edit-btn" onClick={() => handleEdit(project)} title="Edit">
-                    ✎
-                  </button>
-                  <button className="task-action-btn delete-btn" onClick={() => handleDelete(project.id)} title="Delete">
-                    ✕
-                  </button>
-                </div>
+              <div className="project-info">
+                <h3>{project.name}</h3>
+                {project.description && <p>{project.description}</p>}
               </div>
-              {project.description && <p className="project-description">{project.description}</p>}
+              <div className="project-actions">
+                <button className="task-action-btn edit-btn" onClick={() => handleEdit(project)} title="Edit">
+                  ✎
+                </button>
+                <button className="task-action-btn delete-btn" onClick={() => handleDelete(project.id)} title="Delete">
+                  ✕
+                </button>
+              </div>
             </div>
           ))
         )}

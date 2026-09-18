@@ -1,0 +1,84 @@
+import React, { useState, useEffect } from 'react';
+import '../styles/Settings.css';
+
+function Settings() {
+  const [stats, setStats] = useState({ tasks: 0, projects: 0, users: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const [tasks, projects, users] = await Promise.all([
+          fetch('/api/tasks/').then((r) => r.json()),
+          fetch('/api/projects/').then((r) => r.json()),
+          fetch('/api/users/').then((r) => r.json()),
+        ]);
+        setStats({ tasks: tasks.length, projects: projects.length, users: users.length });
+      } catch (err) {
+        console.error('Failed to load stats:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadStats();
+  }, []);
+
+  return (
+    <div className="container">
+      <div className="task-list-header">
+        <div className="header-left">
+          <h1>Settings</h1>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <h2>Overview</h2>
+        <div className="stats-grid">
+          <div className="stat-card">
+            <span className="stat-value">{loading ? '—' : stats.tasks}</span>
+            <span className="stat-label">Tasks</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-value">{loading ? '—' : stats.projects}</span>
+            <span className="stat-label">Projects</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-value">{loading ? '—' : stats.users}</span>
+            <span className="stat-label">Users</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <h2>About</h2>
+        <div className="settings-info">
+          <div className="info-row">
+            <span className="info-label">Application</span>
+            <span className="info-value">Project Manager</span>
+          </div>
+          <div className="info-row">
+            <span className="info-label">Stack</span>
+            <span className="info-value">FastAPI + React + PostgreSQL</span>
+          </div>
+          <div className="info-row">
+            <span className="info-label">Hosted on</span>
+            <span className="info-value">LXC 113 · PVE .103</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <h2>Coming Soon</h2>
+        <ul className="upcoming-list">
+          <li>User management (add/edit/remove users)</li>
+          <li>Task drag-to-reorder</li>
+          <li>Authentication &amp; login</li>
+          <li>Notifications for upcoming deadlines</li>
+          <li>Dark mode</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+export default Settings;

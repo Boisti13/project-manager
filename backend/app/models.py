@@ -47,7 +47,7 @@ class Task(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Foreign keys
-    project_id = Column(Integer, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     parent_task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
     assignee_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
