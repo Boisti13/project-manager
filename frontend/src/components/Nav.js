@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import NotificationBell from './NotificationBell';
 import '../styles/Nav.css';
 
 function Nav() {
@@ -28,6 +29,7 @@ function Nav() {
         </NavLink>
       </div>
       <div className="nav-user">
+        <NotificationBell />
         <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>

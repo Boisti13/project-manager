@@ -75,13 +75,6 @@ function Settings() {
       </div>
 
       {currentUser?.is_admin && <UserManagement />}
-
-      <div className="settings-section">
-        <h2>Coming Soon</h2>
-        <ul className="upcoming-list">
-          <li>Notifications for upcoming deadlines</li>
-        </ul>
-      </div>
     </div>
   );
 }

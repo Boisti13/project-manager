@@ -1,0 +1,118 @@
+.notification-bell {
+  position: relative;
+}
+
+.bell-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  position: relative;
+  transition: background-color 0.2s ease;
+  line-height: 1;
+}
+
+.bell-btn:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.bell-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.badge-urgent {
+  background-color: #d32f2f;
+}
+
+.badge-info {
+  background-color: #ff9800;
+}
+
+.bell-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 300px;
+  max-height: 360px;
+  overflow-y: auto;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+}
+
+.bell-dropdown-header {
+  padding: 12px 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.bell-empty {
+  padding: 20px 16px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.bell-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.bell-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid var(--color-border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bell-item:last-child {
+  border-bottom: none;
+}
+
+.bell-item:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.bell-item-title {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.bell-item-badge {
+  font-size: 11px;
+  font-weight: 600;
+  width: fit-content;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.bell-overdue {
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+}
+
+.bell-upcoming {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
