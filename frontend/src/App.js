@@ -1,41 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import TaskList from './components/TaskList';
 import './App.css';
 
 function App() {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch tasks from API
-    const fetchTasks = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/api/tasks/');
-        const data = await response.json();
-        setTasks(data);
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTasks();
-  }, []);
-
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Task Manager</h1>
+        <h1>📋 Project Manager</h1>
+        <p className="App-subtitle">Organize your tasks hierarchically</p>
       </header>
       <main>
-        {loading ? (
-          <p>Loading tasks...</p>
-        ) : (
-          <div>
-            <p>Tasks: {tasks.length}</p>
-          </div>
-        )}
+        <TaskList />
       </main>
+      <footer className="App-footer">
+        <p>© 2026 Project Manager | FastAPI + React</p>
+      </footer>
     </div>
   );
 }
