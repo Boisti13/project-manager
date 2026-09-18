@@ -59,5 +59,6 @@ class Task(Base):
         remote_side=[id],
         backref="parent_task",
         foreign_keys=[parent_task_id],
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        single_parent=True
     )
