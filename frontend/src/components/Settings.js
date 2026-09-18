@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { authFetch, useAuth } from '../context/AuthContext';
 import '../styles/Settings.css';
 
 function Settings() {
+  const { currentUser } = useAuth();
   const [stats, setStats] = useState({ tasks: 0, projects: 0, users: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -9,9 +11,9 @@ function Settings() {
     const loadStats = async () => {
       try {
         const [tasks, projects, users] = await Promise.all([
-          fetch('/api/tasks/').then((r) => r.json()),
-          fetch('/api/projects/').then((r) => r.json()),
-          fetch('/api/users/').then((r) => r.json()),
+          authFetch('/api/tasks/').then((r) => r.json()),
+          authFetch('/api/projects/').then((r) => r.json()),
+          authFetch('/api/users/').then((r) => r.json()),
         ]);
         setStats({ tasks: tasks.length, projects: projects.length, users: users.length });
       } catch (err) {
@@ -53,6 +55,10 @@ function Settings() {
         <h2>About</h2>
         <div className="settings-info">
           <div className="info-row">
+            <span className="info-label">Logged in as</span>
+            <span className="info-value">{currentUser?.username} ({currentUser?.email})</span>
+          </div>
+          <div className="info-row">
             <span className="info-label">Application</span>
             <span className="info-value">Project Manager</span>
           </div>
@@ -70,9 +76,8 @@ function Settings() {
       <div className="settings-section">
         <h2>Coming Soon</h2>
         <ul className="upcoming-list">
-          <li>User management (add/edit/remove users)</li>
+          <li>User management (edit/remove users, admin roles)</li>
           <li>Task drag-to-reorder</li>
-          <li>Authentication &amp; login</li>
           <li>Notifications for upcoming deadlines</li>
           <li>Dark mode</li>
         </ul>

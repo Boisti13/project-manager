@@ -1,0 +1,90 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import '../styles/Login.css';
+
+function Login() {
+  const [mode, setMode] = useState('login');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const { login, register } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      if (mode === 'login') {
+        await login(username, password);
+      } else {
+        await register(username, email, password);
+      }
+      navigate('/');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="login-page">
+      <div className="login-card">
+        <h1>📋 Project Manager</h1>
+        <div className="login-tabs">
+          <button
+            type="button"
+            className={mode === 'login' ? 'login-tab active' : 'login-tab'}
+            onClick={() => setMode('login')}
+          >
+            Log In
+          </button>
+          <button
+            type="button"
+            className={mode === 'register' ? 'login-tab active' : 'login-tab'}
+            onClick={() => setMode('register')}
+          >
+            Register
+          </button>
+        </div>
+
+        {error && <div className="error-message">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="login-form">
+          <div className="form-group">
+            <label>Username</label>
+            <input value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
+          </div>
+
+          {mode === 'register' && (
+            <div className="form-group">
+              <label>Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+          )}
+
+          <div className="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={4}
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
+            {submitting ? 'Please wait...' : mode === 'login' ? 'Log In' : 'Create Account'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default Login;

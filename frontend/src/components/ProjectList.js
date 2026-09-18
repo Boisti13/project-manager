@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ProjectForm from './ProjectForm';
+import { authFetch } from '../context/AuthContext';
 import '../styles/TaskList.css';
 import '../styles/ProjectList.css';
 
@@ -27,7 +28,7 @@ function ProjectList() {
   };
 
   const fetchJson = async (url, options) => {
-    const response = await fetch(url, options);
+    const response = await authFetch(url, options);
     if (!response.ok) throw new Error(await parseApiError(response));
     return response.json();
   };
@@ -79,7 +80,7 @@ function ProjectList() {
   const handleDelete = async (projectId) => {
     if (!window.confirm('Delete this project? Tasks assigned to it will keep their reference but the project will be gone.')) return;
     try {
-      const response = await fetch(`/api/projects/${projectId}`, { method: 'DELETE' });
+      const response = await authFetch(`/api/projects/${projectId}`, { method: 'DELETE' });
       if (!response.ok) throw new Error(await parseApiError(response));
       setProjects(projects.filter((p) => p.id !== projectId));
       setError(null);

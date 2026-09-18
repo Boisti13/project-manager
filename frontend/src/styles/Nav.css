@@ -1,8 +1,41 @@
 .app-nav {
   display: flex;
-  gap: 4px;
+  justify-content: space-between;
+  align-items: center;
   padding: 0 20px;
   background-color: #1976D2;
+}
+
+.nav-links {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-username {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.nav-logout {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-logout:hover {
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .nav-link {

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
+import { authFetch, useAuth } from '../context/AuthContext';
 import '../styles/TaskList.css';
 
 function TaskList() {
+  const { currentUser } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
@@ -14,6 +16,7 @@ function TaskList() {
   const [parentTaskForNew, setParentTaskForNew] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterProject, setFilterProject] = useState(null);
+  const [myTasksOnly, setMyTasksOnly] = useState(false);
   const [expandedIds, setExpandedIds] = useState(new Set());
 
   useEffect(() => {
@@ -33,7 +36,7 @@ function TaskList() {
   };
 
   const fetchJson = async (url, options) => {
-    const response = await fetch(url, options);
+    const response = await authFetch(url, options);
     if (!response.ok) throw new Error(await parseApiError(response));
     return response.json();
   };
@@ -94,7 +97,7 @@ function TaskList() {
   const handleDeleteTask = async (taskId) => {
     if (!window.confirm('Are you sure you want to delete this task? Subtasks will be deleted too.')) return;
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+      const response = await authFetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
       if (!response.ok) throw new Error(await parseApiError(response));
       await loadData();
     } catch (err) {
@@ -138,6 +141,10 @@ function TaskList() {
 
     if (filterProject) {
       filtered = filtered.filter((t) => t.project_id === filterProject);
+    }
+
+    if (myTasksOnly && currentUser) {
+      filtered = filtered.filter((t) => t.assignee_id === currentUser.id);
     }
 
     return filtered;
@@ -203,6 +210,17 @@ function TaskList() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="filter-group filter-checkbox">
+          <label>
+            <input
+              type="checkbox"
+              checked={myTasksOnly}
+              onChange={(e) => setMyTasksOnly(e.target.checked)}
+            />
+            My Tasks Only
+          </label>
         </div>
       </div>
 

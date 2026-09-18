@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import Project
+from app.models import Project, User
 from app import schemas
+from app.auth import get_current_user
 
 router = APIRouter()
 
 @router.post("/", response_model=schemas.Project)
-def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)):
+def create_project(project: schemas.ProjectCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     db_project = Project(**project.model_dump())
     db.add(db_project)
     db.commit()
@@ -15,18 +16,18 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)
     return db_project
 
 @router.get("/", response_model=list[schemas.Project])
-def list_projects(db: Session = Depends(get_db)):
+def list_projects(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return db.query(Project).all()
 
 @router.get("/{project_id}", response_model=schemas.Project)
-def get_project(project_id: int, db: Session = Depends(get_db)):
+def get_project(project_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
 
 @router.put("/{project_id}", response_model=schemas.Project)
-def update_project(project_id: int, project: schemas.ProjectCreate, db: Session = Depends(get_db)):
+def update_project(project_id: int, project: schemas.ProjectCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     db_project = db.query(Project).filter(Project.id == project_id).first()
     if not db_project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -39,7 +40,7 @@ def update_project(project_id: int, project: schemas.ProjectCreate, db: Session 
     return db_project
 
 @router.delete("/{project_id}")
-def delete_project(project_id: int, db: Session = Depends(get_db)):
+def delete_project(project_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     db_project = db.query(Project).filter(Project.id == project_id).first()
     if not db_project:
         raise HTTPException(status_code=404, detail="Project not found")
