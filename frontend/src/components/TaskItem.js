@@ -32,22 +32,26 @@ function TaskItem({ task, onEdit, onDelete, onAddSubtask, onReorder, expandedIds
   };
 
   const handleDragStart = (e) => {
+    e.stopPropagation();
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', String(task.id));
     setDragging(true);
   };
 
-  const handleDragEnd = () => {
+  const handleDragEnd = (e) => {
+    e.stopPropagation();
     setDragging(false);
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
     if (!dragOver) setDragOver(true);
   };
 
-  const handleDragLeave = () => {
+  const handleDragLeave = (e) => {
+    e.stopPropagation();
     setDragOver(false);
   };
 
