@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum as SQLEnum
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from app.database import Base
 from datetime import datetime
 import enum
@@ -56,9 +56,6 @@ class Task(Base):
     assignee = relationship("User", back_populates="tasks")
     subtasks = relationship(
         "Task",
-        remote_side=[id],
-        backref="parent_task",
-        foreign_keys=[parent_task_id],
-        cascade="all, delete-orphan",
-        single_parent=True
+        backref=backref("parent_task", remote_side=[id]),
+        cascade="all, delete-orphan"
     )
