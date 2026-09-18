@@ -149,6 +149,15 @@
   background-color: #f0f0f0;
 }
 
+.subtask-btn {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.subtask-btn:hover {
+  color: #4CAF50;
+}
+
 .edit-btn:hover {
   color: #2196F3;
 }

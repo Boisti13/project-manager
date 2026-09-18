@@ -11,12 +11,26 @@ function TaskList() {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [parentTaskForNew, setParentTaskForNew] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterProject, setFilterProject] = useState(null);
+  const [expandedIds, setExpandedIds] = useState(new Set());
 
   useEffect(() => {
     loadData();
   }, []);
+
+  const parseApiError = async (response) => {
+    try {
+      const data = await response.json();
+      if (Array.isArray(data.detail)) {
+        return data.detail.map((d) => `${d.loc[d.loc.length - 1]}: ${d.msg}`).join(', ');
+      }
+      return data.detail || `HTTP ${response.status}`;
+    } catch {
+      return `HTTP ${response.status}`;
+    }
+  };
 
   const fetchJson = async (url, options) => {
     const response = await fetch(url, options);
@@ -44,28 +58,19 @@ function TaskList() {
     }
   };
 
-  const parseApiError = async (response) => {
-    try {
-      const data = await response.json();
-      if (Array.isArray(data.detail)) {
-        return data.detail.map((d) => `${d.loc[d.loc.length - 1]}: ${d.msg}`).join(', ');
-      }
-      return data.detail || `HTTP ${response.status}`;
-    } catch {
-      return `HTTP ${response.status}`;
-    }
-  };
-
   const handleCreateTask = async (formData) => {
     try {
-      const res = await fetchJson('/api/tasks/', {
+      await fetchJson('/api/tasks/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-      setTasks([...tasks, res]);
+      if (formData.parent_task_id) {
+        setExpandedIds((prev) => new Set(prev).add(formData.parent_task_id));
+      }
       setShowForm(false);
-      setError(null);
+      setParentTaskForNew(null);
+      await loadData();
     } catch (err) {
       setError('Failed to create task: ' + err.message);
     }
@@ -73,27 +78,25 @@ function TaskList() {
 
   const handleUpdateTask = async (formData) => {
     try {
-      const res = await fetchJson(`/api/tasks/${selectedTask.id}`, {
+      await fetchJson(`/api/tasks/${selectedTask.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-      setTasks(tasks.map((t) => (t.id === selectedTask.id ? res : t)));
       setSelectedTask(null);
       setShowForm(false);
-      setError(null);
+      await loadData();
     } catch (err) {
       setError('Failed to update task: ' + err.message);
     }
   };
 
   const handleDeleteTask = async (taskId) => {
-    if (!window.confirm('Are you sure you want to delete this task?')) return;
+    if (!window.confirm('Are you sure you want to delete this task? Subtasks will be deleted too.')) return;
     try {
       const response = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
       if (!response.ok) throw new Error(await parseApiError(response));
-      setTasks(tasks.filter((t) => t.id !== taskId));
-      setError(null);
+      await loadData();
     } catch (err) {
       setError('Failed to delete task: ' + err.message);
     }
@@ -101,12 +104,29 @@ function TaskList() {
 
   const handleEditTask = (task) => {
     setSelectedTask(task);
+    setParentTaskForNew(null);
+    setShowForm(true);
+  };
+
+  const handleAddSubtask = (task) => {
+    setSelectedTask(null);
+    setParentTaskForNew(task);
     setShowForm(true);
   };
 
   const handleFormCancel = () => {
     setShowForm(false);
     setSelectedTask(null);
+    setParentTaskForNew(null);
+  };
+
+  const handleToggleExpand = (taskId) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
   };
 
   const getFilteredTasks = () => {
@@ -138,6 +158,7 @@ function TaskList() {
           className="btn btn-primary"
           onClick={() => {
             setSelectedTask(null);
+            setParentTaskForNew(null);
             setShowForm(true);
           }}
         >
@@ -151,6 +172,7 @@ function TaskList() {
         <div className="form-container">
           <TaskForm
             task={selectedTask}
+            parentTask={parentTaskForNew}
             projects={projects}
             users={users}
             onSubmit={selectedTask ? handleUpdateTask : handleCreateTask}
@@ -194,6 +216,9 @@ function TaskList() {
               task={task}
               onEdit={handleEditTask}
               onDelete={handleDeleteTask}
+              onAddSubtask={handleAddSubtask}
+              expandedIds={expandedIds}
+              onToggleExpand={handleToggleExpand}
             />
           ))
         )}

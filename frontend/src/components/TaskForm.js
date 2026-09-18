@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/TaskForm.css';
 
-function TaskForm({ task, projects, users, onSubmit, onCancel }) {
+function TaskForm({ task, parentTask, projects, users, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     status: 'todo',
     priority: 0,
     deadline: '',
-    project_id: null,
+    project_id: parentTask ? parentTask.project_id || null : null,
     assignee_id: null,
+    parent_task_id: parentTask ? parentTask.id : null,
   });
 
   useEffect(() => {
@@ -22,6 +23,7 @@ function TaskForm({ task, projects, users, onSubmit, onCancel }) {
         deadline: task.deadline ? task.deadline.split('T')[0] : '',
         project_id: task.project_id || null,
         assignee_id: task.assignee_id || null,
+        parent_task_id: task.parent_task_id || null,
       });
     }
   }, [task]);
@@ -46,6 +48,12 @@ function TaskForm({ task, projects, users, onSubmit, onCancel }) {
 
   return (
     <form className="task-form" onSubmit={handleSubmit}>
+      {parentTask && (
+        <div className="subtask-of-banner">
+          Subtask of: <strong>{parentTask.title}</strong>
+        </div>
+      )}
+
       <div className="form-group">
         <label>Title *</label>
         <input

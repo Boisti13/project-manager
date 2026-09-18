@@ -4,6 +4,14 @@
   gap: 16px;
 }
 
+.subtask-of-banner {
+  background-color: #e3f2fd;
+  color: #1976D2;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;

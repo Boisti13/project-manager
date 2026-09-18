@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import '../styles/TaskItem.css';
 
-function TaskItem({ task, onEdit, onDelete, onStatusChange, onSelectSubtasks, indent = 0 }) {
-  const [showSubtasks, setShowSubtasks] = useState(false);
+function TaskItem({ task, onEdit, onDelete, onAddSubtask, expandedIds, onToggleExpand, indent = 0 }) {
+  const showSubtasks = expandedIds.has(task.id);
 
   const statusColors = {
     todo: '#999',
@@ -36,7 +36,7 @@ function TaskItem({ task, onEdit, onDelete, onStatusChange, onSelectSubtasks, in
           {task.subtasks && task.subtasks.length > 0 && (
             <button
               className="expand-btn"
-              onClick={() => setShowSubtasks(!showSubtasks)}
+              onClick={() => onToggleExpand(task.id)}
               title={showSubtasks ? 'Collapse' : 'Expand'}
             >
               {showSubtasks ? '▼' : '▶'}
@@ -58,6 +58,9 @@ function TaskItem({ task, onEdit, onDelete, onStatusChange, onSelectSubtasks, in
             </span>
           )}
           <span className={`task-status-badge status-${task.status}`}>{task.status.replace('_', ' ')}</span>
+          <button className="task-action-btn subtask-btn" onClick={() => onAddSubtask(task)} title="Add Subtask">
+            +
+          </button>
           <button className="task-action-btn edit-btn" onClick={() => onEdit(task)} title="Edit">
             ✎
           </button>
@@ -77,7 +80,9 @@ function TaskItem({ task, onEdit, onDelete, onStatusChange, onSelectSubtasks, in
               task={subtask}
               onEdit={onEdit}
               onDelete={onDelete}
-              onStatusChange={onStatusChange}
+              onAddSubtask={onAddSubtask}
+              expandedIds={expandedIds}
+              onToggleExpand={onToggleExpand}
               indent={indent + 1}
             />
           ))}
