@@ -18,10 +18,13 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Username or email already registered")
 
+    is_first_user = db.query(User).count() == 0
+
     db_user = User(
         username=user.username,
         email=user.email,
         hashed_password=get_password_hash(user.password),
+        is_admin=is_first_user,
     )
     db.add(db_user)
     db.commit()

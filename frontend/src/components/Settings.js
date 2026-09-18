@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch, useAuth } from '../context/AuthContext';
+import UserManagement from './UserManagement';
 import '../styles/Settings.css';
 
 function Settings() {
@@ -73,10 +74,11 @@ function Settings() {
         </div>
       </div>
 
+      {currentUser?.is_admin && <UserManagement />}
+
       <div className="settings-section">
         <h2>Coming Soon</h2>
         <ul className="upcoming-list">
-          <li>User management (edit/remove users, admin roles)</li>
           <li>Task drag-to-reorder</li>
           <li>Notifications for upcoming deadlines</li>
           <li>Dark mode</li>

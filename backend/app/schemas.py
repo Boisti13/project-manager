@@ -14,10 +14,15 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: int
     is_active: bool
+    is_admin: bool
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+class UserAdminUpdate(BaseModel):
+    is_active: Optional[bool] = None
+    is_admin: Optional[bool] = None
 
 class Token(BaseModel):
     access_token: str
