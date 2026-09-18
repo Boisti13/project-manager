@@ -79,9 +79,7 @@ function Settings() {
       <div className="settings-section">
         <h2>Coming Soon</h2>
         <ul className="upcoming-list">
-          <li>Task drag-to-reorder</li>
           <li>Notifications for upcoming deadlines</li>
-          <li>Dark mode</li>
         </ul>
       </div>
     </div>
