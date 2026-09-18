@@ -18,13 +18,19 @@ function TaskList() {
     loadData();
   }, []);
 
+  const fetchJson = async (url, options) => {
+    const response = await fetch(url, options);
+    if (!response.ok) throw new Error(await parseApiError(response));
+    return response.json();
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
       const [tasksRes, projectsRes, usersRes] = await Promise.all([
-        fetch('/api/tasks/').then(r => r.json()),
-        fetch('/api/projects/').then(r => r.json()),
-        fetch('/api/users/').then(r => r.json()),
+        fetchJson('/api/tasks/'),
+        fetchJson('/api/projects/'),
+        fetchJson('/api/users/'),
       ]);
       setTasks(tasksRes);
       setProjects(projectsRes);
@@ -52,13 +58,11 @@ function TaskList() {
 
   const handleCreateTask = async (formData) => {
     try {
-      const response = await fetch('/api/tasks/', {
+      const res = await fetchJson('/api/tasks/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-      if (!response.ok) throw new Error(await parseApiError(response));
-      const res = await response.json();
       setTasks([...tasks, res]);
       setShowForm(false);
       setError(null);
@@ -69,13 +73,11 @@ function TaskList() {
 
   const handleUpdateTask = async (formData) => {
     try {
-      const response = await fetch(`/api/tasks/${selectedTask.id}`, {
+      const res = await fetchJson(`/api/tasks/${selectedTask.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-      if (!response.ok) throw new Error(await parseApiError(response));
-      const res = await response.json();
       setTasks(tasks.map((t) => (t.id === selectedTask.id ? res : t)));
       setSelectedTask(null);
       setShowForm(false);
@@ -88,7 +90,8 @@ function TaskList() {
   const handleDeleteTask = async (taskId) => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
     try {
-      await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+      const response = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error(await parseApiError(response));
       setTasks(tasks.filter((t) => t.id !== taskId));
       setError(null);
     } catch (err) {
