@@ -1,92 +1,85 @@
 # Deployment Guide
 
-## LXC Setup on PVE .103 (192.168.100.x)
+## Current Deployment
 
-### Prerequisites
-- LXC container with Ubuntu 22.04 or similar
-- Docker and Docker Compose installed
-- Git installed
+**LXC 113** on PVE .103 (192.168.100.113) — Ubuntu 22.04, bare metal (no Docker).
 
-### Installation Steps
+| Component | How it runs |
+|---|---|
+| PostgreSQL 14 | systemd, native package |
+| FastAPI backend | Supervisor (`project-manager-backend`), Uvicorn on :8000, Python venv |
+| React frontend | Supervisor (`project-manager-frontend`), `npm start` on :3000 |
+| Nginx | Reverse proxy on :80 — `/api/*` → backend, `/` → frontend |
 
-1. **Clone the repository on the LXC**
+**Production only ever runs `main`.** Ongoing work happens on `dev`; merge to `main` and tag a release (see [README.md](README.md#versioning)) when ready to ship.
+
+## Updating the Live Deployment
+
 ```bash
-git clone <repo-url> /opt/task-manager
-cd /opt/task-manager
+ssh root@192.168.100.103
+pct exec 113 -- bash -c '
+  cd /opt/project-manager
+  git checkout main
+  git pull origin main
+  cd frontend && npm install && cd ..
+  supervisorctl restart project-manager-backend project-manager-frontend
+'
+```
+
+If the `Task` or `User` model changed, check whether a manual `ALTER TABLE` is needed first — `Base.metadata.create_all()` only creates missing tables, it never alters existing columns or constraints (see the `is_admin` column and `ON DELETE SET NULL` constraints added by hand during development).
+
+## Fresh Install (from scratch)
+
+1. **Create the LXC** — Ubuntu 22.04, at least 8GB disk (12GB+ recommended once npm/postgres/logs accumulate), nesting NOT required (bare metal, no Docker).
+
+2. **Install dependencies**
+```bash
+apt-get install -y postgresql python3-venv npm curl nginx supervisor git
+```
+   Node.js from Ubuntu's default repo is often too old for `react-scripts`; install Node 18+ from NodeSource if `npm install` fails with `node:path` module errors.
+
+3. **Create the database**
+```bash
+sudo -u postgres psql <<EOF
+CREATE DATABASE projectmanager;
+CREATE USER projectmanager WITH PASSWORD 'projectmanager';
+GRANT ALL PRIVILEGES ON DATABASE projectmanager TO projectmanager;
+EOF
+```
+
+4. **Clone and set up the backend**
+```bash
+cd /opt && git clone <repo-url> project-manager && cd project-manager
 git checkout main
-```
-
-2. **Create environment file**
-```bash
+python3 -m venv backend/venv
+source backend/venv/bin/activate
+pip install -r backend/requirements.txt
+deactivate
 cp backend/.env.example backend/.env
-# Edit backend/.env with production values
 ```
 
-3. **Create PostgreSQL data directory**
+5. **Set up the frontend**
 ```bash
-mkdir -p /data/postgres
-chmod 755 /data/postgres
+cd frontend && npm install && cd ..
 ```
 
-4. **Update docker-compose.yml for production**
-- Change volume paths if needed
-- Set proper environment variables
-- Update PostgreSQL password in production
+6. **Supervisor configs** — `/etc/supervisor/conf.d/project-manager-backend.conf` and `project-manager-frontend.conf`, running the Uvicorn/npm commands above. `supervisorctl reread && supervisorctl update`.
 
-5. **Start services**
-```bash
-docker-compose up -d
-```
+7. **Nginx** — reverse proxy config as described in the table above, under `/etc/nginx/sites-available/`.
 
-6. **Verify services are running**
-```bash
-docker-compose ps
-docker-compose logs -f
-```
+8. **First admin user**: the first account registered via the app's Register tab is automatically promoted to admin — no manual step needed.
 
-7. **Access the application**
-- Frontend: `http://<lxc-ip>:3000`
-- API: `http://<lxc-ip>:8000`
-- API Docs: `http://<lxc-ip>:8000/docs`
-
-### Database Migrations (Future)
-
-When using Alembic for migrations:
-```bash
-# Inside backend container
-docker-compose exec backend alembic upgrade head
-```
-
-### Updates
-
-To update from git:
-```bash
-cd /opt/task-manager
-git fetch origin
-git pull origin main
-docker-compose down
-docker-compose up -d
-```
-
-### Troubleshooting
+## Troubleshooting
 
 **Check logs:**
 ```bash
-docker-compose logs backend
-docker-compose logs frontend
-docker-compose logs postgres
+pct exec 113 -- tail -50 /var/log/project-manager-backend.log
+pct exec 113 -- tail -50 /var/log/project-manager-frontend.log
+pct exec 113 -- supervisorctl status
 ```
 
-**Rebuild images:**
-```bash
-docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
-```
+**Frontend won't start / `node:path` errors**: Node.js version too old — install 18+ from NodeSource.
 
-**Reset database:**
-```bash
-docker-compose down -v
-docker volume rm task-manager_postgres_data
-docker-compose up -d
-```
+**Port already in use on restart**: `fuser -k 3000/tcp` before `supervisorctl restart project-manager-frontend`.
+
+**Backend 500s after a model change**: check for a pending manual migration (see "Updating" above) — `create_all()` won't add columns or fix constraints on existing tables.

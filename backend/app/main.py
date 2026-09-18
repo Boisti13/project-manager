@@ -1,3 +1,4 @@
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
@@ -5,7 +6,13 @@ from app.routers import users, tasks, projects, auth
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Task Manager API", version="0.1.0")
+VERSION_FILE = Path(__file__).resolve().parent.parent.parent / "VERSION"
+try:
+    APP_VERSION = VERSION_FILE.read_text().strip()
+except FileNotFoundError:
+    APP_VERSION = "0.0.0"
+
+app = FastAPI(title="Task Manager API", version=APP_VERSION)
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,5 +32,6 @@ def read_root():
     return {"message": "Task Manager API"}
 
 @app.get("/health")
+@app.get("/api/health")
 def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "version": APP_VERSION}

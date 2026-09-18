@@ -6,6 +6,7 @@ import '../styles/Settings.css';
 function Settings() {
   const { currentUser } = useAuth();
   const [stats, setStats] = useState({ tasks: 0, projects: 0, users: 0 });
+  const [version, setVersion] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,6 +25,11 @@ function Settings() {
       }
     };
     loadStats();
+
+    fetch('/api/health')
+      .then((r) => r.json())
+      .then((d) => setVersion(d.version))
+      .catch(() => setVersion(null));
   }, []);
 
   return (
@@ -61,7 +67,7 @@ function Settings() {
           </div>
           <div className="info-row">
             <span className="info-label">Application</span>
-            <span className="info-value">Project Manager</span>
+            <span className="info-value">Project Manager{version ? ` v${version}` : ''}</span>
           </div>
           <div className="info-row">
             <span className="info-label">Stack</span>
