@@ -1,12 +1,12 @@
 .App {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--color-bg);
   display: flex;
   flex-direction: column;
 }
 
 .App-header {
-  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   padding: 30px 20px;
   color: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -31,11 +31,11 @@ main {
 }
 
 .App-footer {
-  background-color: #f0f0f0;
-  border-top: 1px solid #e0e0e0;
+  background-color: var(--color-border-light);
+  border-top: 1px solid var(--color-border);
   padding: 20px;
   text-align: center;
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 12px;
 }
 

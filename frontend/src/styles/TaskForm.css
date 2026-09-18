@@ -5,8 +5,8 @@
 }
 
 .subtask-of-banner {
-  background-color: #e3f2fd;
-  color: #1976D2;
+  background-color: var(--color-info-bg);
+  color: var(--color-info-text);
   padding: 8px 12px;
   border-radius: 4px;
   font-size: 13px;
@@ -19,7 +19,7 @@
 
 .form-group label {
   font-weight: 500;
-  color: #333;
+  color: var(--color-text-primary);
   margin-bottom: 6px;
   font-size: 14px;
 }
@@ -28,8 +28,10 @@
 .form-group textarea,
 .form-group select {
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.2s ease;
@@ -39,7 +41,7 @@
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #2196F3;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
 }
 

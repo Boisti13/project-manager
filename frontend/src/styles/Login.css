@@ -3,12 +3,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   padding: 20px;
 }
 
 .login-card {
-  background-color: #fff;
+  background-color: var(--color-surface);
   border-radius: 8px;
   padding: 36px;
   width: 100%;
@@ -20,13 +20,13 @@
   text-align: center;
   margin: 0 0 24px 0;
   font-size: 22px;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .login-tabs {
   display: flex;
   margin-bottom: 20px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .login-tab {
@@ -36,15 +36,15 @@
   padding: 10px;
   font-size: 14px;
   font-weight: 500;
-  color: #999;
+  color: var(--color-text-muted);
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all 0.2s ease;
 }
 
 .login-tab.active {
-  color: #2196F3;
-  border-bottom-color: #2196F3;
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 
 .login-form {
@@ -55,7 +55,7 @@
 
 .login-form .form-group label {
   font-weight: 500;
-  color: #333;
+  color: var(--color-text-primary);
   margin-bottom: 6px;
   font-size: 14px;
   display: block;
@@ -64,14 +64,16 @@
 .login-form .form-group input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
   font-size: 14px;
 }
 
 .login-form .form-group input:focus {
   outline: none;
-  border-color: #2196F3;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
 }
 
