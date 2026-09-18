@@ -58,5 +58,6 @@ class Task(Base):
     subtasks = relationship(
         "Task",
         backref=backref("parent_task", remote_side=[id]),
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        order_by="Task.order"
     )

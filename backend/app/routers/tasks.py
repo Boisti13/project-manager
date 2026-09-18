@@ -24,7 +24,7 @@ def list_tasks(project_id: int = None, parent_id: int = None, current_user: User
     if parent_id:
         query = query.filter(Task.parent_task_id == parent_id)
 
-    return query.all()
+    return query.order_by(Task.order, Task.id).all()
 
 @router.get("/{task_id}", response_model=schemas.Task)
 def get_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

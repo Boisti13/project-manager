@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import '../styles/TaskItem.css';
 
-function TaskItem({ task, onEdit, onDelete, onAddSubtask, expandedIds, onToggleExpand, indent = 0 }) {
+function TaskItem({ task, onEdit, onDelete, onAddSubtask, onReorder, expandedIds, onToggleExpand, indent = 0 }) {
   const showSubtasks = expandedIds.has(task.id);
+  const [dragOver, setDragOver] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
   const statusColors = {
     todo: '#999',
@@ -29,10 +31,50 @@ function TaskItem({ task, onEdit, onDelete, onAddSubtask, expandedIds, onToggleE
     return new Date(deadline) < new Date() && task.status !== 'done';
   };
 
+  const handleDragStart = (e) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(task.id));
+    setDragging(true);
+  };
+
+  const handleDragEnd = () => {
+    setDragging(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!dragOver) setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const draggedId = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    if (draggedId && draggedId !== task.id) {
+      onReorder(draggedId, task.id);
+    }
+  };
+
   return (
-    <div className="task-item" style={{ marginLeft: `${indent * 20}px` }}>
+    <div
+      className={`task-item ${dragOver ? 'drag-over' : ''} ${dragging ? 'dragging' : ''}`}
+      style={{ marginLeft: `${indent * 20}px` }}
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div className="task-header">
         <div className="task-left">
+          <span className="drag-handle" title="Drag to reorder">⠿</span>
           {task.subtasks && task.subtasks.length > 0 && (
             <button
               className="expand-btn"
@@ -81,6 +123,7 @@ function TaskItem({ task, onEdit, onDelete, onAddSubtask, expandedIds, onToggleE
               onEdit={onEdit}
               onDelete={onDelete}
               onAddSubtask={onAddSubtask}
+              onReorder={onReorder}
               expandedIds={expandedIds}
               onToggleExpand={onToggleExpand}
               indent={indent + 1}

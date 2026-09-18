@@ -12,6 +12,27 @@
   border-color: #2196F3;
 }
 
+.task-item.dragging {
+  opacity: 0.4;
+}
+
+.task-item.drag-over {
+  border-top: 3px solid #2196F3;
+  padding-top: 10px;
+}
+
+.drag-handle {
+  cursor: grab;
+  color: #ccc;
+  font-size: 14px;
+  line-height: 1;
+  user-select: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
 .task-header {
   display: flex;
   justify-content: space-between;

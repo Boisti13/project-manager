@@ -123,6 +123,46 @@ function TaskList() {
     setParentTaskForNew(null);
   };
 
+  const handleReorder = async (draggedId, targetId) => {
+    const dragged = tasks.find((t) => t.id === draggedId);
+    const target = tasks.find((t) => t.id === targetId);
+    if (!dragged || !target) return;
+    if (dragged.parent_task_id !== target.parent_task_id) return; // only reorder siblings
+
+    const siblings = tasks
+      .filter((t) => t.parent_task_id === dragged.parent_task_id)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.id - b.id);
+
+    const fromIndex = siblings.findIndex((t) => t.id === draggedId);
+    const toIndex = siblings.findIndex((t) => t.id === targetId);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const reordered = [...siblings];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+
+    const updates = reordered
+      .map((t, idx) => ({ id: t.id, order: idx }))
+      .filter((u) => siblings.find((s) => s.id === u.id).order !== u.order);
+
+    if (updates.length === 0) return;
+
+    try {
+      await Promise.all(
+        updates.map((u) =>
+          fetchJson(`/api/tasks/${u.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: u.order }),
+          })
+        )
+      );
+      await loadData();
+    } catch (err) {
+      setError('Failed to reorder tasks: ' + err.message);
+    }
+  };
+
   const handleToggleExpand = (taskId) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
@@ -235,6 +275,7 @@ function TaskList() {
               onEdit={handleEditTask}
               onDelete={handleDeleteTask}
               onAddSubtask={handleAddSubtask}
+              onReorder={handleReorder}
               expandedIds={expandedIds}
               onToggleExpand={handleToggleExpand}
             />
