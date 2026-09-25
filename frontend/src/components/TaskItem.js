@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { highlightParts } from '../taskFilters';
+import TaskComments from './TaskComments';
 import '../styles/TaskItem.css';
 
 function Highlight({ text, needle }) {
@@ -17,6 +18,7 @@ function TaskItem({
   isExpanded,
   onToggleExpand,
   onToggleDone,
+  onCommentCount,
   childrenOf,
   matchedIds = null,
   searchText = '',
@@ -34,6 +36,9 @@ function TaskItem({
   const isReady = progress.total > 0 && progress.done === progress.total && task.status !== 'done';
   const [dragOver, setDragOver] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  // Text boxes inside a draggable row can't be selected with the mouse.
+  const draggableNow = canDrag && !showComments;
 
   const statusColors = {
     todo: '#999',
@@ -98,8 +103,8 @@ function TaskItem({
     <div
       className={`task-item ${dragOver ? 'drag-over' : ''} ${dragging ? 'dragging' : ''} ${isContext ? 'task-context' : ''} ${isReady ? 'task-ready' : ''}`}
       style={{ marginLeft: `${indent * 20}px` }}
-      draggable={canDrag}
-      {...(canDrag && {
+      draggable={draggableNow}
+      {...(draggableNow && {
         onDragStart: handleDragStart,
         onDragEnd: handleDragEnd,
         onDragOver: handleDragOver,
@@ -162,6 +167,14 @@ function TaskItem({
             </span>
           )}
           <span className={`task-status-badge status-${task.status}`}>{task.status.replace('_', ' ')}</span>
+          <button
+            className={`task-action-btn comment-btn ${showComments ? 'active' : ''}`}
+            onClick={() => setShowComments((v) => !v)}
+            title={task.comment_count ? `${task.comment_count} comment${task.comment_count === 1 ? '' : 's'}` : 'Comments'}
+            aria-expanded={showComments}
+          >
+            💬{task.comment_count > 0 && <span className="comment-count">{task.comment_count}</span>}
+          </button>
           <button className="task-action-btn subtask-btn" onClick={() => onAddSubtask(task)} title="Add Subtask">
             +
           </button>
@@ -180,6 +193,8 @@ function TaskItem({
         </p>
       )}
 
+      {showComments && <TaskComments taskId={task.id} onCountChange={(n) => onCommentCount?.(task.id, n)} />}
+
       {showSubtasks && subtasks.length > 0 && (
         <div className="subtasks">
           {subtasks.map((subtask) => (
@@ -193,6 +208,7 @@ function TaskItem({
               isExpanded={isExpanded}
               onToggleExpand={onToggleExpand}
               onToggleDone={onToggleDone}
+              onCommentCount={onCommentCount}
               childrenOf={childrenOf}
               matchedIds={matchedIds}
               searchText={searchText}

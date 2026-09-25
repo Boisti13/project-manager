@@ -99,6 +99,9 @@ const SORTERS = {
  * archiveAfterDays old is left out (with its subtasks), unless the user is
  * searching or filtering by status "done" — then everything is searchable.
  *
+ * commentMatchIds: ids of tasks whose comments match the search text (from
+ * the server), counted as text matches.
+ *
  * projectParentOf(projectId) returns the parent of a category (or null), so a
  * project filter also matches tasks in that project's categories.
  */
@@ -110,7 +113,13 @@ export function isArchived(task, archiveAfterDays, now = Date.now()) {
 export function buildTaskTree(
   tasks,
   filters,
-  { currentUserId, now = Date.now(), projectParentOf = () => null, archiveAfterDays = null } = {}
+  {
+    currentUserId,
+    now = Date.now(),
+    projectParentOf = () => null,
+    archiveAfterDays = null,
+    commentMatchIds = null,
+  } = {}
 ) {
   const children = new Map();
   const byId = new Map();
@@ -155,7 +164,7 @@ export function buildTaskTree(
   const walk = (task, inheritedProject) => {
     const project = task.project_id ?? inheritedProject;
     const matches =
-      matchesText(task, needle) &&
+      (matchesText(task, needle) || (needle !== '' && commentMatchIds?.has(task.id))) &&
       matchesStatus(task, filters.status) &&
       // Filtering by a project includes its categories.
       (filters.project === '' ||

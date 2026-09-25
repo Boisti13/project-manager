@@ -82,6 +82,7 @@ class TaskUpdate(BaseModel):
 class Task(TaskBase):
     id: int
     completed_at: Optional[datetime] = None
+    comment_count: int = 0
     created_at: datetime
     updated_at: datetime
     subtasks: List["Task"] = []
@@ -100,3 +101,17 @@ class AppSettings(BaseModel):
 class AppSettingsUpdate(BaseModel):
     archive_after_days: Optional[int] = Field(default=None, ge=1, le=3650)
     backup_keep: Optional[int] = Field(default=None, ge=1, le=100)
+
+
+# Comments
+class CommentCreate(BaseModel):
+    body: str = Field(min_length=1, max_length=10000)
+
+class Comment(BaseModel):
+    id: int
+    task_id: int
+    author_id: Optional[int] = None
+    author: Optional[str] = None
+    body: str
+    created_at: datetime
+    edited_at: Optional[datetime] = None

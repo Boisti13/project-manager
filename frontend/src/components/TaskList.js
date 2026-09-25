@@ -33,6 +33,8 @@ function TaskList() {
   const [openCompleted, setOpenCompleted] = useState(new Set());
   // Phones only: the filter selects are folded away behind a button.
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Tasks whose comments match the search text (searched server-side).
+  const [commentMatchIds, setCommentMatchIds] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -58,6 +60,27 @@ function TaskList() {
     setSearchParams(filtersToParams({ ...DEFAULT_FILTERS, sort: filters.sort }), { replace: true });
     setCollapsedIds(new Set());
   };
+
+  useEffect(() => {
+    const q = filters.q.trim();
+    if (!q) {
+      setCommentMatchIds(null);
+      return undefined;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await authFetch(`/api/comments/search?q=${encodeURIComponent(q)}`);
+        if (res.ok && !cancelled) setCommentMatchIds(new Set(await res.json()));
+      } catch {
+        // search still works on titles/descriptions
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [filters.q]);
 
   // "/" focuses the search box (unless already typing somewhere).
   useEffect(() => {
@@ -178,6 +201,9 @@ function TaskList() {
     }
   };
 
+  const handleCommentCount = (taskId, n) =>
+    setTasks((ts) => ts.map((t) => (t.id === taskId && t.comment_count !== n ? { ...t, comment_count: n } : t)));
+
   const handleEditTask = (task) => {
     setSelectedTask(task);
     setParentTaskForNew(null);
@@ -267,8 +293,9 @@ function TaskList() {
         currentUserId: currentUser?.id,
         projectParentOf: projectIndex.parentIdOf,
         archiveAfterDays,
+        commentMatchIds,
       }),
-    [tasks, filters, currentUser, projectIndex, archiveAfterDays]
+    [tasks, filters, currentUser, projectIndex, archiveAfterDays, commentMatchIds]
   );
 
   // While filtering, only sections with results are shown; otherwise every
@@ -308,6 +335,7 @@ function TaskList() {
       isExpanded={isExpanded}
       onToggleExpand={handleToggleExpand}
       onToggleDone={handleToggleDone}
+      onCommentCount={handleCommentCount}
       childrenOf={tree.childrenOf}
       matchedIds={tree.matchedIds}
       searchText={filters.q}

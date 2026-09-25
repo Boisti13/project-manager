@@ -1,0 +1,126 @@
+.task-comments {
+  margin: 10px 0 0 32px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  background-color: var(--color-surface-hover);
+  border: 1px solid var(--color-border-light);
+  cursor: default;
+}
+
+.comments-empty {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.comment {
+  padding: 6px 0 8px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.comment:last-of-type {
+  margin-bottom: 8px;
+}
+
+.comment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.comment-author {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.comment-actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.comment-actions .link-btn {
+  font-size: 12px;
+}
+
+.comment-delete:hover {
+  color: var(--color-error-text);
+}
+
+.comment-body {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.task-comments textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  font: inherit;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  resize: vertical;
+}
+
+.comment-new {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.comment-edit {
+  margin-top: 6px;
+}
+
+.comment-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* 💬 button on the task row */
+.comment-btn {
+  width: auto !important;
+  min-width: 28px;
+  gap: 3px;
+  font-size: 13px;
+}
+
+.comment-btn .comment-count {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.comment-btn.active {
+  color: var(--color-primary);
+  background-color: var(--color-info-bg);
+}
+
+@media (max-width: 600px) {
+  .comment-btn {
+    padding: 0 4px !important;
+  }
+
+  .task-comments {
+    margin-left: 0;
+  }
+
+  .comment-new {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .comment-new .btn {
+    min-height: 40px;
+  }
+}

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import users, tasks, projects, auth, system, settings, transfer
+from app.routers import users, tasks, projects, auth, system, settings, transfer, comments
 from app.version import APP_VERSION
 
 # Schema is managed by Alembic -- run `python migrate.py` on deploy.
@@ -22,6 +22,7 @@ app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
 app.include_router(system.router, prefix="/api/system", tags=["system"])
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 app.include_router(transfer.router, prefix="/api/transfer", tags=["transfer"])
+app.include_router(comments.router, prefix="/api", tags=["comments"])
 
 @app.get("/")
 def read_root():

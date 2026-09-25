@@ -2,6 +2,20 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.12.0 — 2026-09-25
+
+### Added
+- **Comments on tasks**: a 💬 button on every task and subtask (with the comment count) opens its comment thread — author, time, *edited* marker; Ctrl+Enter to send. Authors can edit and delete their own comments, admins can delete any.
+- Task search also finds tasks by the text of their comments.
+- Project export/import includes comments; on another installation the original author's name is kept as text.
+
+### Changed
+- On phones the task row's action buttons are a little narrower so the comment button fits on the same line.
+
+### Under the hood
+- Migration `0004`: `task_comments` table (deleted together with its task).
+- New API: `GET/POST /api/tasks/{id}/comments`, `PUT/DELETE /api/comments/{id}`, `GET /api/comments/search?q=`; tasks in `GET /api/tasks/` carry `comment_count`.
+
 ## v1.11.0 — 2026-09-25
 
 Everything since v1.5.0 ships in this release (v1.6.0 – v1.10.0 were development versions on `dev`).

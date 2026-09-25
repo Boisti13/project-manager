@@ -1,9 +1,10 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import Task, TaskStatus, User
+from app.models import Task, TaskComment, TaskStatus, User
 from app import schemas
 from app.auth import get_current_user
 
@@ -36,7 +37,11 @@ def list_tasks(project_id: int = None, parent_id: int = None, current_user: User
     if parent_id:
         query = query.filter(Task.parent_task_id == parent_id)
 
-    return query.order_by(Task.order, Task.id).all()
+    tasks = query.order_by(Task.order, Task.id).all()
+    counts = dict(db.query(TaskComment.task_id, func.count(TaskComment.id)).group_by(TaskComment.task_id))
+    for t in tasks:
+        t.comment_count = counts.get(t.id, 0)
+    return tasks
 
 @router.get("/{task_id}", response_model=schemas.Task)
 def get_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

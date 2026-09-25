@@ -257,7 +257,7 @@
   .task-right {
     flex-basis: 100%;
     justify-content: flex-start;
-    gap: 6px;
+    gap: 4px;
     padding-left: 30px;
   }
 
@@ -267,7 +267,7 @@
   }
 
   .task-action-btn {
-    width: 38px;
+    width: 32px;
     height: 38px;
     font-size: 16px;
   }

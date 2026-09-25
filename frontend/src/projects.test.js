@@ -145,3 +145,14 @@ test('a task whose subtasks are all done stays open until it is ticked itself', 
   tree = buildTaskTree(more, DEFAULT_FILTERS, { projectParentOf: idx.parentIdOf });
   assert.deepStrictEqual(tree.progressOf(more.find((x) => x.id === 1)), { done: 2, total: 3 });
 });
+
+test('search also matches tasks by their comments', () => {
+  const tasks = [t(1, 1, { title: 'Order modules' }), t(2, 1, { title: 'Other' }), t(3, null, { title: 'Sub', parent_task_id: 2 })];
+  const run = (ids) => buildTaskTree(tasks, { ...DEFAULT_FILTERS, q: 'supplier' }, { commentMatchIds: ids });
+  assert.deepStrictEqual(run(null).roots, []);
+  assert.deepStrictEqual([...run(new Set([1])).matchedIds], [1]);
+  // A comment on a subtask brings its parent along, auto-expanded.
+  const r = run(new Set([3]));
+  assert.deepStrictEqual(r.roots.map((x) => x.id), [2]);
+  assert.ok(r.autoExpandIds.has(2));
+});

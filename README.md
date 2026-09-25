@@ -1,6 +1,6 @@
 # Project Manager
 
-A self-hosted task management application with hierarchical tasks (main tasks + subtasks), color-coded projects with categories, multi-user support, deadlines, search and filtering, a phone-friendly layout and in-app updates.
+A self-hosted task management application with hierarchical tasks (main tasks + subtasks), color-coded projects with categories, task comments, multi-user support, deadlines, search and filtering, a phone-friendly layout and in-app updates.
 
 ![Tasks grouped by project and category](docs/screenshots/tasks-desktop.png)
 
@@ -11,7 +11,8 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Hierarchical Tasks**: Main tasks with subtasks in a tree structure, drag-to-reorder at any level (in manual sort order), subtask progress (e.g. *1/2*) on the parent; when all subtasks are ticked the parent is highlighted as ready (*✓ 2/2*) but stays open — it only moves to *Completed* when you tick it yourself, so more subtasks can still be added
 - **Done Checkbox & Archive**: Tick tasks off with a checkbox; they move into a collapsed *✓ Completed* row at the end of their project/category (most recent first). After a configurable number of days (Settings → *Completed tasks*, default 30) they're archived — hidden from the list but still found by search or the *Done* filter. Nothing is deleted
 - **Multi-User**: Task assignment
-- **Search & Filters**: Full-text search over titles and descriptions (subtasks included), filters for status, project, assignee and deadline, sorting by deadline/priority/date/title; filters are kept in the URL
+- **Comments**: Discussion thread on every task and subtask (💬 with count on the row); authors can edit (marked *edited*) and delete their comments, admins can delete any; search also finds tasks by comment text; comments travel with project export/import
+- **Search & Filters**: Full-text search over titles, descriptions and comments (subtasks included), filters for status, project, assignee and deadline, sorting by deadline/priority/date/title; filters are kept in the URL
 - **Projects & Categories**: Projects with one level of categories (e.g. *6GHub → General, Ordering, Documentation*), each project color-coded; the Tasks page lists tasks in collapsible sections per project and per category (remembered per browser), with every task carrying its project's color
 - **Phone-friendly**: Bottom tab bar, two-line task rows with large touch targets, folding filters, no input zoom on iOS; installable via *Add to Home Screen* (web app manifest) to run full-screen like an app
 - **Extended Status**: todo / in_progress / blocked / done
@@ -29,6 +30,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 | ![Tasks, dark mode](docs/screenshots/tasks-desktop-dark.png) | ![Tasks on a phone](docs/screenshots/tasks-phone.png) |
 | ![Search with highlighted matches](docs/screenshots/tasks-filtered.png) | ![Completed row on a phone, dark mode](docs/screenshots/tasks-phone-dark.png) |
 | ![Projects with categories](docs/screenshots/projects-desktop.png) | ![Projects on a phone](docs/screenshots/projects-phone.png) |
+| ![Comments on a task](docs/screenshots/comments-desktop.png) | ![Comments on a phone](docs/screenshots/comments-phone.png) |
 
 <details>
 <summary>Settings (archive days, backup &amp; restore, export, updates, users)</summary>

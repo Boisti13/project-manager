@@ -70,6 +70,33 @@ class Task(Base):
         cascade="all, delete-orphan",
         order_by="Task.order"
     )
+    comments = relationship(
+        "TaskComment",
+        back_populates="task",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="TaskComment.id",
+    )
+
+    # Filled in by the task list endpoint; not a column.
+    comment_count = 0
+
+
+class TaskComment(Base):
+    __tablename__ = "task_comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False, index=True)
+    author_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    # Shown when there's no author account: imported comments from another
+    # installation keep their original author's name here.
+    author_name = Column(String, nullable=True)
+    body = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    edited_at = Column(DateTime, nullable=True)
+
+    task = relationship("Task", back_populates="comments")
+    author = relationship("User")
 
 
 class AppSetting(Base):

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.database import get_db
 from app.version import APP_VERSION
-from app.models import Project, Task, TaskStatus, User
+from app.models import Project, Task, TaskComment, TaskStatus, User
 from app.routers.projects import next_color
 from app.routers.tasks import sync_completed_at
 
@@ -24,6 +24,12 @@ FORMAT_VERSION = 1
 
 # ---- file format --------------------------------------------------------
 
+class CommentData(BaseModel):
+    author: Optional[str] = None
+    body: str = Field(min_length=1, max_length=10000)
+    created_at: Optional[datetime] = None
+
+
 class TaskData(BaseModel):
     title: str = Field(min_length=1, max_length=500)
     description: Optional[str] = None
@@ -32,6 +38,7 @@ class TaskData(BaseModel):
     order: int = 0
     deadline: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+    comments: List[CommentData] = []
     subtasks: List["TaskData"] = []
 
 
@@ -73,6 +80,14 @@ def _task_tree(task: Task, children: dict) -> dict:
         "order": task.order or 0,
         "deadline": task.deadline.isoformat() if task.deadline else None,
         "completed_at": task.completed_at.isoformat() if task.completed_at else None,
+        "comments": [
+            {
+                "author": c.author.username if c.author else c.author_name,
+                "body": c.body,
+                "created_at": c.created_at.isoformat() if c.created_at else None,
+            }
+            for c in task.comments
+        ],
         "subtasks": [_task_tree(c, children) for c in children.get(task.id, [])],
     }
 
@@ -141,7 +156,7 @@ def _free_name(db: Session, name: str) -> str:
 
 @router.post("/import")
 def import_projects(data: ExportFile, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    counts = {"projects": 0, "categories": 0, "tasks": 0}
+    counts = {"projects": 0, "categories": 0, "tasks": 0, "comments": 0}
     renamed = []
 
     def add_tasks(items: List[TaskData], project_id, parent_id=None):
@@ -155,6 +170,11 @@ def import_projects(data: ExportFile, current_user: User = Depends(get_current_u
             db.add(task)
             db.flush()
             counts["tasks"] += 1
+            for c in item.comments:
+                # Users differ between installations: keep the name as text.
+                db.add(TaskComment(task_id=task.id, author_id=None, author_name=c.author,
+                                   body=c.body, created_at=c.created_at or datetime.utcnow()))
+                counts["comments"] += 1
             add_tasks(item.subtasks, project_id, task.id)
 
     for p in data.projects:
