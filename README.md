@@ -31,7 +31,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 | ![Projects with categories](docs/screenshots/projects-desktop.png) | ![Projects on a phone](docs/screenshots/projects-phone.png) |
 
 <details>
-<summary>Settings (archive days, updates, users)</summary>
+<summary>Settings (archive days, backup &amp; restore, export, updates, users)</summary>
 
 ![Settings](docs/screenshots/settings-desktop.png)
 
@@ -42,6 +42,10 @@ Screenshots use sample data from a local preview instance.
 ### On your phone
 
 Open the app's URL in the phone browser and use *Add to Home Screen* (iOS: Share menu; Android/Chrome: ⋮ menu → *Install app*). It then starts full-screen with its own icon. It needs a connection to the server (e.g. over your VPN/ZeroTier when away) — there is no offline mode.
+
+## Releases
+
+See [CHANGELOG.md](CHANGELOG.md) and the [GitHub releases](https://github.com/Boisti13/project-manager/releases).
 
 ## Tech Stack
 
@@ -125,6 +129,7 @@ project-manager/
 │   └── src/
 │       ├── components/      # React components (TaskList, Settings, UpdatePanel, ...)
 │       ├── taskFilters.js   # Pure search/filter/sort/archive logic for the task tree
+│       ├── exportCsv.js     # CSV export of all tasks
 │       └── projects.js      # Project tree, colors, grouping tasks by project/category
 ├── install.sh               # Installer for a Debian/Ubuntu LXC or VM (idempotent)
 ├── proxmox/
@@ -135,6 +140,7 @@ project-manager/
 │   └── restore-db.sh        # Safety backup, restore, migrate; rolls back on failure
 ├── deploy/nginx.conf        # Production Nginx config (static build + /api proxy)
 ├── docs/screenshots/        # README screenshots (sample data)
+├── CHANGELOG.md             # What changed in each release
 ├── docker-compose.yml       # Local dev only, not used in production
 └── DEPLOYMENT.md            # LXC deployment, updates, migrations, troubleshooting
 ```
@@ -150,7 +156,7 @@ project-manager/
 
 Semantic versioning (`MAJOR.MINOR.PATCH`), tracked in the `VERSION` file at the repo root — the backend reads it at startup and serves it at `/api/health`. The frontend's `package.json` version is kept in sync.
 
-**Bump the `VERSION` file on every behavior-changing commit** (not just docs/comments), update this README alongside, and tag the corresponding commit on `main` as `vX.Y.Z`:
+**Bump the `VERSION` file on every behavior-changing commit** (not just docs/comments), update this README and [CHANGELOG.md](CHANGELOG.md) alongside, and tag the corresponding commit on `main` as `vX.Y.Z`:
 - **Patch** (`1.0.x`): bug fixes, no behavior change
 - **Minor** (`1.x.0`): new features, backward-compatible
 - **Major** (`x.0.0`): breaking changes (API contract, data model requiring migration)

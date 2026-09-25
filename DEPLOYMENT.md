@@ -10,8 +10,9 @@
 | FastAPI backend | Supervisor (`project-manager-backend`), Uvicorn on 127.0.0.1:8000, Python venv, settings from `backend/.env` |
 | React frontend | Static production build in `frontend/build/`, served by Nginx — no Node process at runtime |
 | Nginx | :80 — `/api/*` → backend, everything else → `frontend/build/` ([`deploy/nginx.conf`](deploy/nginx.conf)) |
+| Backups | `/var/backups/project-manager/`, newest 3 kept (see [Backups & Export](#backups--export)) |
 
-**Production only ever runs `main`.** Ongoing work happens on `dev`; merge to `main` and tag a release (see [README.md](README.md#versioning)) when ready to ship.
+**Production runs `main`.** Ongoing work happens on `dev`, which can be tried on the live instance via Settings → Updates → *Switch to dev*; merge to `main`, tag a release (see [README.md](README.md#versioning)) and switch back when ready to ship.
 
 ## Updating the Live Deployment
 
