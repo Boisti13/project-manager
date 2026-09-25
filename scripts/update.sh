@@ -22,6 +22,7 @@ cd "$APP_DIR" || fail "cannot cd to $APP_DIR"
 
 if [ -z "${UPDATE_CHECKED_OUT:-}" ]; then
   echo "Started $(date -Is), current: $(git rev-parse --abbrev-ref HEAD) @ $(git rev-parse --short HEAD)"
+  UPDATE_FROM="$(git rev-parse --short HEAD)"
 
   step "Fetching origin/$BRANCH"
   git fetch origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH" || fail "git fetch failed"
@@ -34,8 +35,12 @@ if [ -z "${UPDATE_CHECKED_OUT:-}" ]; then
 
   # Continue with the freshly checked-out copy of this script, so changes to
   # the deploy steps apply to the update that brings them in.
-  UPDATE_CHECKED_OUT=1 exec bash "$APP_DIR/scripts/update.sh" "$BRANCH"
+  UPDATE_CHECKED_OUT=1 UPDATE_FROM="$UPDATE_FROM" exec bash "$APP_DIR/scripts/update.sh" "$BRANCH"
 fi
+
+step "Backing up the database"
+# Before anything can touch the schema. No backup, no update.
+bash scripts/backup-db.sh "before-update-from-${UPDATE_FROM:-unknown}" || fail "database backup failed; the new code is checked out but the database and running services are untouched"
 
 step "Installing backend dependencies"
 backend/venv/bin/pip install -q -r backend/requirements.txt || fail "pip install failed, services were NOT restarted"

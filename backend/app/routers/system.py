@@ -12,6 +12,7 @@ import time
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from app.auth import get_current_user, get_current_admin_user
@@ -25,6 +26,8 @@ STATE_DIR = APP_DIR / ".update"
 STATUS_FILE = STATE_DIR / "status"
 LOG_FILE = STATE_DIR / "update.log"
 STALE_AFTER = 30 * 60  # seconds
+BACKUP_SCRIPT = APP_DIR / "scripts" / "backup-db.sh"
+BACKUP_DIR = Path(os.environ.get("PM_BACKUP_DIR", "/var/backups/project-manager"))
 
 BRANCH_RE = re.compile(r"^[A-Za-z0-9._][A-Za-z0-9._/-]{0,99}$")
 
@@ -183,3 +186,44 @@ def start_update(req: UpdateRequest, current_user: User = Depends(get_current_ad
 def update_status(current_user: User = Depends(get_current_admin_user)):
     state, log = _update_state()
     return {"state": state, "log": log}
+
+
+@router.get("/backups")
+def list_backups(current_user: User = Depends(get_current_admin_user)):
+    """Database dumps made by scripts/backup-db.sh, newest first."""
+    try:
+        files = sorted(BACKUP_DIR.glob("*.dump"), key=lambda p: p.stat().st_mtime, reverse=True)
+    except OSError:
+        files = []
+    return {
+        "dir": str(BACKUP_DIR),
+        "backups": [
+            {"name": f.name, "size": f.stat().st_size, "created": int(f.stat().st_mtime)}
+            for f in files
+        ],
+    }
+
+
+@router.post("/backups")
+def create_backup(current_user: User = Depends(get_current_admin_user)):
+    if os.name != "posix":
+        raise HTTPException(status_code=400, detail="Backups only work on the Linux deployment.")
+    try:
+        r = subprocess.run(
+            ["bash", str(BACKUP_SCRIPT), f"manual-{current_user.username}"],
+            cwd=APP_DIR, capture_output=True, text=True, timeout=300,
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        raise HTTPException(status_code=500, detail=f"Backup failed: {e}")
+    if r.returncode != 0:
+        raise HTTPException(status_code=500, detail="Backup failed: " + (r.stderr or r.stdout)[-400:])
+    return {"output": r.stdout.strip()}
+
+
+@router.get("/backups/{name}")
+def download_backup(name: str, current_user: User = Depends(get_current_admin_user)):
+    # Only plain file names of existing dumps, never paths.
+    path = BACKUP_DIR / name
+    if not re.fullmatch(r"[A-Za-z0-9._-]+\.dump", name) or not path.is_file():
+        raise HTTPException(status_code=404, detail="Backup not found")
+    return FileResponse(path, media_type="application/octet-stream", filename=name)

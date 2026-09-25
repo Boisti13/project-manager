@@ -19,11 +19,11 @@
 
 Any logged-in user can pick a branch and **Check for updates**. Admins additionally get an **Update now** / **Switch to <branch>** button, which runs [`scripts/update.sh`](scripts/update.sh) in the background:
 
-fetch → `git checkout -f -B <branch> origin/<branch>` → `pip install` → `migrate.py` → `npm install` → `npm run build` → sync the Nginx site from `deploy/nginx.conf` (rolled back if `nginx -t` fails) → `supervisorctl restart project-manager-backend`
+fetch → `git checkout -f -B <branch> origin/<branch>` → **database backup** → `pip install` → `migrate.py` → `npm install` → `npm run build` → sync the Nginx site from `deploy/nginx.conf` (rolled back if `nginx -t` fails) → `supervisorctl restart project-manager-backend`
 
 After the checkout the script re-runs itself from the new code, so changes to these steps apply to the update that ships them. The frontend is built into `frontend/build.new/` and only swapped in once the build succeeds.
 
-The log streams into the Settings page and is kept in `/opt/project-manager/.update/update.log`. If pip, migrations, npm or the build fail, nothing is restarted or swapped: the old backend and the old frontend build keep being served. Any local edits to tracked files in the deployed checkout are discarded.
+The log streams into the Settings page and is kept in `/opt/project-manager/.update/update.log`. If the database backup fails, the update stops before any migration runs. If pip, migrations, npm or the build fail, nothing is restarted or swapped: the old backend and the old frontend build keep being served. Any local edits to tracked files in the deployed checkout are discarded.
 
 Requirements: the backend runs as a user that can run `git` in the checkout and `supervisorctl` (root under the default Supervisor setup), and the LXC can reach GitHub.
 
@@ -58,6 +58,46 @@ The schema is managed by Alembic (`backend/alembic/`). The app no longer creates
   Always read the generated file — autogenerate misses things like enum value changes and renames. Use short sequential revision IDs (`--rev-id 0002`) to keep the history readable.
 - **Check models and DB agree**: `venv/bin/alembic check`
 - **Current revision**: `venv/bin/alembic current`
+
+## Backups & Export
+
+### Database backups
+
+[`scripts/backup-db.sh`](scripts/backup-db.sh) writes a full `pg_dump` (custom format) of the app database to `/var/backups/project-manager/`, using the connection settings in `backend/.env`. It runs automatically:
+
+- before every update from **Settings → Updates** (label `before-update-from-<commit>`)
+- before migrations when `install.sh` re-runs on an existing install (`before-reinstall`)
+
+and on demand via **Settings → Backup & export → Back up now** (admins) or by hand:
+
+```bash
+cd /opt/project-manager && scripts/backup-db.sh my-label
+```
+
+Only the newest backups are kept — **3** by default, adjustable under **Settings → Backup & export** (stored in the `app_settings` table; the script reads it from there). Override per run with `PM_BACKUP_KEEP=10`, or the location with `PM_BACKUP_DIR=/somewhere`. The directory is `700`, each dump `600`.
+
+Admins can **download** any listed backup from the Settings page, to keep a copy off the server.
+
+### Restoring a backup manually
+
+Stop the backend, restore, migrate, start:
+
+```bash
+cd /opt/project-manager
+supervisorctl stop project-manager-backend
+scripts/backup-db.sh before-restore            # safety copy of the current state
+set -a; . backend/.env; set +a
+PGPASSWORD="$DB_PASSWORD" pg_restore -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" \
+  --clean --if-exists --no-owner --no-privileges /var/backups/project-manager/<file>.dump
+(cd backend && venv/bin/python migrate.py)    # brings an older backup up to the current schema
+supervisorctl start project-manager-backend
+```
+
+A dump can be restored into the same or a newer PostgreSQL version, not an older one.
+
+### CSV export
+
+**Settings → Backup & export → Export CSV** (any user) downloads all tasks — including subtasks, done and archived ones — as a semicolon-separated UTF-8 CSV that Excel opens directly: ID, project, category, task, parent task, status, priority, assignee, deadline, created, completed, description. It's for spreadsheets and reporting; use the database backups to restore.
 
 ## Fresh Install
 

@@ -142,6 +142,11 @@ say "Installing backend dependencies"
 backend/venv/bin/pip install -q --upgrade pip
 backend/venv/bin/pip install -q -r backend/requirements.txt
 
+if [[ $UPDATE_MODE -eq 1 ]]; then
+  say "Backing up the database"
+  bash scripts/backup-db.sh before-reinstall || die "Database backup failed; nothing was migrated."
+fi
+
 say "Running database migrations"
 (cd backend && venv/bin/python migrate.py)
 

@@ -9,7 +9,8 @@ from app.models import AppSetting, User
 
 router = APIRouter()
 
-DEFAULTS = {"archive_after_days": 30}
+# backup_keep is also read by scripts/backup-db.sh straight from the table.
+DEFAULTS = {"archive_after_days": 30, "backup_keep": 3}
 
 
 def read_settings(db: Session) -> dict:
@@ -25,8 +26,8 @@ def get_settings(current_user: User = Depends(get_current_user), db: Session = D
 
 
 @router.put("/", response_model=schemas.AppSettings)
-def update_settings(new: schemas.AppSettings, current_user: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
-    for key, value in new.model_dump().items():
+def update_settings(new: schemas.AppSettingsUpdate, current_user: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+    for key, value in new.model_dump(exclude_none=True).items():
         row = db.get(AppSetting, key)
         if row is None:
             db.add(AppSetting(key=key, value=str(value)))
