@@ -14,12 +14,15 @@
 #   -b, --branch NAME   branch to install, default main        (PM_BRANCH)
 #   -d, --dir PATH      install directory                      (PM_DIR)
 #   -r, --repo URL      git repository to clone                (PM_REPO)
+#   -R, --restore FILE  load a backup (.dump from Settings -> Backup & export)
+#                       into this install, replacing its data   (PM_RESTORE)
 set -euo pipefail
 
 REPO="${PM_REPO:-https://github.com/Boisti13/project-manager.git}"
 BRANCH="${PM_BRANCH:-main}"
 INSTALL_DIR="${PM_DIR:-/opt/project-manager}"
 ASSUME_YES="${PM_YES:-0}"
+RESTORE="${PM_RESTORE:-}"
 NODE_MAJOR=20
 
 while [[ $# -gt 0 ]]; do
@@ -28,7 +31,8 @@ while [[ $# -gt 0 ]]; do
     -b|--branch) BRANCH="$2"; shift ;;
     -d|--dir) INSTALL_DIR="$2"; shift ;;
     -r|--repo) REPO="$2"; shift ;;
-    -h|--help) echo "Usage: install.sh [-y] [-b branch] [-d dir] [-r repo]  (see the header of install.sh)"; exit 0 ;;
+    -R|--restore) RESTORE="$2"; shift ;;
+    -h|--help) echo "Usage: install.sh [-y] [-b branch] [-d dir] [-r repo] [-R backup.dump]  (see the header of install.sh)"; exit 0 ;;
     *) echo "Unknown option: $1 (see --help)" >&2; exit 1 ;;
   esac
   shift
@@ -45,6 +49,11 @@ export DEBIAN_FRONTEND=noninteractive
 # creates its cluster as SQL_ASCII.
 export LANG=C.UTF-8 LC_ALL=C.UTF-8
 
+if [[ -n "$RESTORE" ]]; then
+  [[ -f "$RESTORE" ]] || die "Backup to restore not found: $RESTORE"
+  RESTORE="$(cd "$(dirname "$RESTORE")" && pwd)/$(basename "$RESTORE")"
+fi
+
 UPDATE_MODE=0
 [[ -d "$INSTALL_DIR/.git" && -f "$INSTALL_DIR/backend/.env" ]] && UPDATE_MODE=1
 
@@ -58,6 +67,7 @@ if [[ $UPDATE_MODE -eq 1 ]]; then
 else
   echo "Mode:              fresh install"
 fi
+[[ -n "$RESTORE" ]] && echo "Restore backup:    $RESTORE (replaces all data)"
 if [[ "$ASSUME_YES" != 1 ]]; then
   read -rp "Proceed? [Y/n]: " CONFIRM </dev/tty || CONFIRM=Y
   [[ "${CONFIRM:-Y}" =~ ^[Nn] ]] && { echo "Aborted."; exit 1; }
@@ -150,6 +160,11 @@ fi
 say "Running database migrations"
 (cd backend && venv/bin/python migrate.py)
 
+if [[ -n "$RESTORE" ]]; then
+  say "Restoring backup $(basename "$RESTORE")"
+  bash scripts/restore-db.sh "$RESTORE" || die "Restoring the backup failed (the previous data was kept)."
+fi
+
 say "Building the frontend (takes a minute)"
 (cd frontend && npm install --no-audit --no-fund --loglevel=error && GENERATE_SOURCEMAP=false npm run build >/dev/null) \
   || die "Frontend build failed. Re-run with the output visible: cd $INSTALL_DIR/frontend && npm run build"
@@ -202,7 +217,9 @@ echo "Done. Project Manager v$(cat VERSION) is running."
 echo
 echo "  http://${IP:-<this-host>}/"
 echo
-if [[ $UPDATE_MODE -eq 0 ]]; then
+if [[ -n "$RESTORE" ]]; then
+  echo "Log in with an account from the restored backup."
+elif [[ $UPDATE_MODE -eq 0 ]]; then
   echo "Open it and register — the first account becomes the admin."
 fi
 echo "Later updates: Settings -> Updates in the app, or re-run this script."

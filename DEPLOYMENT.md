@@ -78,22 +78,48 @@ Only the newest backups are kept — **3** by default, adjustable under **Settin
 
 Admins can **download** any listed backup from the Settings page, to keep a copy off the server.
 
-### Restoring a backup manually
+### Restoring a backup
 
-Stop the backend, restore, migrate, start:
+**In the app** (admins): **Settings → Backup & export → Restore** on any backup in the list. To bring in a backup from another server, **Download** it there and **Upload backup…** here, then *Restore* it. A restore **replaces all data** — users, projects, tasks, settings — so afterwards you log in with an account from the backup.
+
+**On the command line:**
 
 ```bash
-cd /opt/project-manager
-supervisorctl stop project-manager-backend
-scripts/backup-db.sh before-restore            # safety copy of the current state
-set -a; . backend/.env; set +a
-PGPASSWORD="$DB_PASSWORD" pg_restore -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" \
-  --clean --if-exists --no-owner --no-privileges /var/backups/project-manager/<file>.dump
-(cd backend && venv/bin/python migrate.py)    # brings an older backup up to the current schema
-supervisorctl start project-manager-backend
+cd /opt/project-manager && scripts/restore-db.sh /var/backups/project-manager/<file>.dump
 ```
 
-A dump can be restored into the same or a newer PostgreSQL version, not an older one.
+Both run [`scripts/restore-db.sh`](scripts/restore-db.sh), which:
+
+1. makes a safety backup of the current data (`before-restore`)
+2. drops the app's tables and types (only objects owned by the app's DB user — no superuser needed)
+3. `pg_restore`s the backup in a single transaction
+4. runs `migrate.py`, so a backup from an older version is upgraded to the current schema
+
+If step 3 or 4 fails — corrupt file, or a backup from a *newer* app version than the one installed — the safety backup is loaded back and nothing changes. The backend keeps running throughout.
+
+A backup can be restored into the same or a newer PostgreSQL version (e.g. from a Ubuntu 22.04 install with PostgreSQL 14 into a Debian 12 container with PostgreSQL 15), not an older one.
+
+### Moving to a new server
+
+1. On the old instance: **Settings → Backup & export → Back up now**, then **Download** it.
+2. Create the new instance with the backup loaded, either
+   - on the Proxmox host (copy the `.dump` there first):
+     ```bash
+     PM_RESTORE_FILE=/root/projectmanager-….dump \
+       bash -c "$(curl -fsSL https://raw.githubusercontent.com/Boisti13/project-manager/main/proxmox/project-manager-lxc.sh)"
+     ```
+   - or inside an existing Debian/Ubuntu container: `install.sh --restore /path/to/file.dump`
+   - or install normally, register a temporary admin, and use **Upload backup…** + **Restore** in Settings.
+3. Log in with your usual account — users come with the backup.
+
+### Handing projects to someone else (export/import)
+
+For moving *some* projects rather than a whole instance — e.g. to another person's installation or account — use the **Projects** page:
+
+- **⤓** on a project exports it with its categories, tasks and subtasks (status, priority, deadlines, completion dates) as JSON; **Export all** also includes tasks without a project.
+- **Import** reads such a file and always creates **new** projects; if a name is taken it becomes *Name (2)*. Assignees aren't included (users differ between installations), so imported tasks are unassigned.
+
+Any logged-in user can export and import. The file format is `project-manager/projects`, version 1 ([`backend/app/routers/transfer.py`](backend/app/routers/transfer.py)).
 
 ### CSV export
 
@@ -105,7 +131,7 @@ All options install without Docker: PostgreSQL, a Python venv under Supervisor, 
 
 ### Option A: New LXC from the Proxmox host (recommended)
 
-On the Proxmox VE host shell, as root:
+On the Proxmox VE host shell, as root (add `PM_RESTORE_FILE=/path/backup.dump` in front to start from a backup, see [Moving to a new server](#moving-to-a-new-server)):
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Boisti13/project-manager/main/proxmox/project-manager-lxc.sh)"
@@ -130,7 +156,7 @@ As root inside the container:
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Boisti13/project-manager/main/install.sh)"
 ```
 
-or from a clone: `sudo ./install.sh`. Options: `-y` (no prompt), `-b <branch>`, `-d <dir>`, `-r <repo-url>`.
+or from a clone: `sudo ./install.sh`. Options: `-y` (no prompt), `-b <branch>`, `-d <dir>`, `-r <repo-url>`, `-R <backup.dump>` (load a backup, replacing the data).
 
 What it does:
 1. Installs `postgresql nginx supervisor git python3-venv`, plus Node.js 18+ (distribution package if new enough, otherwise Node 20 from NodeSource)

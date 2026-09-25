@@ -21,6 +21,8 @@
 #   CT_VLAN         VLAN tag                           (none)
 #   CT_PASSWORD     root password                      (none; use `pct enter`)
 #   PM_BRANCH       branch to install                  (main)
+#   PM_RESTORE_FILE backup (.dump) on this host to load into the new
+#                   container, e.g. one downloaded from Settings (none)
 set -euo pipefail
 
 APP="Project Manager"
@@ -55,6 +57,7 @@ CT_GW="${CT_GW:-}"
 CT_VLAN="${CT_VLAN:-}"
 CT_PASSWORD="${CT_PASSWORD:-}"
 PM_BRANCH="${PM_BRANCH:-main}"
+PM_RESTORE_FILE="${PM_RESTORE_FILE:-}"
 
 # ---- settings dialog -------------------------------------------------------
 if [[ "${UNATTENDED:-0}" != 1 && -t 0 ]] && command -v whiptail >/dev/null; then
@@ -90,6 +93,7 @@ qm status "$CTID" >/dev/null 2>&1 && die "ID $CTID is already used by a VM."
 [[ -n "$TEMPLATE_STORAGE" ]] || die "No storage with 'vztmpl' content found."
 [[ "$CT_IP" == dhcp || -n "$CT_GW" ]] || die "A static IP needs a gateway (CT_GW)."
 (( CT_RAM >= 1024 )) || die "At least 1024 MB of memory is needed to build the frontend."
+[[ -z "$PM_RESTORE_FILE" || -f "$PM_RESTORE_FILE" ]] || die "Backup to restore not found: $PM_RESTORE_FILE"
 
 NET="name=eth0,bridge=$CT_BRIDGE,ip=$CT_IP"
 [[ -n "$CT_GW" ]] && NET+=",gw=$CT_GW"
@@ -141,13 +145,20 @@ pct exec "$CTID" -- getent hosts github.com >/dev/null 2>&1 || die "Container $C
 ok "Network is up"
 
 # ---- install ---------------------------------------------------------------------------
+RESTORE_ARG=""
+if [[ -n "$PM_RESTORE_FILE" ]]; then
+  msg "Copying backup $(basename "$PM_RESTORE_FILE") into the container"
+  pct push "$CTID" "$PM_RESTORE_FILE" /root/project-manager-restore.dump --perms 600
+  RESTORE_ARG="--restore /root/project-manager-restore.dump"
+fi
+
 msg "Installing $APP inside the container (this takes a few minutes)"
 pct exec "$CTID" -- bash -c "
   set -e
   export DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
   apt-get update -qq && apt-get install -y -qq curl ca-certificates >/dev/null
   curl -fsSL '$RAW_BASE/$PM_BRANCH/install.sh' -o /root/project-manager-install.sh
-  bash /root/project-manager-install.sh --yes --branch '$PM_BRANCH'
+  bash /root/project-manager-install.sh --yes --branch '$PM_BRANCH' $RESTORE_ARG
 "
 trap - ERR
 
@@ -159,5 +170,9 @@ ok "$APP is running in container $CTID"
 echo
 echo "    http://$IP/"
 echo
-echo "Register there — the first account becomes the admin."
+if [[ -n "$PM_RESTORE_FILE" ]]; then
+  echo "Log in with an account from the restored backup."
+else
+  echo "Register there — the first account becomes the admin."
+fi
 echo "Updates: Settings -> Updates in the app."

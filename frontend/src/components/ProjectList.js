@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ProjectForm from './ProjectForm';
 import { authFetch } from '../context/AuthContext';
 import { buildProjectIndex } from '../projects';
@@ -12,6 +12,8 @@ function ProjectList() {
   const [error, setError] = useState(null);
   // null: closed; { project } to edit; { parentId } to create
   const [form, setForm] = useState(null);
+  const [notice, setNotice] = useState(null);
+  const importRef = useRef(null);
 
   const projectIndex = useMemo(() => buildProjectIndex(projects), [projects]);
 
@@ -92,6 +94,53 @@ function ProjectList() {
     }
   };
 
+  // Export: one project (with categories and tasks), or everything incl.
+  // tasks without a project. See backend/app/routers/transfer.py.
+  const exportProjects = async (project = null) => {
+    try {
+      const url = project ? `/api/transfer/export?project_id=${project.id}` : '/api/transfer/export';
+      const data = await fetchJson(url);
+      const slug = (project ? project.name : 'all-projects').replace(/[^A-Za-z0-9._-]+/g, '-');
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${slug}-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch (err) {
+      setError('Export failed: ' + err.message);
+    }
+  };
+
+  const importProjects = async (file) => {
+    setNotice(null);
+    try {
+      let data;
+      try {
+        data = JSON.parse(await file.text());
+      } catch {
+        throw new Error('this is not a JSON file');
+      }
+      const res = await fetchJson('/api/transfer/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const renamed = res.renamed.map((r) => `"${r.from}" → "${r.to}"`).join(', ');
+      setNotice(
+        `Imported ${res.projects} project${res.projects === 1 ? '' : 's'}, ${res.categories} ` +
+          `categor${res.categories === 1 ? 'y' : 'ies'} and ${res.tasks} task${res.tasks === 1 ? '' : 's'}.` +
+          (renamed ? ` Renamed because the name was taken: ${renamed}.` : '')
+      );
+      setError(null);
+      await loadData();
+    } catch (err) {
+      setError('Import failed: ' + err.message);
+    }
+  };
+
   const openForm = (value) => {
     setForm(value);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -108,12 +157,37 @@ function ProjectList() {
           <h1>Projects</h1>
           <span className="task-count">({projectIndex.topLevel.length})</span>
         </div>
-        <button className="btn btn-primary" onClick={() => openForm({ parentId: null })}>
-          + New Project
-        </button>
+        <div className="header-actions">
+          <button className="btn btn-secondary" onClick={() => importRef.current?.click()} title="Import projects from a JSON export">
+            Import
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={() => exportProjects()}
+            title="Export all projects and tasks as JSON"
+            disabled={projectIndex.topLevel.length === 0}
+          >
+            Export all
+          </button>
+          <button className="btn btn-primary" onClick={() => openForm({ parentId: null })}>
+            + New Project
+          </button>
+          <input
+            ref={importRef}
+            type="file"
+            accept=".json,application/json"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = '';
+              if (f) importProjects(f);
+            }}
+          />
+        </div>
       </div>
 
       {error && <div className="error-message">{error}</div>}
+      {notice && <div className="success-message">{notice}</div>}
 
       {form && (
         <div className="form-container">
@@ -152,6 +226,13 @@ function ProjectList() {
                       title="Add a category (sub-project)"
                     >
                       + Category
+                    </button>
+                    <button
+                      className="task-action-btn"
+                      onClick={() => exportProjects(project)}
+                      title={`Export ${project.name} (with categories and tasks) as JSON`}
+                    >
+                      ⤓
                     </button>
                     <button className="task-action-btn edit-btn" onClick={() => openForm({ project })} title="Edit">
                       ✎

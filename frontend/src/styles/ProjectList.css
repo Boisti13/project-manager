@@ -137,3 +137,37 @@
     margin-left: 8px;
   }
 }
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.success-message {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+@media (max-width: 600px) {
+  .task-list-header:has(.header-actions) {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { authFetch, useAuth } from '../context/AuthContext';
 import { buildProjectIndex } from '../projects';
 import { tasksToCsv } from '../exportCsv';
@@ -34,6 +34,7 @@ function BackupSettings() {
   const [backupDir, setBackupDir] = useState('');
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState(null); // { ok, text }
+  const uploadRef = useRef(null);
 
   const loadBackups = useCallback(async () => {
     const res = await authFetch('/api/system/backups');
@@ -98,6 +99,35 @@ function BackupSettings() {
       saveBlob(await res.blob(), name);
     });
 
+  const upload = (file) =>
+    run(async () => {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await authFetch('/api/system/backups/upload', { method: 'POST', body: form });
+      if (!res.ok) throw new Error('Upload failed: ' + (await errorText(res)));
+      const d = await res.json();
+      await loadBackups();
+      setStatus({ ok: true, text: `Uploaded as ${d.name}. Use "Restore" on it to load it.` });
+    });
+
+  const restore = (b) => {
+    const when = new Date(b.created * 1000).toLocaleString();
+    const ok = window.confirm(
+      `Restore "${b.name}" (${when})?\n\n` +
+        'This REPLACES ALL DATA — users, projects, tasks and settings — with the contents of that backup. ' +
+        'A safety backup of the current data is made first.\n\n' +
+        'Afterwards you may have to log in again with an account from the backup.'
+    );
+    if (!ok) return;
+    run(async () => {
+      setStatus({ ok: true, text: 'Restoring… this can take a moment.' });
+      const res = await authFetch(`/api/system/backups/${encodeURIComponent(b.name)}/restore`, { method: 'POST' });
+      if (!res.ok) throw new Error(await errorText(res));
+      setStatus({ ok: true, text: 'Restore complete. Reloading…' });
+      setTimeout(() => window.location.assign('/'), 1500);
+    });
+  };
+
   const exportCsv = () =>
     run(async () => {
       const get = async (url) => {
@@ -138,13 +168,30 @@ function BackupSettings() {
             <div>
               <strong>Database backups</strong>
               <p className="settings-help">
-                Full database dumps in <code>{backupDir || '…'}</code>. One is made automatically before every update
-                and re-install; restore with <code>pg_restore</code> (see DEPLOYMENT.md).
+                Full database dumps in <code>{backupDir || '…'}</code>. One is made automatically before every update,
+                re-install and restore. <em>Restore</em> replaces all data with a backup; to move to a new server,
+                download a backup here and upload it there.
               </p>
             </div>
-            <button className="btn btn-primary btn-small" onClick={backupNow} disabled={busy}>
-              {busy ? 'Working…' : 'Back up now'}
-            </button>
+            <div className="backup-actions">
+              <button className="btn btn-primary btn-small" onClick={backupNow} disabled={busy}>
+                {busy ? 'Working…' : 'Back up now'}
+              </button>
+              <button className="btn btn-secondary btn-small" onClick={() => uploadRef.current?.click()} disabled={busy}>
+                Upload backup…
+              </button>
+              <input
+                ref={uploadRef}
+                type="file"
+                accept=".dump"
+                hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = '';
+                  if (f) upload(f);
+                }}
+              />
+            </div>
           </div>
 
           <form className="archive-form" onSubmit={saveKeep}>
@@ -175,9 +222,14 @@ function BackupSettings() {
                   <span className="backup-meta">
                     {new Date(b.created * 1000).toLocaleString()} · {formatSize(b.size)}
                   </span>
-                  <button className="btn btn-secondary btn-small" onClick={() => download(b.name)} disabled={busy}>
-                    Download
-                  </button>
+                  <span className="backup-buttons">
+                    <button className="btn btn-secondary btn-small" onClick={() => download(b.name)} disabled={busy}>
+                      Download
+                    </button>
+                    <button className="btn btn-secondary btn-small btn-danger" onClick={() => restore(b)} disabled={busy}>
+                      Restore
+                    </button>
+                  </span>
                 </li>
               ))}
             </ul>

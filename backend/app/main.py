@@ -1,15 +1,9 @@
-from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import users, tasks, projects, auth, system, settings
+from app.routers import users, tasks, projects, auth, system, settings, transfer
+from app.version import APP_VERSION
 
 # Schema is managed by Alembic -- run `python migrate.py` on deploy.
-
-VERSION_FILE = Path(__file__).resolve().parent.parent.parent / "VERSION"
-try:
-    APP_VERSION = VERSION_FILE.read_text().strip()
-except FileNotFoundError:
-    APP_VERSION = "0.0.0"
 
 app = FastAPI(title="Project Manager API", version=APP_VERSION)
 
@@ -27,6 +21,7 @@ app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"])
 app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
 app.include_router(system.router, prefix="/api/system", tags=["system"])
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
+app.include_router(transfer.router, prefix="/api/transfer", tags=["transfer"])
 
 @app.get("/")
 def read_root():

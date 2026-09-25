@@ -11,11 +11,13 @@ import threading
 import time
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.auth import get_current_user, get_current_admin_user
+from app.database import engine, get_db
 from app.models import User
 
 router = APIRouter()
@@ -227,3 +229,58 @@ def download_backup(name: str, current_user: User = Depends(get_current_admin_us
     if not re.fullmatch(r"[A-Za-z0-9._-]+\.dump", name) or not path.is_file():
         raise HTTPException(status_code=404, detail="Backup not found")
     return FileResponse(path, media_type="application/octet-stream", filename=name)
+
+
+
+RESTORE_SCRIPT = APP_DIR / "scripts" / "restore-db.sh"
+MAX_UPLOAD = 200 * 1024 * 1024
+
+
+@router.post("/backups/upload")
+async def upload_backup(file: UploadFile = File(...), current_user: User = Depends(get_current_admin_user)):
+    """Stores an uploaded pg_dump next to the other backups, so it can be restored from the list."""
+    head = await file.read(5)
+    if head != b"PGDMP":
+        raise HTTPException(status_code=400, detail="Not a Project Manager backup (expected a pg_dump .dump file)")
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    os.chmod(BACKUP_DIR, 0o700)
+    name = f"projectmanager-{time.strftime('%Y%m%d-%H%M%S')}-uploaded.dump"
+    path = BACKUP_DIR / name
+    size = len(head)
+    with open(path, "wb") as out:
+        out.write(head)
+        while chunk := await file.read(1024 * 1024):
+            size += len(chunk)
+            if size > MAX_UPLOAD:
+                out.close()
+                path.unlink(missing_ok=True)
+                raise HTTPException(status_code=413, detail="Backup file too large")
+            out.write(chunk)
+    os.chmod(path, 0o600)
+    return {"name": name, "size": size}
+
+
+@router.post("/backups/{name}/restore")
+def restore_backup(name: str, current_user: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+    """Replaces the whole database with a backup (see scripts/restore-db.sh)."""
+    if os.name != "posix":
+        raise HTTPException(status_code=400, detail="Restore only works on the Linux deployment.")
+    path = BACKUP_DIR / name
+    if not re.fullmatch(r"[A-Za-z0-9._-]+\.dump", name) or not path.is_file():
+        raise HTTPException(status_code=404, detail="Backup not found")
+    # This request's own session holds locks (the auth lookup read the users
+    # table); release them, or dropping the tables would wait on us forever.
+    db.rollback()
+    db.close()
+    engine.dispose()
+    try:
+        r = subprocess.run(["bash", str(RESTORE_SCRIPT), str(path)], cwd=APP_DIR,
+                           capture_output=True, text=True, timeout=600)
+    except (subprocess.SubprocessError, OSError) as e:
+        raise HTTPException(status_code=500, detail=f"Restore failed: {e}")
+    finally:
+        engine.dispose()  # drop pooled connections that saw the old tables
+    output = (r.stdout + r.stderr).strip()
+    if r.returncode != 0:
+        raise HTTPException(status_code=500, detail="Restore failed: " + output[-800:])
+    return {"output": output}

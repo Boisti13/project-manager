@@ -160,8 +160,22 @@
   color: var(--color-text-muted);
 }
 
-.backup-list .btn {
+.backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.backup-buttons {
+  display: flex;
+  gap: 6px;
   margin-left: auto;
+}
+
+.btn-danger:hover {
+  color: var(--color-error-text);
+  background-color: var(--color-error-bg);
 }
 
 .backup-empty {
