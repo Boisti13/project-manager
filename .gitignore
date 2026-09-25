@@ -61,3 +61,6 @@ Thumbs.db
 # Frontend build staging (scripts/update.sh)
 frontend/build.new/
 frontend/build.old/
+
+# pytest
+.pytest_cache/

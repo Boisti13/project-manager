@@ -2,6 +2,19 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.12.1 — 2026-09-25
+
+### Fixed
+- **Deactivated users were not locked out**: they could still log in and keep using existing sessions. Login now refuses deactivated accounts ("This account has been deactivated") and their tokens stop working immediately.
+
+### Added
+- **Backend test suite** (`backend/tests/`, pytest against a real PostgreSQL — starts a throwaway server automatically): auth and users, projects/categories, tasks, comments, settings, export/import, backup endpoints, migrations, and the backup/restore scripts including rollback.
+- **GitHub Actions CI**: backend tests on Python 3.10 and 3.12 with PostgreSQL 16, frontend tests and production build, shellcheck — on every push to `main`/`dev` and on pull requests.
+- `PM_ENV_FILE` for `scripts/backup-db.sh` / `restore-db.sh` to read connection settings from a file other than `backend/.env`.
+
+### Changed
+- The two long-standing ESLint warnings in the frontend build are resolved.
+
 ## v1.12.0 — 2026-09-25
 
 ### Added

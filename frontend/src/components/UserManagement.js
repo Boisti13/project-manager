@@ -8,8 +8,10 @@ function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Load once when the page opens.
   useEffect(() => {
     loadUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const parseApiError = async (response) => {

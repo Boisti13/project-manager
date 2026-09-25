@@ -11,7 +11,7 @@
 # 4. runs migrate.py (older backups are upgraded)
 # If 3 or 4 fails, the safety backup is restored the same way.
 #
-# Uses the connection settings in backend/.env. Works on a running
+# Uses the connection settings in backend/.env (or $PM_ENV_FILE). Works on a running
 # instance; used by Settings -> Backup & export -> Restore and by
 # install.sh --restore.
 set -euo pipefail
@@ -20,7 +20,7 @@ export LANG=C.UTF-8 LC_ALL=C.UTF-8
 DUMP="${1:?usage: restore-db.sh <file.dump>}"
 APP_DIR="${PM_APP_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 PYTHON="${PM_PYTHON:-$APP_DIR/backend/venv/bin/python}"
-ENV_FILE="$APP_DIR/backend/.env"
+ENV_FILE="${PM_ENV_FILE:-$APP_DIR/backend/.env}"
 
 [[ -f "$DUMP" ]] || { echo "restore: $DUMP not found" >&2; exit 1; }
 [[ "$(head -c 5 "$DUMP")" == PGDMP ]] || { echo "restore: $DUMP is not a pg_dump custom-format file" >&2; exit 1; }

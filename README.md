@@ -1,5 +1,7 @@
 # Project Manager
 
+[![CI](https://github.com/Boisti13/project-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/Boisti13/project-manager/actions/workflows/ci.yml)
+
 A self-hosted task management application with hierarchical tasks (main tasks + subtasks), color-coded projects with categories, task comments, multi-user support, deadlines, search and filtering, a phone-friendly layout and in-app updates.
 
 ![Tasks grouped by project and category](docs/screenshots/tasks-desktop.png)
@@ -107,24 +109,35 @@ npm start                 # dev server on :3000, proxies /api to :8000
 
 ## Testing
 
-```bash
-cd frontend
-npm test                  # Jest: taskFilters (search/filter/sort/archive), projects (tree, grouping), exportCsv
-```
+**Backend** — pytest against a real PostgreSQL:
 
 ```bash
 cd backend
-alembic check             # models and migrations agree (against your dev DB)
+pip install -r requirements-dev.txt
+pytest
 ```
+
+With no configuration it starts a throwaway PostgreSQL via the `pgserver` package (nothing to install); set `PM_TEST_DATABASE_URL=postgresql://user:pw@host/postgres` to use an existing server instead (the user needs `CREATE DATABASE`). Each run uses its own database and removes it afterwards. The suite covers auth and user management, projects/categories, tasks, comments, settings, export/import, the backup endpoints, the migrations (upgrade/downgrade, models vs. migrations, stamping pre-Alembic databases) and the `backup-db.sh`/`restore-db.sh` scripts including rollback — the script tests need `bash` and the PostgreSQL client tools and are skipped without them.
+
+**Frontend** — Jest:
+
+```bash
+cd frontend
+npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), exportCsv
+```
+
+**CI** — [GitHub Actions](.github/workflows/ci.yml) runs the backend tests (PostgreSQL 16, Python 3.10 and 3.12), the frontend tests and production build, and shellcheck on every push to `main`/`dev` and on pull requests.
 
 ## Architecture
 
 ```
 project-manager/
 ├── VERSION                  # Single source of truth for the app version
+├── .github/workflows/ci.yml # Tests, build and shellcheck on every push
 ├── backend/
 │   ├── app/                 # FastAPI application (routers/, models.py, schemas.py, ...)
 │   ├── alembic/versions/    # Database migrations
+│   ├── tests/               # pytest suite (real PostgreSQL)
 │   └── migrate.py           # Applies migrations; stamps pre-Alembic databases
 ├── frontend/
 │   ├── public/              # index.html, web app manifest, app icons

@@ -10,6 +10,7 @@
 #   PM_BACKUP_DIR   where dumps go          (/var/backups/project-manager)
 #   PM_BACKUP_KEEP  how many dumps to keep  (Settings -> Database backups, else 3)
 #   PM_APP_DIR      app checkout            (the directory above this script)
+#   PM_ENV_FILE     connection settings     ($PM_APP_DIR/backend/.env)
 set -euo pipefail
 # The Postgres client wrappers are Perl and warn when LANG names a locale the
 # container doesn't have.
@@ -18,7 +19,7 @@ export LANG=C.UTF-8 LC_ALL=C.UTF-8
 LABEL="${1:-manual}"
 APP_DIR="${PM_APP_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 BACKUP_DIR="${PM_BACKUP_DIR:-/var/backups/project-manager}"
-ENV_FILE="$APP_DIR/backend/.env"
+ENV_FILE="${PM_ENV_FILE:-$APP_DIR/backend/.env}"
 
 [[ -f "$ENV_FILE" ]] || { echo "backup: $ENV_FILE not found" >&2; exit 1; }
 command -v pg_dump >/dev/null || { echo "backup: pg_dump not found (install postgresql-client)" >&2; exit 1; }
