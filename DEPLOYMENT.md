@@ -21,12 +21,27 @@ pct exec 113 -- bash -c '
   cd /opt/project-manager
   git checkout main
   git pull origin main
+  backend/venv/bin/pip install -r backend/requirements.txt
+  cd backend && venv/bin/python migrate.py && cd ..
   cd frontend && npm install && cd ..
   supervisorctl restart project-manager-backend project-manager-frontend
 '
 ```
 
-If the `Task` or `User` model changed, check whether a manual `ALTER TABLE` is needed first — `Base.metadata.create_all()` only creates missing tables, it never alters existing columns or constraints (see the `is_admin` column and `ON DELETE SET NULL` constraints added by hand during development).
+`migrate.py` applies any pending Alembic migrations and is a no-op when there are none, so it is safe to run on every deploy. The `&&` means the services are not restarted if a migration fails.
+
+### Database migrations
+
+The schema is managed by Alembic (`backend/alembic/`). The app no longer creates tables on startup.
+
+- **First run on a pre-Alembic database** (anything created by the old `create_all()`): `migrate.py` checks that the schema matches the `0001` baseline — including the hand-applied `users.is_admin` column and `ON DELETE SET NULL` foreign keys — and stamps it. If something doesn't match, it changes nothing and lists the differences.
+- **Changing a model**: after editing `app/models.py`, generate and review a migration from `backend/` against a dev database:
+  ```bash
+  venv/bin/alembic revision --autogenerate -m "add foo to tasks"
+  ```
+  Always read the generated file — autogenerate misses things like enum value changes and renames. Use short sequential revision IDs (`--rev-id 0002`) to keep the history readable.
+- **Check models and DB agree**: `venv/bin/alembic check`
+- **Current revision**: `venv/bin/alembic current`
 
 ## Fresh Install (from scratch)
 
@@ -55,7 +70,8 @@ python3 -m venv backend/venv
 source backend/venv/bin/activate
 pip install -r backend/requirements.txt
 deactivate
-cp backend/.env.example backend/.env
+cp backend/.env.example backend/.env   # then set DB_* to match step 3
+cd backend && venv/bin/python migrate.py && cd ..
 ```
 
 5. **Set up the frontend**
@@ -82,4 +98,4 @@ pct exec 113 -- supervisorctl status
 
 **Port already in use on restart**: `fuser -k 3000/tcp` before `supervisorctl restart project-manager-frontend`.
 
-**Backend 500s after a model change**: check for a pending manual migration (see "Updating" above) — `create_all()` won't add columns or fix constraints on existing tables.
+**Backend 500s after a model change**: check `cd backend && venv/bin/alembic current` shows `(head)`; if not, run `venv/bin/python migrate.py`.

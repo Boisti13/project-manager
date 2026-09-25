@@ -1,10 +1,9 @@
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine, Base
 from app.routers import users, tasks, projects, auth
 
-Base.metadata.create_all(bind=engine)
+# Schema is managed by Alembic -- run `python migrate.py` on deploy.
 
 VERSION_FILE = Path(__file__).resolve().parent.parent.parent / "VERSION"
 try:

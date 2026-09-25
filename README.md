@@ -29,7 +29,10 @@ cd backend
 python -m venv venv
 source venv/bin/activate  # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
+python migrate.py   # create/upgrade the schema (Alembic)
 ```
+
+Schema changes go through Alembic migrations — see [DEPLOYMENT.md](DEPLOYMENT.md#database-migrations).
 
 ### Frontend
 
