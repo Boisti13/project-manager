@@ -101,7 +101,8 @@ echo "At $(git rev-parse --short HEAD): $(git log -1 --pretty=%s) (v$(cat VERSIO
 say "Setting up PostgreSQL"
 systemctl enable --now postgresql >/dev/null 2>&1 || true
 ENV_FILE="$INSTALL_DIR/backend/.env"
-psql_q() { (cd /tmp && sudo -u postgres psql -qtAX "$@"); }
+# runuser rather than sudo: minimal Debian templates ship without sudo.
+psql_q() { (cd /tmp && runuser -u postgres -- psql -qtAX "$@"); }
 if [[ -f "$ENV_FILE" ]]; then
   echo "Keeping existing $ENV_FILE"
   # Older installs were set up with the example secret; anyone who knows it

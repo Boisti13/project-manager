@@ -33,8 +33,8 @@ die() { echo -e "\e[1;31m[✗]\e[0m $*" >&2; exit 1; }
 [[ $EUID -eq 0 ]] || die "Run this as root on the Proxmox VE host."
 command -v pct >/dev/null && command -v pveam >/dev/null || die "This must run on a Proxmox VE host (pct/pveam not found)."
 
-first_storage() { # $1 = content type
-  pvesm status -content "$1" 2>/dev/null | awk 'NR>1 && $3=="active" {print $1}'
+first_storage() { # $1 = content type -> active storages, most free space first
+  pvesm status -content "$1" 2>/dev/null | awk 'NR>1 && $3=="active" {print $6, $1}' | sort -rn | awk '{print $2}'
 }
 pick_storage() { # $1 = content type, $2 = preferred
   local all; all="$(first_storage "$1")"
