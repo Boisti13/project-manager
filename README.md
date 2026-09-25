@@ -14,13 +14,29 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Deadlines**: Overdue highlighting plus an in-app notification bell (overdue + due-within-3-days)
 - **Dark Mode**: Toggle in the nav, persisted per browser, defaults to OS preference
 - **In-app Updates**: Settings shows the running version/branch/commit; anyone can check a branch for updates, admins can update or switch branches (pull, migrate, rebuild the frontend, restart) with a live log
-- **Self-Hosted**: Bare-metal deployment on an LXC container on Proxmox VE
+- **Self-Hosted**: One-command install on Proxmox VE (creates the LXC for you) or into any Debian/Ubuntu LXC/VM, no Docker
 
 ## Tech Stack
 
 - **Backend**: FastAPI (Python) + SQLAlchemy + PostgreSQL
 - **Frontend**: React 18 + React Router
 - **Deployment**: Bare metal on LXC — Supervisor runs the API, Nginx serves the static React build. A Docker Compose setup also exists for local development but is not the production path.
+
+## Installation
+
+**New Proxmox LXC** (run on the PVE host):
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Boisti13/project-manager/main/proxmox/project-manager-lxc.sh)"
+```
+
+**Existing Debian 12 / Ubuntu 22.04+ LXC or VM** (run inside it, as root):
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Boisti13/project-manager/main/install.sh)"
+```
+
+Both install PostgreSQL, Nginx, Supervisor and Node.js without Docker, generate the database password and secret key, build the frontend and print the URL. Register the first account to become admin; later updates happen from **Settings → Updates**. Options, unattended mode and the manual steps are in [DEPLOYMENT.md](DEPLOYMENT.md#fresh-install).
 
 ## Development Setup
 
@@ -79,6 +95,9 @@ project-manager/
 │   └── src/
 │       ├── components/      # React components (TaskList, Settings, UpdatePanel, ...)
 │       └── taskFilters.js   # Pure search/filter/sort logic for the task tree
+├── install.sh               # Installer for a Debian/Ubuntu LXC or VM (idempotent)
+├── proxmox/
+│   └── project-manager-lxc.sh # Run on the PVE host: creates an LXC and runs install.sh
 ├── scripts/update.sh        # In-app updater (fetch, install, migrate, build, restart)
 ├── deploy/nginx.conf        # Production Nginx config (static build + /api proxy)
 ├── docker-compose.yml       # Local dev only, not used in production

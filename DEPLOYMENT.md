@@ -7,7 +7,7 @@
 | Component | How it runs |
 |---|---|
 | PostgreSQL 14 | systemd, native package |
-| FastAPI backend | Supervisor (`project-manager-backend`), Uvicorn on :8000, Python venv |
+| FastAPI backend | Supervisor (`project-manager-backend`), Uvicorn on 127.0.0.1:8000, Python venv, settings from `backend/.env` |
 | React frontend | Static production build in `frontend/build/`, served by Nginx — no Node process at runtime |
 | Nginx | :80 — `/api/*` → backend, everything else → `frontend/build/` ([`deploy/nginx.conf`](deploy/nginx.conf)) |
 
@@ -59,48 +59,65 @@ The schema is managed by Alembic (`backend/alembic/`). The app no longer creates
 - **Check models and DB agree**: `venv/bin/alembic check`
 - **Current revision**: `venv/bin/alembic current`
 
-## Fresh Install (from scratch)
+## Fresh Install
 
-1. **Create the LXC** — Ubuntu 22.04, at least 8GB disk (12GB+ recommended once npm/postgres/logs accumulate), nesting NOT required (bare metal, no Docker).
+All options install without Docker: PostgreSQL, a Python venv under Supervisor, and Nginx serving the built frontend. The app lives in `/opt/project-manager` as a git checkout, so **Settings → Updates** works right away. The first account you register becomes the admin.
 
-2. **Install dependencies**
+### Option A: New LXC from the Proxmox host (recommended)
+
+On the Proxmox VE host shell, as root:
+
 ```bash
-apt-get install -y postgresql python3-venv npm curl nginx supervisor git
-```
-   Node.js from Ubuntu's default repo is often too old for `react-scripts`; install Node 18+ from NodeSource if `npm install` fails with `node:path` module errors.
-
-3. **Create the database**
-```bash
-sudo -u postgres psql <<EOF
-CREATE DATABASE projectmanager;
-CREATE USER projectmanager WITH PASSWORD 'projectmanager';
-GRANT ALL PRIVILEGES ON DATABASE projectmanager TO projectmanager;
-EOF
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Boisti13/project-manager/main/proxmox/project-manager-lxc.sh)"
 ```
 
-4. **Clone and set up the backend**
+Pick **default** (next free ID, 2 cores, 2 GB RAM, 8 GB disk, DHCP on `vmbr0`) or **advanced** to set ID, hostname, resources, storage, bridge, static IP/gateway, VLAN, root password and branch. It downloads the Debian 12 template if needed, creates an unprivileged container (`nesting=1`, start on boot, tagged `project-manager`), runs the installer inside and prints the URL.
+
+Unattended, e.g. with a static IP:
+
 ```bash
-cd /opt && git clone <repo-url> project-manager && cd project-manager
-git checkout main
-python3 -m venv backend/venv
-source backend/venv/bin/activate
-pip install -r backend/requirements.txt
-deactivate
-cp backend/.env.example backend/.env   # then set DB_* to match step 3
-cd backend && venv/bin/python migrate.py && cd ..
+UNATTENDED=1 CT_HOSTNAME=pm CT_IP=192.168.100.120/24 CT_GW=192.168.100.1 \
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/Boisti13/project-manager/main/proxmox/project-manager-lxc.sh)"
 ```
 
-5. **Build the frontend** (needs ~1 GB RAM while building)
+All variables are listed at the top of [`proxmox/project-manager-lxc.sh`](proxmox/project-manager-lxc.sh). If a step fails, the container is kept for inspection and the script prints how to remove it.
+
+### Option B: Existing LXC or VM (Debian 12, Ubuntu 22.04/24.04)
+
+As root inside the container:
+
 ```bash
-cd frontend && npm install && npm run build && cd ..
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Boisti13/project-manager/main/install.sh)"
 ```
 
-6. **Supervisor config** — `/etc/supervisor/conf.d/project-manager-backend.conf`, running `backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000` in `backend/`. `supervisorctl reread && supervisorctl update`. The frontend needs no Supervisor program.
-   - If the configs set `DB_*` via `environment=`, keep `backend/.env` identical — the app uses the Supervisor values, but `migrate.py`/`alembic` run from a shell read `.env`.
+or from a clone: `sudo ./install.sh`. Options: `-y` (no prompt), `-b <branch>`, `-d <dir>`, `-r <repo-url>`.
 
-7. **Nginx** — copy [`deploy/nginx.conf`](deploy/nginx.conf) to `/etc/nginx/sites-available/project-manager`, symlink it into `sites-enabled/` (remove `default`), `nginx -t && systemctl reload nginx`.
+What it does:
+1. Installs `postgresql nginx supervisor git python3-venv`, plus Node.js 18+ (distribution package if new enough, otherwise Node 20 from NodeSource)
+2. Clones the repo to `/opt/project-manager` (or updates an existing checkout)
+3. Creates the `projectmanager` database and role with a random password, and writes `backend/.env` with a random `SECRET_KEY`
+4. Installs Python dependencies, runs `migrate.py`, builds the frontend
+5. Writes `/etc/supervisor/conf.d/project-manager-backend.conf` (Uvicorn on `127.0.0.1:8000`) and the Nginx site from [`deploy/nginx.conf`](deploy/nginx.conf)
+6. Checks `/api/health` and prints the URL
 
-8. **First admin user**: the first account registered via the app's Register tab is automatically promoted to admin — no manual step needed.
+**Re-running it is safe**: it updates in place, keeps the existing `.env` and database, and migrates older installs (removes the old frontend dev-server program, drops Supervisor `environment=` DB settings in favour of `.env`, and replaces a placeholder `SECRET_KEY`).
+
+### Option C: Manually
+
+The steps `install.sh` automates, for reference:
+
+```bash
+apt-get install -y postgresql nginx supervisor git python3-venv nodejs npm   # Node 18+ needed
+sudo -u postgres psql -c "CREATE ROLE projectmanager LOGIN PASSWORD '<password>'"
+sudo -u postgres psql -c "CREATE DATABASE projectmanager OWNER projectmanager ENCODING 'UTF8' TEMPLATE template0"
+git clone https://github.com/Boisti13/project-manager.git /opt/project-manager && cd /opt/project-manager
+python3 -m venv backend/venv && backend/venv/bin/pip install -r backend/requirements.txt
+cp backend/.env.example backend/.env   # set DB_PASSWORD and a random SECRET_KEY (openssl rand -hex 32)
+(cd backend && venv/bin/python migrate.py)
+(cd frontend && npm install && npm run build)   # needs ~1 GB RAM
+```
+
+Then a Supervisor program running `backend/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000` in `backend/` (as root, for the in-app updater), and [`deploy/nginx.conf`](deploy/nginx.conf) as the Nginx site.
 
 ## Troubleshooting
 
