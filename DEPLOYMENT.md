@@ -8,8 +8,8 @@
 |---|---|
 | PostgreSQL 14 | systemd, native package |
 | FastAPI backend | Supervisor (`project-manager-backend`), Uvicorn on :8000, Python venv |
-| React frontend | Supervisor (`project-manager-frontend`), `npm start` on :3000 |
-| Nginx | Reverse proxy on :80 — `/api/*` → backend, `/` → frontend |
+| React frontend | Static production build in `frontend/build/`, served by Nginx — no Node process at runtime |
+| Nginx | :80 — `/api/*` → backend, everything else → `frontend/build/` ([`deploy/nginx.conf`](deploy/nginx.conf)) |
 
 **Production only ever runs `main`.** Ongoing work happens on `dev`; merge to `main` and tag a release (see [README.md](README.md#versioning)) when ready to ship.
 
@@ -19,9 +19,11 @@
 
 Any logged-in user can pick a branch and **Check for updates**. Admins additionally get an **Update now** / **Switch to <branch>** button, which runs [`scripts/update.sh`](scripts/update.sh) in the background:
 
-fetch → `git checkout -f -B <branch> origin/<branch>` → `pip install` → `migrate.py` → `npm install` → `supervisorctl restart` both services
+fetch → `git checkout -f -B <branch> origin/<branch>` → `pip install` → `migrate.py` → `npm install` → `npm run build` → `supervisorctl restart project-manager-backend`
 
-The log streams into the Settings page and is kept in `/opt/project-manager/.update/update.log`. If pip, migrations or npm fail, the services are **not** restarted, so the old processes keep running. Any local edits to tracked files in the deployed checkout are discarded.
+After the checkout the script re-runs itself from the new code, so changes to these steps apply to the update that ships them. The frontend is built into `frontend/build.new/` and only swapped in once the build succeeds.
+
+The log streams into the Settings page and is kept in `/opt/project-manager/.update/update.log`. If pip, migrations, npm or the build fail, nothing is restarted or swapped: the old backend and the old frontend build keep being served. Any local edits to tracked files in the deployed checkout are discarded.
 
 Requirements: the backend runs as a user that can run `git` in the checkout and `supervisorctl` (root under the default Supervisor setup), and the LXC can reach GitHub.
 
@@ -30,19 +32,19 @@ Switching to an older branch does not roll back database migrations. That's usua
 ### Manually
 
 ```bash
-ssh root@192.168.100.103
+ssh root@192.168.100.103   # or the pve_rptu alias
 pct exec 113 -- bash -c '
   cd /opt/project-manager
   git checkout main
   git pull origin main
   backend/venv/bin/pip install -r backend/requirements.txt
   cd backend && venv/bin/python migrate.py && cd ..
-  cd frontend && npm install && cd ..
-  supervisorctl restart project-manager-backend project-manager-frontend
+  cd frontend && npm install && npm run build && cd ..
+  supervisorctl restart project-manager-backend
 '
 ```
 
-`migrate.py` applies any pending Alembic migrations and is a no-op when there are none, so it is safe to run on every deploy. The `&&` means the services are not restarted if a migration fails.
+`migrate.py` applies any pending Alembic migrations and is a no-op when there are none, so it is safe to run on every deploy. The `&&` means nothing is restarted if a migration or the build fails. (The manual `npm run build` writes straight into `build/`, so the site is briefly broken during the build — the in-app updater avoids that.)
 
 ### Database migrations
 
@@ -88,16 +90,15 @@ cp backend/.env.example backend/.env   # then set DB_* to match step 3
 cd backend && venv/bin/python migrate.py && cd ..
 ```
 
-5. **Set up the frontend**
+5. **Build the frontend** (needs ~1 GB RAM while building)
 ```bash
-cd frontend && npm install && cd ..
+cd frontend && npm install && npm run build && cd ..
 ```
 
-6. **Supervisor configs** — `/etc/supervisor/conf.d/project-manager-backend.conf` and `project-manager-frontend.conf`, running the Uvicorn/npm commands above. `supervisorctl reread && supervisorctl update`.
-   - The frontend program needs `stopasgroup=true` and `killasgroup=true`. `npm start` spawns the actual dev server as a child, and without these a restart only kills `npm`, leaving the old server holding port 3000.
+6. **Supervisor config** — `/etc/supervisor/conf.d/project-manager-backend.conf`, running `backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000` in `backend/`. `supervisorctl reread && supervisorctl update`. The frontend needs no Supervisor program.
    - If the configs set `DB_*` via `environment=`, keep `backend/.env` identical — the app uses the Supervisor values, but `migrate.py`/`alembic` run from a shell read `.env`.
 
-7. **Nginx** — reverse proxy config as described in the table above, under `/etc/nginx/sites-available/`.
+7. **Nginx** — copy [`deploy/nginx.conf`](deploy/nginx.conf) to `/etc/nginx/sites-available/project-manager`, symlink it into `sites-enabled/` (remove `default`), `nginx -t && systemctl reload nginx`.
 
 8. **First admin user**: the first account registered via the app's Register tab is automatically promoted to admin — no manual step needed.
 
@@ -106,12 +107,14 @@ cd frontend && npm install && cd ..
 **Check logs:**
 ```bash
 pct exec 113 -- tail -50 /var/log/project-manager-backend.log
-pct exec 113 -- tail -50 /var/log/project-manager-frontend.log
+pct exec 113 -- tail -50 /var/log/nginx/error.log
 pct exec 113 -- supervisorctl status
 ```
 
-**Frontend won't start / `node:path` errors**: Node.js version too old — install 18+ from NodeSource.
+**Build fails / `node:path` errors**: Node.js version too old — install 18+ from NodeSource. A build killed with no error is usually out-of-memory; the LXC needs ~1 GB free during `npm run build`.
 
-**Port already in use on restart** (`Something is already running on port 3000`): the frontend Supervisor config is missing `stopasgroup=true`/`killasgroup=true` (see Fresh Install step 6). One-off fix: `fuser -k 3000/tcp` then `supervisorctl start project-manager-frontend`.
+**Blank page or 500 at `/`**: `frontend/build/index.html` is missing — run the build (step 5). Check the last update log at `.update/update.log`.
+
+**Old UI after an update**: hard-reload (Ctrl+F5). `index.html` is served with `Cache-Control: no-cache`, so this should only happen if a proxy in front caches it.
 
 **Backend 500s after a model change**: check `cd backend && venv/bin/alembic current` shows `(head)`; if not, run `venv/bin/python migrate.py`.

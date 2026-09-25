@@ -57,3 +57,7 @@ Thumbs.db
 
 # In-app updater state
 .update/
+
+# Frontend build staging (scripts/update.sh)
+frontend/build.new/
+frontend/build.old/

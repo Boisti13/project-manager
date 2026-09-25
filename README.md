@@ -19,7 +19,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 
 - **Backend**: FastAPI (Python) + SQLAlchemy + PostgreSQL
 - **Frontend**: React 18 + React Router
-- **Deployment**: Bare metal on LXC (Supervisor + Nginx). A Docker Compose setup also exists for local development but is not the production path.
+- **Deployment**: Bare metal on LXC — Supervisor runs the API, Nginx serves the static React build. A Docker Compose setup also exists for local development but is not the production path.
 
 ## Development Setup
 
