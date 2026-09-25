@@ -94,6 +94,8 @@ cd frontend && npm install && cd ..
 ```
 
 6. **Supervisor configs** — `/etc/supervisor/conf.d/project-manager-backend.conf` and `project-manager-frontend.conf`, running the Uvicorn/npm commands above. `supervisorctl reread && supervisorctl update`.
+   - The frontend program needs `stopasgroup=true` and `killasgroup=true`. `npm start` spawns the actual dev server as a child, and without these a restart only kills `npm`, leaving the old server holding port 3000.
+   - If the configs set `DB_*` via `environment=`, keep `backend/.env` identical — the app uses the Supervisor values, but `migrate.py`/`alembic` run from a shell read `.env`.
 
 7. **Nginx** — reverse proxy config as described in the table above, under `/etc/nginx/sites-available/`.
 
@@ -110,6 +112,6 @@ pct exec 113 -- supervisorctl status
 
 **Frontend won't start / `node:path` errors**: Node.js version too old — install 18+ from NodeSource.
 
-**Port already in use on restart**: `fuser -k 3000/tcp` before `supervisorctl restart project-manager-frontend`.
+**Port already in use on restart** (`Something is already running on port 3000`): the frontend Supervisor config is missing `stopasgroup=true`/`killasgroup=true` (see Fresh Install step 6). One-off fix: `fuser -k 3000/tcp` then `supervisorctl start project-manager-frontend`.
 
 **Backend 500s after a model change**: check `cd backend && venv/bin/alembic current` shows `(head)`; if not, run `venv/bin/python migrate.py`.
