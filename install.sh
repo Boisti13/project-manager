@@ -51,7 +51,11 @@ export LANG=C.UTF-8 LC_ALL=C.UTF-8
 
 if [[ -n "$RESTORE" ]]; then
   [[ -f "$RESTORE" ]] || die "Backup to restore not found: $RESTORE"
-  RESTORE="$(cd "$(dirname "$RESTORE")" && pwd)/$(basename "$RESTORE")"
+  # Private copy: the pre-migration backup below applies retention, which
+  # could delete the original if it lives in the backup directory.
+  RESTORE_COPY="$(mktemp /tmp/pm-install-restore-XXXXXX.dump)"
+  trap 'rm -f -- "$RESTORE_COPY"' EXIT
+  cp -- "$RESTORE" "$RESTORE_COPY"
 fi
 
 UPDATE_MODE=0
@@ -162,7 +166,7 @@ say "Running database migrations"
 
 if [[ -n "$RESTORE" ]]; then
   say "Restoring backup $(basename "$RESTORE")"
-  bash scripts/restore-db.sh "$RESTORE" || die "Restoring the backup failed (the previous data was kept)."
+  bash scripts/restore-db.sh "$RESTORE_COPY" || die "Restoring the backup failed (the previous data was kept)."
 fi
 
 say "Building the frontend (takes a minute)"

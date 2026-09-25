@@ -26,6 +26,12 @@ ENV_FILE="$APP_DIR/backend/.env"
 [[ "$(head -c 5 "$DUMP")" == PGDMP ]] || { echo "restore: $DUMP is not a pg_dump custom-format file" >&2; exit 1; }
 [[ -f "$ENV_FILE" ]] || { echo "restore: $ENV_FILE not found" >&2; exit 1; }
 
+# Work on a private copy: the safety backup below applies backup retention,
+# which could otherwise delete the very file we're restoring.
+WORK="$(mktemp /tmp/pm-restore-XXXXXX.dump)"
+trap 'rm -f -- "$WORK"' EXIT
+cp -- "$DUMP" "$WORK"
+
 env_get() { sed -n "s/^$1=//p" "$ENV_FILE" | tail -1; }
 PGHOST="$(env_get DB_HOST)"; PGPORT="$(env_get DB_PORT)"; PGUSER="$(env_get DB_USER)"
 PGDATABASE="$(env_get DB_NAME)"; PGPASSWORD="$(env_get DB_PASSWORD)"
@@ -64,7 +70,7 @@ SAFETY="$(sed -n 's/^Backup: \(.*\) (.*)$/\1/p' <<<"$SAFETY_OUT" | head -1)"
 [[ -f "$SAFETY" ]] || { echo "restore: safety backup failed, nothing was changed" >&2; exit 1; }
 
 echo "==> Restoring $(basename "$DUMP")"
-if load "$DUMP"; then
+if load "$WORK"; then
   echo "==> Restore complete"
   exit 0
 fi
