@@ -19,7 +19,7 @@
 
 Any logged-in user can pick a branch and **Check for updates**. Admins additionally get an **Update now** / **Switch to <branch>** button, which runs [`scripts/update.sh`](scripts/update.sh) in the background:
 
-fetch → `git checkout -f -B <branch> origin/<branch>` → `pip install` → `migrate.py` → `npm install` → `npm run build` → `supervisorctl restart project-manager-backend`
+fetch → `git checkout -f -B <branch> origin/<branch>` → `pip install` → `migrate.py` → `npm install` → `npm run build` → sync the Nginx site from `deploy/nginx.conf` (rolled back if `nginx -t` fails) → `supervisorctl restart project-manager-backend`
 
 After the checkout the script re-runs itself from the new code, so changes to these steps apply to the update that ships them. The frontend is built into `frontend/build.new/` and only swapped in once the build succeeds.
 

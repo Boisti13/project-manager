@@ -57,6 +57,26 @@ rm -rf frontend/build.old
 mv frontend/build.new frontend/build || fail "could not swap in the new build"
 rm -rf frontend/build.old
 
+step "Syncing Nginx config"
+# Keep the live site config in step with deploy/nginx.conf; roll back if the
+# new one doesn't pass nginx -t.
+SITE=/etc/nginx/sites-available/project-manager
+if [ -f "$SITE" ]; then
+  NEW="$(sed "s#/opt/project-manager/frontend/build#$APP_DIR/frontend/build#" deploy/nginx.conf)"
+  if [ "$NEW" != "$(cat "$SITE")" ]; then
+    cp "$SITE" "$SITE.bak"
+    printf '%s\n' "$NEW" > "$SITE"
+    if nginx -t -q; then
+      systemctl reload nginx && echo "Updated and reloaded $SITE"
+    else
+      mv "$SITE.bak" "$SITE"
+      echo "New nginx config failed nginx -t, kept the previous one"
+    fi
+  else
+    echo "Unchanged"
+  fi
+fi
+
 step "Restarting backend"
 set_state restarting
 supervisorctl restart project-manager-backend || fail "supervisorctl restart failed"

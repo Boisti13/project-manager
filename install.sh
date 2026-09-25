@@ -112,6 +112,7 @@ if [[ -f "$ENV_FILE" ]]; then
     echo "SECRET_KEY=$(openssl rand -hex 32)" >> "$ENV_FILE"
     echo "Replaced the placeholder SECRET_KEY with a random one (users will need to log in again)"
   fi
+  chmod 600 "$ENV_FILE"
 else
   DB_NAME=projectmanager DB_USER=projectmanager
   DB_PASSWORD="$(openssl rand -hex 16)"

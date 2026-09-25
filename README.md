@@ -13,7 +13,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Extended Status**: todo / in_progress / blocked / done
 - **Deadlines**: Overdue highlighting plus an in-app notification bell (overdue + due-within-3-days)
 - **Dark Mode**: Toggle in the nav, persisted per browser, defaults to OS preference
-- **In-app Updates**: Settings shows the running version/branch/commit; anyone can check a branch for updates, admins can update or switch branches (pull, migrate, rebuild the frontend, restart) with a live log
+- **In-app Updates**: Settings shows the running version/branch/commit; anyone can check a branch for updates, admins can update or switch branches (pull, migrate, rebuild the frontend, sync the Nginx config, restart) with a live log
 - **Self-Hosted**: One-command install on Proxmox VE (creates the LXC for you) or into any Debian/Ubuntu LXC/VM, no Docker
 
 ## Tech Stack
@@ -98,7 +98,7 @@ project-manager/
 ├── install.sh               # Installer for a Debian/Ubuntu LXC or VM (idempotent)
 ├── proxmox/
 │   └── project-manager-lxc.sh # Run on the PVE host: creates an LXC and runs install.sh
-├── scripts/update.sh        # In-app updater (fetch, install, migrate, build, restart)
+├── scripts/update.sh        # In-app updater (fetch, install, migrate, build, sync nginx, restart)
 ├── deploy/nginx.conf        # Production Nginx config (static build + /api proxy)
 ├── docker-compose.yml       # Local dev only, not used in production
 └── DEPLOYMENT.md            # LXC deployment, updates, migrations, troubleshooting
