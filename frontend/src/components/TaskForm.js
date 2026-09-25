@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/TaskForm.css';
 
-function TaskForm({ task, parentTask, projects, users, onSubmit, onCancel }) {
+function TaskForm({ task, parentTask, defaultProjectId = null, projectIndex, users, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     status: 'todo',
     priority: 0,
     deadline: '',
-    project_id: parentTask ? parentTask.project_id || null : null,
+    project_id: parentTask ? parentTask.project_id || null : defaultProjectId,
     assignee_id: null,
     parent_task_id: parentTask ? parentTask.id : null,
   });
@@ -116,11 +116,26 @@ function TaskForm({ task, parentTask, projects, users, onSubmit, onCancel }) {
           <label>Project</label>
           <select name="project_id" value={formData.project_id || ''} onChange={handleChange}>
             <option value="">None</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
+            {projectIndex.topLevel.map((p) => {
+              const categories = projectIndex.categoriesOf(p.id);
+              if (categories.length === 0) {
+                return (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                );
+              }
+              return (
+                <optgroup key={p.id} label={p.name}>
+                  <option value={p.id}>{p.name} (no category)</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
           </select>
         </div>
       </div>

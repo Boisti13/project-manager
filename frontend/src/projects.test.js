@@ -1,0 +1,76 @@
+// Run with `npm test` (react-scripts / Jest).
+import assert from 'assert';
+import { buildProjectIndex, groupTasksByProject, groupTaskCount, NO_PROJECT_COLOR } from './projects';
+import { DEFAULT_FILTERS, buildTaskTree } from './taskFilters';
+
+const projects = [
+  { id: 1, name: '6GHub', color: '#2196f3', parent_id: null },
+  { id: 2, name: 'Ordering', color: null, parent_id: 1 },
+  { id: 3, name: 'General', color: null, parent_id: 1 },
+  { id: 4, name: 'Documentation', color: '#ff0000', parent_id: 1 },
+  { id: 5, name: 'Apartment', color: '#4caf50', parent_id: null },
+  { id: 6, name: 'Orphan category', color: null, parent_id: 99 },
+];
+const t = (id, project_id, extra = {}) => ({
+  id, title: `Task ${id}`, status: 'todo', order: 0, parent_task_id: null, project_id, ...extra,
+});
+
+test('project index: tree, colors, labels', () => {
+  const idx = buildProjectIndex(projects);
+  assert.deepStrictEqual(idx.topLevel.map((p) => p.name), ['6GHub', 'Apartment', 'Orphan category']);
+  assert.deepStrictEqual(idx.categoriesOf(1).map((p) => p.name), ['Documentation', 'General', 'Ordering']);
+  assert.strictEqual(idx.colorOf(2), '#2196f3'); // inherits
+  assert.strictEqual(idx.colorOf(4), '#ff0000'); // own color wins
+  assert.strictEqual(idx.colorOf(123), NO_PROJECT_COLOR);
+  assert.strictEqual(idx.labelOf(2), '6GHub / Ordering');
+  assert.strictEqual(idx.parentIdOf(2), 1);
+  assert.strictEqual(idx.parentIdOf(1), null);
+  assert.strictEqual(idx.parentIdOf(6), null); // missing parent -> top-level
+});
+
+test('grouping tasks under projects and categories', () => {
+  const idx = buildProjectIndex(projects);
+  const roots = [t(10, 2), t(11, 1), t(12, null), t(13, 3), t(14, 2), t(15, 777)];
+
+  const groups = groupTasksByProject(roots, idx);
+  assert.deepStrictEqual(groups.map((g) => g.key), ['p1', 'none']);
+  const hub = groups[0];
+  assert.deepStrictEqual(hub.tasks.map((x) => x.id), [11]);
+  assert.deepStrictEqual(hub.categories.map((c) => [c.project.name, c.tasks.map((x) => x.id)]), [
+    ['General', [13]],
+    ['Ordering', [10, 14]], // input order kept
+  ]);
+  assert.strictEqual(groupTaskCount(hub), 4);
+  // Unknown project ids end up under "No project".
+  assert.deepStrictEqual(groups[1].tasks.map((x) => x.id), [12, 15]);
+
+  // includeEmpty lists every project and category.
+  const all = groupTasksByProject([], idx, { includeEmpty: true });
+  assert.deepStrictEqual(all.map((g) => g.key), ['p1', 'p5', 'p6']);
+  assert.strictEqual(all[0].categories.length, 3);
+});
+
+test('project filter includes categories; same title in two projects stays separate', () => {
+  const idx = buildProjectIndex(projects);
+  const tasks = [
+    t(1, 1, { title: 'Order cables' }),
+    t(2, 2, { title: 'Order cables' }),
+    t(3, 5, { title: 'Order cables' }),
+    t(4, null, { title: 'Order cables', parent_task_id: 2 }), // subtask inherits Ordering
+  ];
+  const run = (over) =>
+    buildTaskTree(tasks, { ...DEFAULT_FILTERS, ...over }, { projectParentOf: idx.parentIdOf });
+
+  assert.deepStrictEqual([...run({ project: '1' }).matchedIds].sort(), [1, 2, 4]);
+  assert.deepStrictEqual([...run({ project: '2' }).matchedIds].sort(), [2, 4]);
+  assert.deepStrictEqual([...run({ project: '5' }).matchedIds], [3]);
+
+  const groups = groupTasksByProject(run({ q: 'order' }).roots, idx);
+  assert.deepStrictEqual(
+    groups.map((g) => [g.project.name, g.tasks.map((x) => x.id), g.categories.map((c) => c.tasks.map((x) => x.id))]),
+    [
+      ['6GHub', [1], [[2]]],
+      ['Apartment', [3], []],
+    ]
+  );
+});

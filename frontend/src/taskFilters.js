@@ -86,8 +86,11 @@ const SORTERS = {
  *   matchedIds   – tasks that satisfy every filter (null when no filter is active)
  *   autoExpandIds – ancestors of matches, to be shown expanded
  *   totalRoots   – number of root tasks before filtering
+ *
+ * projectParentOf(projectId) returns the parent of a category (or null), so a
+ * project filter also matches tasks in that project's categories.
  */
-export function buildTaskTree(tasks, filters, { currentUserId, now = Date.now() } = {}) {
+export function buildTaskTree(tasks, filters, { currentUserId, now = Date.now(), projectParentOf = () => null } = {}) {
   const children = new Map();
   const byId = new Map();
   for (const t of tasks) {
@@ -123,7 +126,10 @@ export function buildTaskTree(tasks, filters, { currentUserId, now = Date.now() 
     const matches =
       matchesText(task, needle) &&
       matchesStatus(task, filters.status) &&
-      (filters.project === '' || String(project) === filters.project) &&
+      // Filtering by a project includes its categories.
+      (filters.project === '' ||
+        String(project) === filters.project ||
+        (project != null && String(projectParentOf(project)) === filters.project)) &&
       matchesAssignee(task, filters.assignee, currentUserId) &&
       matchesDue(task, filters.due, now);
 

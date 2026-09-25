@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ProjectForm from './ProjectForm';
 import { authFetch } from '../context/AuthContext';
+import { buildProjectIndex } from '../projects';
 import '../styles/TaskList.css';
 import '../styles/ProjectList.css';
 
 function ProjectList() {
   const [projects, setProjects] = useState([]);
+  const [taskCounts, setTaskCounts] = useState(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [selectedProject, setSelectedProject] = useState(null);
+  // null: closed; { project } to edit; { parentId } to create
+  const [form, setForm] = useState(null);
 
-  useEffect(() => {
-    loadProjects();
-  }, []);
+  const projectIndex = useMemo(() => buildProjectIndex(projects), [projects]);
 
   const parseApiError = async (response) => {
     try {
@@ -33,11 +33,15 @@ function ProjectList() {
     return response.json();
   };
 
-  const loadProjects = async () => {
+  const loadData = async () => {
     try {
-      setLoading(true);
-      const res = await fetchJson('/api/projects/');
-      setProjects(res);
+      const [projectsRes, tasksRes] = await Promise.all([fetchJson('/api/projects/'), fetchJson('/api/tasks/')]);
+      setProjects(projectsRes);
+      const counts = new Map();
+      for (const t of tasksRes) {
+        if (t.project_id != null && t.parent_task_id == null) counts.set(t.project_id, (counts.get(t.project_id) || 0) + 1);
+      }
+      setTaskCounts(counts);
       setError(null);
     } catch (err) {
       setError('Failed to load projects: ' + err.message);
@@ -46,107 +50,140 @@ function ProjectList() {
     }
   };
 
-  const handleCreate = async (formData) => {
+  useEffect(() => {
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSubmit = async (formData) => {
     try {
-      const res = await fetchJson('/api/projects/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      setProjects([...projects, res]);
-      setShowForm(false);
-      setError(null);
+      if (form.project) {
+        await fetchJson(`/api/projects/${form.project.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+      } else {
+        await fetchJson('/api/projects/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+      }
+      setForm(null);
+      await loadData();
     } catch (err) {
-      setError('Failed to create project: ' + err.message);
+      setError('Failed to save: ' + err.message);
     }
   };
 
-  const handleUpdate = async (formData) => {
+  const handleDelete = async (project) => {
+    const categories = projectIndex.categoriesOf(project.id);
+    const msg = categories.length
+      ? `Delete "${project.name}" and its ${categories.length} ${categories.length === 1 ? 'category' : 'categories'}? Their tasks are kept but will no longer belong to a project.`
+      : `Delete "${project.name}"? Its tasks are kept but will no longer belong to a project.`;
+    if (!window.confirm(msg)) return;
     try {
-      const res = await fetchJson(`/api/projects/${selectedProject.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      setProjects(projects.map((p) => (p.id === selectedProject.id ? res : p)));
-      setSelectedProject(null);
-      setShowForm(false);
-      setError(null);
-    } catch (err) {
-      setError('Failed to update project: ' + err.message);
-    }
-  };
-
-  const handleDelete = async (projectId) => {
-    if (!window.confirm('Delete this project? Tasks assigned to it will keep their reference but the project will be gone.')) return;
-    try {
-      const response = await authFetch(`/api/projects/${projectId}`, { method: 'DELETE' });
+      const response = await authFetch(`/api/projects/${project.id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error(await parseApiError(response));
-      setProjects(projects.filter((p) => p.id !== projectId));
-      setError(null);
+      await loadData();
     } catch (err) {
-      setError('Failed to delete project: ' + err.message);
+      setError('Failed to delete: ' + err.message);
     }
   };
 
-  const handleEdit = (project) => {
-    setSelectedProject(project);
-    setShowForm(true);
-  };
-
-  const handleCancel = () => {
-    setShowForm(false);
-    setSelectedProject(null);
+  const openForm = (value) => {
+    setForm(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (loading) return <div className="container"><p>Loading projects...</p></div>;
+
+  const count = (id) => taskCounts.get(id) || 0;
 
   return (
     <div className="container">
       <div className="task-list-header">
         <div className="header-left">
           <h1>Projects</h1>
-          <span className="task-count">({projects.length})</span>
+          <span className="task-count">({projectIndex.topLevel.length})</span>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            setSelectedProject(null);
-            setShowForm(true);
-          }}
-        >
+        <button className="btn btn-primary" onClick={() => openForm({ parentId: null })}>
           + New Project
         </button>
       </div>
 
       {error && <div className="error-message">{error}</div>}
 
-      {showForm && (
+      {form && (
         <div className="form-container">
-          <ProjectForm project={selectedProject} onSubmit={selectedProject ? handleUpdate : handleCreate} onCancel={handleCancel} />
+          <ProjectForm
+            key={form.project ? `e${form.project.id}` : `n${form.parentId}`}
+            project={form.project || null}
+            defaultParentId={form.parentId ?? null}
+            projectIndex={projectIndex}
+            onSubmit={handleSubmit}
+            onCancel={() => setForm(null)}
+          />
         </div>
       )}
 
       <div className="project-list">
-        {projects.length === 0 ? (
+        {projectIndex.topLevel.length === 0 ? (
           <p className="no-tasks">No projects yet</p>
         ) : (
-          projects.map((project) => (
-            <div className="project-item" key={project.id}>
-              <div className="project-info">
-                <h3>{project.name}</h3>
-                {project.description && <p>{project.description}</p>}
+          projectIndex.topLevel.map((project) => {
+            const categories = projectIndex.categoriesOf(project.id);
+            const total = count(project.id) + categories.reduce((n, c) => n + count(c.id), 0);
+            return (
+              <div className="project-item" key={project.id} style={{ '--project-color': projectIndex.colorOf(project.id) }}>
+                <div className="project-row">
+                  <span className="project-swatch" />
+                  <div className="project-info">
+                    <h3>
+                      {project.name} <span className="project-group-count">{total}</span>
+                    </h3>
+                    {project.description && <p>{project.description}</p>}
+                  </div>
+                  <div className="project-actions">
+                    <button
+                      className="btn btn-secondary btn-small"
+                      onClick={() => openForm({ parentId: project.id })}
+                      title="Add a category (sub-project)"
+                    >
+                      + Category
+                    </button>
+                    <button className="task-action-btn edit-btn" onClick={() => openForm({ project })} title="Edit">
+                      ✎
+                    </button>
+                    <button className="task-action-btn delete-btn" onClick={() => handleDelete(project)} title="Delete">
+                      ✕
+                    </button>
+                  </div>
+                </div>
+
+                {categories.length > 0 && (
+                  <ul className="category-list">
+                    {categories.map((c) => (
+                      <li key={c.id} className="category-row">
+                        <span className="category-name">{c.name}</span>
+                        <span className="project-group-count">{count(c.id)}</span>
+                        {c.description && <span className="category-desc">{c.description}</span>}
+                        <span className="project-actions">
+                          <button className="task-action-btn edit-btn" onClick={() => openForm({ project: c })} title="Edit">
+                            ✎
+                          </button>
+                          <button className="task-action-btn delete-btn" onClick={() => handleDelete(c)} title="Delete">
+                            ✕
+                          </button>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              <div className="project-actions">
-                <button className="task-action-btn edit-btn" onClick={() => handleEdit(project)} title="Edit">
-                  ✎
-                </button>
-                <button className="task-action-btn delete-btn" onClick={() => handleDelete(project.id)} title="Delete">
-                  ✕
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

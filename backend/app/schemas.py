@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime
 from app.models import TaskStatus
@@ -29,12 +29,22 @@ class Token(BaseModel):
     token_type: str
 
 # Project schemas
+HEX_COLOR = r"^#[0-9a-fA-F]{6}$"
+
 class ProjectBase(BaseModel):
     name: str
     description: Optional[str] = None
+    color: Optional[str] = Field(default=None, pattern=HEX_COLOR)
+    parent_id: Optional[int] = None
 
 class ProjectCreate(ProjectBase):
     pass
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    color: Optional[str] = Field(default=None, pattern=HEX_COLOR)
+    parent_id: Optional[int] = None
 
 class Project(ProjectBase):
     id: int

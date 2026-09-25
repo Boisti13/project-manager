@@ -207,3 +207,16 @@
   border-radius: 2px;
   padding: 0 1px;
 }
+
+.task-done-checkbox {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--color-success-text);
+}
+
+.task-title-done {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}

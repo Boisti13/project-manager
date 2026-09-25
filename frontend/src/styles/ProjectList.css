@@ -5,19 +5,32 @@
 }
 
 .project-item {
+  --project-color: #9e9e9e;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
+  border-left: 5px solid var(--project-color);
   border-radius: 4px;
-  padding: 16px;
+  padding: 14px 16px;
+  transition: box-shadow 0.2s ease;
+}
+
+.project-row {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  gap: 12px;
+}
+
+.project-row .project-swatch {
+  margin-top: 4px;
+}
+
+.project-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .project-item:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-color: var(--color-primary);
 }
 
 .project-info h3 {
@@ -35,6 +48,92 @@
 
 .project-actions {
   display: flex;
+  align-items: center;
   gap: 4px;
   flex-shrink: 0;
+}
+
+.category-list {
+  list-style: none;
+  margin: 10px 0 0 24px;
+  padding: 0;
+}
+
+.category-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px dashed var(--color-border);
+}
+
+.category-row .project-actions {
+  margin-left: auto;
+}
+
+.category-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Color picker in the project form */
+.color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-swatch.selected {
+  border-color: var(--color-text-primary);
+  box-shadow: 0 0 0 2px var(--color-surface) inset;
+}
+
+.color-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.color-custom input[type='color'] {
+  width: 30px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+.color-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .project-row {
+    flex-wrap: wrap;
+  }
+
+  .category-list {
+    margin-left: 8px;
+  }
 }

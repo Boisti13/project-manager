@@ -6,10 +6,10 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 
 - **Authentication**: JWT-based login/registration; first registered user becomes admin
 - **User Management**: Admins can promote/demote and activate/deactivate users
-- **Hierarchical Tasks**: Main tasks with subtasks in a tree structure, drag-to-reorder at any level (in manual sort order)
+- **Hierarchical Tasks**: Main tasks with subtasks in a tree structure, drag-to-reorder at any level (in manual sort order), a checkbox to tick tasks off as done
 - **Multi-User**: Task assignment
 - **Search & Filters**: Full-text search over titles and descriptions (subtasks included), filters for status, project, assignee and deadline, sorting by deadline/priority/date/title; filters are kept in the URL
-- **Projects**: Organize tasks across multiple projects (full CRUD)
+- **Projects & Categories**: Projects with one level of categories (e.g. *6GHub → General, Ordering, Documentation*), each project color-coded; the Tasks page lists tasks in collapsible sections per project and category, with every task carrying its project's color
 - **Extended Status**: todo / in_progress / blocked / done
 - **Deadlines**: Overdue highlighting plus an in-app notification bell (overdue + due-within-3-days)
 - **Dark Mode**: Toggle in the nav, persisted per browser, defaults to OS preference
@@ -74,7 +74,7 @@ npm start                 # dev server on :3000, proxies /api to :8000
 
 ```bash
 cd frontend
-npm test                  # Jest, e.g. src/taskFilters.test.js (search/filter/sort logic)
+npm test                  # Jest: src/taskFilters.test.js (search/filter/sort), src/projects.test.js (project tree, grouping)
 ```
 
 ```bash
@@ -94,7 +94,8 @@ project-manager/
 ├── frontend/
 │   └── src/
 │       ├── components/      # React components (TaskList, Settings, UpdatePanel, ...)
-│       └── taskFilters.js   # Pure search/filter/sort logic for the task tree
+│       ├── taskFilters.js   # Pure search/filter/sort logic for the task tree
+│       └── projects.js      # Project tree, colors, grouping tasks by project/category
 ├── install.sh               # Installer for a Debian/Ubuntu LXC or VM (idempotent)
 ├── proxmox/
 │   └── project-manager-lxc.sh # Run on the PVE host: creates an LXC and runs install.sh

@@ -10,7 +10,18 @@ import {
   filtersToParams,
   hasActiveFilters,
 } from '../taskFilters';
+import { buildProjectIndex, groupTasksByProject, groupTaskCount } from '../projects';
 import '../styles/TaskList.css';
+
+const COLLAPSED_KEY = 'pm.collapsedGroups';
+
+function loadCollapsedGroups() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '[]'));
+  } catch {
+    return new Set();
+  }
+}
 
 function TaskList() {
   const { currentUser } = useAuth();
@@ -22,6 +33,8 @@ function TaskList() {
   const [showForm, setShowForm] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [parentTaskForNew, setParentTaskForNew] = useState(null);
+  const [projectForNew, setProjectForNew] = useState(null);
+  const [collapsedGroups, setCollapsedGroups] = useState(loadCollapsedGroups);
   const [expandedIds, setExpandedIds] = useState(new Set());
   // Rows the user collapsed even though a filter match auto-expanded them.
   const [collapsedIds, setCollapsedIds] = useState(new Set());
@@ -140,6 +153,24 @@ function TaskList() {
     }
   };
 
+  // Checkbox: done <-> todo. Updates the row immediately and rolls back if
+  // the request fails.
+  const handleToggleDone = async (task) => {
+    const status = task.status === 'done' ? 'todo' : 'done';
+    const previous = tasks;
+    setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status } : t)));
+    try {
+      await fetchJson(`/api/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+    } catch (err) {
+      setTasks(previous);
+      setError('Failed to update task: ' + err.message);
+    }
+  };
+
   const handleEditTask = (task) => {
     setSelectedTask(task);
     setParentTaskForNew(null);
@@ -156,13 +187,36 @@ function TaskList() {
     setShowForm(false);
     setSelectedTask(null);
     setParentTaskForNew(null);
+    setProjectForNew(null);
   };
+
+  const openNewTask = (projectId = null) => {
+    setSelectedTask(null);
+    setParentTaskForNew(null);
+    setProjectForNew(projectId);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const toggleGroup = (key) =>
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try {
+        localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...next]));
+      } catch {
+        // per-browser convenience only
+      }
+      return next;
+    });
 
   const handleReorder = async (draggedId, targetId) => {
     const dragged = tasks.find((t) => t.id === draggedId);
     const target = tasks.find((t) => t.id === targetId);
     if (!dragged || !target) return;
     if (dragged.parent_task_id !== target.parent_task_id) return; // only reorder siblings
+    if (dragged.parent_task_id === null && dragged.project_id !== target.project_id) return; // ...within one project
 
     const siblings = tasks
       .filter((t) => t.parent_task_id === dragged.parent_task_id)
@@ -198,9 +252,22 @@ function TaskList() {
     }
   };
 
+  const projectIndex = useMemo(() => buildProjectIndex(projects), [projects]);
+
   const tree = useMemo(
-    () => buildTaskTree(tasks, filters, { currentUserId: currentUser?.id }),
-    [tasks, filters, currentUser]
+    () =>
+      buildTaskTree(tasks, filters, {
+        currentUserId: currentUser?.id,
+        projectParentOf: projectIndex.parentIdOf,
+      }),
+    [tasks, filters, currentUser, projectIndex]
+  );
+
+  // While filtering, only sections with results are shown; otherwise every
+  // project and category is listed so tasks can be added anywhere.
+  const groups = useMemo(
+    () => groupTasksByProject(tree.roots, projectIndex, { includeEmpty: !filtering }),
+    [tree.roots, projectIndex, filtering]
   );
 
   const toggleIn = (setter, taskId) =>
@@ -222,6 +289,24 @@ function TaskList() {
   const visibleRoots = tree.roots;
   const canDrag = filters.sort === 'manual';
 
+  const renderTask = (task) => (
+    <TaskItem
+      key={task.id}
+      task={task}
+      onEdit={handleEditTask}
+      onDelete={handleDeleteTask}
+      onAddSubtask={handleAddSubtask}
+      onReorder={handleReorder}
+      isExpanded={isExpanded}
+      onToggleExpand={handleToggleExpand}
+      onToggleDone={handleToggleDone}
+      childrenOf={tree.childrenOf}
+      matchedIds={tree.matchedIds}
+      searchText={filters.q}
+      canDrag={canDrag}
+    />
+  );
+
   return (
     <div className="container">
       <div className="task-list-header">
@@ -233,11 +318,7 @@ function TaskList() {
         </div>
         <button
           className="btn btn-primary"
-          onClick={() => {
-            setSelectedTask(null);
-            setParentTaskForNew(null);
-            setShowForm(true);
-          }}
+          onClick={() => openNewTask(filters.project ? parseInt(filters.project, 10) : null)}
         >
           + New Task
         </button>
@@ -248,9 +329,11 @@ function TaskList() {
       {showForm && (
         <div className="form-container">
           <TaskForm
+            key={`${selectedTask?.id}-${parentTaskForNew?.id}-${projectForNew}`}
             task={selectedTask}
             parentTask={parentTaskForNew}
-            projects={projects}
+            defaultProjectId={projectForNew}
+            projectIndex={projectIndex}
             users={users}
             onSubmit={selectedTask ? handleUpdateTask : handleCreateTask}
             onCancel={handleFormCancel}
@@ -293,11 +376,17 @@ function TaskList() {
             <label htmlFor="f-project">Project</label>
             <select id="f-project" value={filters.project} onChange={(e) => setFilter('project', e.target.value)}>
               <option value="">All</option>
-              {projects.map((p) => (
+              {projectIndex.topLevel.map((p) => [
                 <option key={p.id} value={String(p.id)}>
                   {p.name}
-                </option>
-              ))}
+                </option>,
+                ...projectIndex.categoriesOf(p.id).map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {'\u00a0\u00a0\u00a0└ '}
+                    {c.name}
+                  </option>
+                )),
+              ])}
             </select>
           </div>
 
@@ -347,35 +436,77 @@ function TaskList() {
       </div>
 
       <div className="task-list">
-        {visibleRoots.length === 0 ? (
+        {visibleRoots.length === 0 && filtering ? (
           <p className="no-tasks">
-            {filtering ? 'No tasks match these filters.' : 'No tasks yet.'}
-            {filtering && (
-              <>
-                {' '}
-                <button className="link-btn" onClick={clearFilters}>
-                  Clear filters
-                </button>
-              </>
-            )}
+            No tasks match these filters.{' '}
+            <button className="link-btn" onClick={clearFilters}>
+              Clear filters
+            </button>
           </p>
+        ) : groups.length === 0 ? (
+          <p className="no-tasks">No tasks or projects yet.</p>
         ) : (
-          visibleRoots.map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              onEdit={handleEditTask}
-              onDelete={handleDeleteTask}
-              onAddSubtask={handleAddSubtask}
-              onReorder={handleReorder}
-              isExpanded={isExpanded}
-              onToggleExpand={handleToggleExpand}
-              childrenOf={tree.childrenOf}
-              matchedIds={tree.matchedIds}
-              searchText={filters.q}
-              canDrag={canDrag}
-            />
-          ))
+          groups.map((group) => {
+            // Filters auto-open sections so results are never hidden.
+            const collapsed = !filtering && collapsedGroups.has(group.key);
+            return (
+              <section
+                key={group.key}
+                className={`project-group ${collapsed ? 'collapsed' : ''}`}
+                style={{ '--project-color': group.color }}
+              >
+                <header className="project-group-header">
+                  <button
+                    className="project-group-toggle"
+                    onClick={() => toggleGroup(group.key)}
+                    aria-expanded={!collapsed}
+                    disabled={filtering}
+                  >
+                    <span className="project-group-caret">{collapsed ? '▶' : '▼'}</span>
+                    <span className="project-swatch" />
+                    <span className="project-group-name">{group.project ? group.project.name : 'No project'}</span>
+                    <span className="project-group-count">{groupTaskCount(group)}</span>
+                  </button>
+                  <button
+                    className="task-action-btn"
+                    title={group.project ? `New task in ${group.project.name}` : 'New task without project'}
+                    onClick={() => openNewTask(group.project ? group.project.id : null)}
+                  >
+                    +
+                  </button>
+                </header>
+
+                {!collapsed && (
+                  <div className="project-group-body">
+                    {group.tasks.map(renderTask)}
+                    {group.categories.map((cat) => (
+                      <div className="category-group" key={cat.key}>
+                        <div className="category-header">
+                          <span className="category-name">{cat.project.name}</span>
+                          <span className="project-group-count">{cat.tasks.length}</span>
+                          <button
+                            className="task-action-btn"
+                            title={`New task in ${group.project.name} / ${cat.project.name}`}
+                            onClick={() => openNewTask(cat.project.id)}
+                          >
+                            +
+                          </button>
+                        </div>
+                        {cat.tasks.length === 0 ? (
+                          <p className="category-empty">No tasks</p>
+                        ) : (
+                          cat.tasks.map(renderTask)
+                        )}
+                      </div>
+                    ))}
+                    {group.tasks.length === 0 && group.categories.length === 0 && (
+                      <p className="category-empty">No tasks</p>
+                    )}
+                  </div>
+                )}
+              </section>
+            );
+          })
         )}
       </div>
     </div>

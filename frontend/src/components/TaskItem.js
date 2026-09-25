@@ -16,6 +16,7 @@ function TaskItem({
   onReorder,
   isExpanded,
   onToggleExpand,
+  onToggleDone,
   childrenOf,
   matchedIds = null,
   searchText = '',
@@ -117,8 +118,16 @@ function TaskItem({
               {showSubtasks ? '▼' : '▶'}
             </button>
           )}
+          <input
+            type="checkbox"
+            className="task-done-checkbox"
+            checked={task.status === 'done'}
+            onChange={() => onToggleDone(task)}
+            title={task.status === 'done' ? 'Mark as not done' : 'Mark as done'}
+            aria-label={`Done: ${task.title}`}
+          />
           <div className="task-status-dot" style={{ backgroundColor: statusColors[task.status] }} />
-          <span className="task-title">
+          <span className={`task-title ${task.status === 'done' ? 'task-title-done' : ''}`}>
             <Highlight text={task.title} needle={searchText} />
           </span>
         </div>
@@ -165,6 +174,7 @@ function TaskItem({
               onReorder={onReorder}
               isExpanded={isExpanded}
               onToggleExpand={onToggleExpand}
+              onToggleDone={onToggleDone}
               childrenOf={childrenOf}
               matchedIds={matchedIds}
               searchText={searchText}

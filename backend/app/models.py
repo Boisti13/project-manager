@@ -29,10 +29,16 @@ class Project(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     description = Column(Text, nullable=True)
+    # Hex color like "#2196f3". Categories usually leave it empty and use
+    # their parent's color.
+    color = Column(String(7), nullable=True)
+    # Set for categories (sub-projects); only one level of nesting.
+    parent_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     tasks = relationship("Task", back_populates="project")
+    children = relationship("Project", passive_deletes=True)
 
 class Task(Base):
     __tablename__ = "tasks"
