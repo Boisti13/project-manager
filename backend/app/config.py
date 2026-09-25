@@ -3,9 +3,9 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     db_host: str = "localhost"
     db_port: int = 5432
-    db_user: str = "taskmanager"
-    db_password: str = "taskmanager"
-    db_name: str = "taskmanager"
+    db_user: str = "projectmanager"
+    db_password: str = "projectmanager"
+    db_name: str = "projectmanager"
     secret_key: str = "your-secret-key-change-in-production"
     algorithm: str = "HS256"
 

@@ -1,6 +1,6 @@
 {
-  "name": "task-manager-frontend",
-  "version": "1.2.0",
+  "name": "project-manager-frontend",
+  "version": "1.2.1",
   "private": true,
   "proxy": "http://localhost:8000",
   "dependencies": {

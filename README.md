@@ -46,7 +46,7 @@ npm start
 ## Architecture
 
 ```
-task-manager/
+project-manager/
 ├── VERSION            # Single source of truth for the app version
 ├── backend/           # FastAPI application
 ├── frontend/          # React application

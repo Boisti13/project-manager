@@ -11,7 +11,7 @@ try:
 except FileNotFoundError:
     APP_VERSION = "0.0.0"
 
-app = FastAPI(title="Task Manager API", version=APP_VERSION)
+app = FastAPI(title="Project Manager API", version=APP_VERSION)
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,7 +29,7 @@ app.include_router(system.router, prefix="/api/system", tags=["system"])
 
 @app.get("/")
 def read_root():
-    return {"message": "Task Manager API"}
+    return {"message": "Project Manager API"}
 
 @app.get("/health")
 @app.get("/api/health")
