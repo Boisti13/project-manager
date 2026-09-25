@@ -18,7 +18,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Deadlines**: Overdue highlighting plus an in-app notification bell (overdue + due-within-3-days)
 - **Dark Mode**: Toggle in the nav, persisted per browser, defaults to OS preference
 - **In-app Updates**: Settings shows the running version/branch/commit; anyone can check a branch for updates, admins can update or switch branches (backup, pull, migrate, rebuild the frontend, sync the Nginx config, restart) with a live log
-- **Backups & Restore**: Automatic database backup before every update; *Back up now*, download, upload and one-click **restore** (with automatic safety backup and rollback) in Settings for admins; keeps the newest N (default 3). Move a whole instance to a new server by restoring a backup there — also straight from the Proxmox helper script
+- **Backups & Restore**: Automatic database backup before every update; *Back up now*, download, delete, upload and one-click **restore** (with automatic safety backup and rollback) in Settings for admins; keeps the newest N (default 3). Move a whole instance to a new server by restoring a backup there — also straight from the Proxmox helper script
 - **Export & Import**: Export a project (with categories, tasks, subtasks) or everything as JSON and import it into another account or installation; CSV export of all tasks for Excel — see [DEPLOYMENT.md](DEPLOYMENT.md#backups--export)
 - **Self-Hosted**: One-command install on Proxmox VE (creates the LXC for you) or into any Debian/Ubuntu LXC/VM, no Docker
 

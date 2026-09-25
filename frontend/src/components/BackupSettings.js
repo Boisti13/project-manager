@@ -128,6 +128,17 @@ function BackupSettings() {
     });
   };
 
+  const remove = (b) => {
+    const when = new Date(b.created * 1000).toLocaleString();
+    if (!window.confirm(`Delete backup "${b.name}" (${when})? This can't be undone.`)) return;
+    run(async () => {
+      const res = await authFetch(`/api/system/backups/${encodeURIComponent(b.name)}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed: ' + (await errorText(res)));
+      await loadBackups();
+      setStatus({ ok: true, text: `Deleted ${b.name}.` });
+    });
+  };
+
   const exportCsv = () =>
     run(async () => {
       const get = async (url) => {
@@ -228,6 +239,14 @@ function BackupSettings() {
                     </button>
                     <button className="btn btn-secondary btn-small btn-danger" onClick={() => restore(b)} disabled={busy}>
                       Restore
+                    </button>
+                    <button
+                      className="btn btn-secondary btn-small btn-danger"
+                      onClick={() => remove(b)}
+                      disabled={busy}
+                      title="Delete this backup"
+                    >
+                      Delete
                     </button>
                   </span>
                 </li>

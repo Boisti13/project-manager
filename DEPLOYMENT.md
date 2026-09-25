@@ -76,7 +76,7 @@ cd /opt/project-manager && scripts/backup-db.sh my-label
 
 Only the newest backups are kept — **3** by default, adjustable under **Settings → Backup & export** (stored in the `app_settings` table; the script reads it from there). Override per run with `PM_BACKUP_KEEP=10`, or the location with `PM_BACKUP_DIR=/somewhere`. The directory is `700`, each dump `600`.
 
-Admins can **download** any listed backup from the Settings page, to keep a copy off the server.
+Admins can **download** any listed backup from the Settings page, to keep a copy off the server, or **delete** backups they no longer need (with confirmation; this can't be undone).
 
 ### Restoring a backup
 

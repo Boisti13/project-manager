@@ -284,3 +284,12 @@ def restore_backup(name: str, current_user: User = Depends(get_current_admin_use
     if r.returncode != 0:
         raise HTTPException(status_code=500, detail="Restore failed: " + output[-800:])
     return {"output": output}
+
+
+@router.delete("/backups/{name}")
+def delete_backup(name: str, current_user: User = Depends(get_current_admin_user)):
+    path = BACKUP_DIR / name
+    if not re.fullmatch(r"[A-Za-z0-9._-]+\.dump", name) or not path.is_file():
+        raise HTTPException(status_code=404, detail="Backup not found")
+    path.unlink()
+    return {"ok": True}
