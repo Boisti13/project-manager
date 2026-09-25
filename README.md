@@ -8,7 +8,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 
 - **Authentication**: JWT-based login/registration; first registered user becomes admin
 - **User Management**: Admins can promote/demote and activate/deactivate users
-- **Hierarchical Tasks**: Main tasks with subtasks in a tree structure, drag-to-reorder at any level (in manual sort order), subtask progress (e.g. *1/2*) on the parent
+- **Hierarchical Tasks**: Main tasks with subtasks in a tree structure, drag-to-reorder at any level (in manual sort order), subtask progress (e.g. *1/2*) on the parent; when all subtasks are ticked the parent is highlighted as ready (*✓ 2/2*) but stays open — it only moves to *Completed* when you tick it yourself, so more subtasks can still be added
 - **Done Checkbox & Archive**: Tick tasks off with a checkbox; they move into a collapsed *✓ Completed* row at the end of their project/category (most recent first). After a configurable number of days (Settings → *Completed tasks*, default 30) they're archived — hidden from the list but still found by search or the *Done* filter. Nothing is deleted
 - **Multi-User**: Task assignment
 - **Search & Filters**: Full-text search over titles and descriptions (subtasks included), filters for status, project, assignee and deadline, sorting by deadline/priority/date/title; filters are kept in the URL

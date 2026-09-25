@@ -120,3 +120,28 @@ test('server dates are parsed as UTC', () => {
   assert.strictEqual(parseServerDate('2026-09-25T10:00:00+02:00').toISOString(), '2026-09-25T08:00:00.000Z');
   assert.strictEqual(parseServerDate(null), null);
 });
+
+test('a task whose subtasks are all done stays open until it is ticked itself', () => {
+  const idx = buildProjectIndex(projects);
+  const tasks = [
+    t(1, 2, { title: 'parent' }),
+    t(2, null, { status: 'done', parent_task_id: 1 }),
+    t(3, null, { status: 'done', parent_task_id: 1 }),
+  ];
+  let tree = buildTaskTree(tasks, DEFAULT_FILTERS, { projectParentOf: idx.parentIdOf });
+  assert.deepStrictEqual(tree.progressOf(tasks[0]), { done: 2, total: 2 });
+  let ordering = groupTasksByProject(tree.roots, idx)[0].categories[0];
+  assert.deepStrictEqual(ordering.tasks.map((x) => x.id), [1]); // open, not completed
+  assert.deepStrictEqual(ordering.completed, []);
+
+  // Ticking the parent is what moves it.
+  tasks[0] = { ...tasks[0], status: 'done', completed_at: '2026-09-25T10:00:00' };
+  tree = buildTaskTree(tasks, DEFAULT_FILTERS, { projectParentOf: idx.parentIdOf });
+  ordering = groupTasksByProject(tree.roots, idx)[0].categories[0];
+  assert.deepStrictEqual(ordering.completed.map((x) => x.id), [1]);
+
+  // A new open subtask on a ready task: progress drops again.
+  const more = [...tasks.slice(1), t(1, 2, { title: 'parent' }), t(4, null, { parent_task_id: 1 })];
+  tree = buildTaskTree(more, DEFAULT_FILTERS, { projectParentOf: idx.parentIdOf });
+  assert.deepStrictEqual(tree.progressOf(more.find((x) => x.id === 1)), { done: 2, total: 3 });
+});

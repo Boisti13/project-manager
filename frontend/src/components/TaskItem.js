@@ -28,6 +28,10 @@ function TaskItem({
   const showSubtasks = isExpanded(task.id);
   // While filtering, ancestors shown only for context are dimmed.
   const isContext = matchedIds !== null && !matchedIds.has(task.id);
+  const progress = progressOf ? progressOf(task) : { done: 0, total: 0 };
+  // All subtasks ticked but the task itself isn't: highlight it, but leave it
+  // open -- new subtasks may still be added. Ticking it is a deliberate step.
+  const isReady = progress.total > 0 && progress.done === progress.total && task.status !== 'done';
   const [dragOver, setDragOver] = useState(false);
   const [dragging, setDragging] = useState(false);
 
@@ -92,7 +96,7 @@ function TaskItem({
 
   return (
     <div
-      className={`task-item ${dragOver ? 'drag-over' : ''} ${dragging ? 'dragging' : ''} ${isContext ? 'task-context' : ''}`}
+      className={`task-item ${dragOver ? 'drag-over' : ''} ${dragging ? 'dragging' : ''} ${isContext ? 'task-context' : ''} ${isReady ? 'task-ready' : ''}`}
       style={{ marginLeft: `${indent * 20}px` }}
       draggable={canDrag}
       {...(canDrag && {
@@ -134,12 +138,17 @@ function TaskItem({
         </div>
 
         <div className="task-right">
-          {progressOf && progressOf(task).total > 0 && (
+          {progress.total > 0 && (
             <span
-              className={`task-progress ${progressOf(task).done === progressOf(task).total ? 'complete' : ''}`}
-              title="Subtasks done"
+              className={`task-progress ${progress.done === progress.total ? 'complete' : ''}`}
+              title={
+                isReady
+                  ? "All subtasks done — tick the task when it's finished"
+                  : `${progress.done} of ${progress.total} subtasks done`
+              }
             >
-              {progressOf(task).done}/{progressOf(task).total}
+              {isReady && '✓ '}
+              {progress.done}/{progress.total}
             </span>
           )}
           {task.priority > 0 && (
