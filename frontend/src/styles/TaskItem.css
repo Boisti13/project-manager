@@ -194,3 +194,16 @@
   margin-top: 8px;
   padding-left: 0;
 }
+
+/* Search/filter results: ancestors shown only for context are dimmed. */
+.task-item.task-context > .task-header,
+.task-item.task-context > .task-description {
+  opacity: 0.55;
+}
+
+.task-item mark {
+  background-color: var(--color-highlight-bg);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}

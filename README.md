@@ -7,7 +7,8 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Authentication**: JWT-based login/registration; first registered user becomes admin
 - **User Management**: Admins can promote/demote and activate/deactivate users
 - **Hierarchical Tasks**: Main tasks with subtasks in a tree structure, drag-to-reorder at any level
-- **Multi-User**: Task assignment, "My Tasks Only" filter
+- **Multi-User**: Task assignment
+- **Search & Filters**: Full-text search over titles and descriptions (subtasks included), filters for status, project, assignee and deadline, sorting by deadline/priority/date/title; filters are kept in the URL
 - **Projects**: Organize tasks across multiple projects (full CRUD)
 - **Extended Status**: todo / in_progress / blocked / done
 - **Deadlines**: Overdue highlighting plus an in-app notification bell (overdue + due-within-3-days)

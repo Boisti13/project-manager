@@ -1,8 +1,31 @@
 import React, { useState } from 'react';
+import { highlightParts } from '../taskFilters';
 import '../styles/TaskItem.css';
 
-function TaskItem({ task, onEdit, onDelete, onAddSubtask, onReorder, expandedIds, onToggleExpand, indent = 0 }) {
-  const showSubtasks = expandedIds.has(task.id);
+function Highlight({ text, needle }) {
+  return highlightParts(text, needle).map((part, i) =>
+    part.hit ? <mark key={i}>{part.text}</mark> : <React.Fragment key={i}>{part.text}</React.Fragment>
+  );
+}
+
+function TaskItem({
+  task,
+  onEdit,
+  onDelete,
+  onAddSubtask,
+  onReorder,
+  isExpanded,
+  onToggleExpand,
+  childrenOf,
+  matchedIds = null,
+  searchText = '',
+  canDrag = true,
+  indent = 0,
+}) {
+  const subtasks = childrenOf(task);
+  const showSubtasks = isExpanded(task.id);
+  // While filtering, ancestors shown only for context are dimmed.
+  const isContext = matchedIds !== null && !matchedIds.has(task.id);
   const [dragOver, setDragOver] = useState(false);
   const [dragging, setDragging] = useState(false);
 
@@ -67,19 +90,25 @@ function TaskItem({ task, onEdit, onDelete, onAddSubtask, onReorder, expandedIds
 
   return (
     <div
-      className={`task-item ${dragOver ? 'drag-over' : ''} ${dragging ? 'dragging' : ''}`}
+      className={`task-item ${dragOver ? 'drag-over' : ''} ${dragging ? 'dragging' : ''} ${isContext ? 'task-context' : ''}`}
       style={{ marginLeft: `${indent * 20}px` }}
-      draggable
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      draggable={canDrag}
+      {...(canDrag && {
+        onDragStart: handleDragStart,
+        onDragEnd: handleDragEnd,
+        onDragOver: handleDragOver,
+        onDragLeave: handleDragLeave,
+        onDrop: handleDrop,
+      })}
     >
       <div className="task-header">
         <div className="task-left">
-          <span className="drag-handle" title="Drag to reorder">⠿</span>
-          {task.subtasks && task.subtasks.length > 0 && (
+          {canDrag && (
+            <span className="drag-handle" title="Drag to reorder">
+              ⠿
+            </span>
+          )}
+          {subtasks.length > 0 && (
             <button
               className="expand-btn"
               onClick={() => onToggleExpand(task.id)}
@@ -89,7 +118,9 @@ function TaskItem({ task, onEdit, onDelete, onAddSubtask, onReorder, expandedIds
             </button>
           )}
           <div className="task-status-dot" style={{ backgroundColor: statusColors[task.status] }} />
-          <span className="task-title">{task.title}</span>
+          <span className="task-title">
+            <Highlight text={task.title} needle={searchText} />
+          </span>
         </div>
 
         <div className="task-right">
@@ -116,11 +147,15 @@ function TaskItem({ task, onEdit, onDelete, onAddSubtask, onReorder, expandedIds
         </div>
       </div>
 
-      {task.description && <p className="task-description">{task.description}</p>}
+      {task.description && (
+        <p className="task-description">
+          <Highlight text={task.description} needle={searchText} />
+        </p>
+      )}
 
-      {showSubtasks && task.subtasks && task.subtasks.length > 0 && (
+      {showSubtasks && subtasks.length > 0 && (
         <div className="subtasks">
-          {task.subtasks.map((subtask) => (
+          {subtasks.map((subtask) => (
             <TaskItem
               key={subtask.id}
               task={subtask}
@@ -128,8 +163,12 @@ function TaskItem({ task, onEdit, onDelete, onAddSubtask, onReorder, expandedIds
               onDelete={onDelete}
               onAddSubtask={onAddSubtask}
               onReorder={onReorder}
-              expandedIds={expandedIds}
+              isExpanded={isExpanded}
               onToggleExpand={onToggleExpand}
+              childrenOf={childrenOf}
+              matchedIds={matchedIds}
+              searchText={searchText}
+              canDrag={canDrag}
               indent={indent + 1}
             />
           ))}

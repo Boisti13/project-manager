@@ -20,6 +20,7 @@
   --color-scrollbar: #888888;
   --color-scrollbar-track: #f1f1f1;
   --color-overlay: rgba(0, 0, 0, 0.4);
+  --color-highlight-bg: #fff176;
 }
 
 :root[data-theme='dark'] {
@@ -44,6 +45,7 @@
   --color-scrollbar: #555555;
   --color-scrollbar-track: #2a2a2a;
   --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-highlight-bg: #6d5d12;
 }
 
 * {

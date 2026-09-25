@@ -1,7 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
 import { authFetch, useAuth } from '../context/AuthContext';
+import {
+  DEFAULT_FILTERS,
+  buildTaskTree,
+  filtersFromParams,
+  filtersToParams,
+  hasActiveFilters,
+} from '../taskFilters';
 import '../styles/TaskList.css';
 
 function TaskList() {
@@ -14,10 +22,37 @@ function TaskList() {
   const [showForm, setShowForm] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [parentTaskForNew, setParentTaskForNew] = useState(null);
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterProject, setFilterProject] = useState(null);
-  const [myTasksOnly, setMyTasksOnly] = useState(false);
   const [expandedIds, setExpandedIds] = useState(new Set());
+  // Rows the user collapsed even though a filter match auto-expanded them.
+  const [collapsedIds, setCollapsedIds] = useState(new Set());
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchRef = useRef(null);
+
+  const filters = useMemo(() => filtersFromParams(searchParams), [searchParams]);
+  const filtering = hasActiveFilters(filters);
+
+  const setFilter = (key, value) => {
+    setSearchParams(filtersToParams({ ...filters, [key]: value }), { replace: true });
+    setCollapsedIds(new Set());
+  };
+
+  const clearFilters = () => {
+    setSearchParams(filtersToParams({ ...DEFAULT_FILTERS, sort: filters.sort }), { replace: true });
+    setCollapsedIds(new Set());
+  };
+
+  // "/" focuses the search box (unless already typing somewhere).
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = document.activeElement?.tagName;
+      if (e.key === '/' && tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -163,43 +198,38 @@ function TaskList() {
     }
   };
 
-  const handleToggleExpand = (taskId) => {
-    setExpandedIds((prev) => {
+  const tree = useMemo(
+    () => buildTaskTree(tasks, filters, { currentUserId: currentUser?.id }),
+    [tasks, filters, currentUser]
+  );
+
+  const toggleIn = (setter, taskId) =>
+    setter((prev) => {
       const next = new Set(prev);
       if (next.has(taskId)) next.delete(taskId);
       else next.add(taskId);
       return next;
     });
-  };
 
-  const getFilteredTasks = () => {
-    let filtered = tasks.filter((t) => t.parent_task_id === null); // Only root tasks
+  const isExpanded = (taskId) =>
+    tree.autoExpandIds.has(taskId) ? !collapsedIds.has(taskId) : expandedIds.has(taskId);
 
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter((t) => t.status === filterStatus);
-    }
-
-    if (filterProject) {
-      filtered = filtered.filter((t) => t.project_id === filterProject);
-    }
-
-    if (myTasksOnly && currentUser) {
-      filtered = filtered.filter((t) => t.assignee_id === currentUser.id);
-    }
-
-    return filtered;
-  };
+  const handleToggleExpand = (taskId) =>
+    toggleIn(tree.autoExpandIds.has(taskId) ? setCollapsedIds : setExpandedIds, taskId);
 
   if (loading) return <div className="container"><p>Loading tasks...</p></div>;
 
-  const filteredTasks = getFilteredTasks();
+  const visibleRoots = tree.roots;
+  const canDrag = filters.sort === 'manual';
 
   return (
     <div className="container">
       <div className="task-list-header">
         <div className="header-left">
           <h1>Tasks</h1>
-          <span className="task-count">({filteredTasks.length})</span>
+          <span className="task-count">
+            ({filtering ? `${visibleRoots.length} of ${tree.totalRoots}` : tree.totalRoots})
+          </span>
         </div>
         <button
           className="btn btn-primary"
@@ -229,46 +259,108 @@ function TaskList() {
       )}
 
       <div className="filters">
-        <div className="filter-group">
-          <label>Status:</label>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-            <option value="all">All</option>
-            <option value="todo">To Do</option>
-            <option value="in_progress">In Progress</option>
-            <option value="blocked">Blocked</option>
-            <option value="done">Done</option>
-          </select>
+        <div className="filter-search">
+          <input
+            ref={searchRef}
+            type="search"
+            placeholder="Search tasks…  ( / )"
+            value={filters.q}
+            onChange={(e) => setFilter('q', e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setFilter('q', '');
+                e.target.blur();
+              }
+            }}
+            aria-label="Search tasks"
+          />
         </div>
 
-        <div className="filter-group">
-          <label>Project:</label>
-          <select value={filterProject || ''} onChange={(e) => setFilterProject(e.target.value ? parseInt(e.target.value, 10) : null)}>
-            <option value="">All Projects</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <div className="filter-row">
+          <div className="filter-group">
+            <label htmlFor="f-status">Status</label>
+            <select id="f-status" value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
+              <option value="all">All</option>
+              <option value="open">Not done</option>
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="blocked">Blocked</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
 
-        <div className="filter-group filter-checkbox">
-          <label>
-            <input
-              type="checkbox"
-              checked={myTasksOnly}
-              onChange={(e) => setMyTasksOnly(e.target.checked)}
-            />
-            My Tasks Only
-          </label>
+          <div className="filter-group">
+            <label htmlFor="f-project">Project</label>
+            <select id="f-project" value={filters.project} onChange={(e) => setFilter('project', e.target.value)}>
+              <option value="">All</option>
+              {projects.map((p) => (
+                <option key={p.id} value={String(p.id)}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label htmlFor="f-assignee">Assignee</label>
+            <select id="f-assignee" value={filters.assignee} onChange={(e) => setFilter('assignee', e.target.value)}>
+              <option value="">Anyone</option>
+              <option value="me">Me</option>
+              <option value="none">Unassigned</option>
+              {users
+                .filter((u) => u.id !== currentUser?.id)
+                .map((u) => (
+                  <option key={u.id} value={String(u.id)}>
+                    {u.username}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label htmlFor="f-due">Deadline</label>
+            <select id="f-due" value={filters.due} onChange={(e) => setFilter('due', e.target.value)}>
+              <option value="">Any</option>
+              <option value="overdue">Overdue</option>
+              <option value="week">Due in 7 days</option>
+              <option value="none">No deadline</option>
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label htmlFor="f-sort">Sort</label>
+            <select id="f-sort" value={filters.sort} onChange={(e) => setFilter('sort', e.target.value)}>
+              <option value="manual">Manual order</option>
+              <option value="deadline">Deadline</option>
+              <option value="priority">Priority</option>
+              <option value="created">Newest first</option>
+              <option value="title">Title</option>
+            </select>
+          </div>
+
+          {filtering && (
+            <button className="btn btn-secondary btn-small filter-clear" onClick={clearFilters}>
+              Clear filters
+            </button>
+          )}
         </div>
       </div>
 
       <div className="task-list">
-        {filteredTasks.length === 0 ? (
-          <p className="no-tasks">No tasks found</p>
+        {visibleRoots.length === 0 ? (
+          <p className="no-tasks">
+            {filtering ? 'No tasks match these filters.' : 'No tasks yet.'}
+            {filtering && (
+              <>
+                {' '}
+                <button className="link-btn" onClick={clearFilters}>
+                  Clear filters
+                </button>
+              </>
+            )}
+          </p>
         ) : (
-          filteredTasks.map((task) => (
+          visibleRoots.map((task) => (
             <TaskItem
               key={task.id}
               task={task}
@@ -276,8 +368,12 @@ function TaskList() {
               onDelete={handleDeleteTask}
               onAddSubtask={handleAddSubtask}
               onReorder={handleReorder}
-              expandedIds={expandedIds}
+              isExpanded={isExpanded}
               onToggleExpand={handleToggleExpand}
+              childrenOf={tree.childrenOf}
+              matchedIds={tree.matchedIds}
+              searchText={filters.q}
+              canDrag={canDrag}
             />
           ))
         )}
