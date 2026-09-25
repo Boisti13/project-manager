@@ -1,0 +1,110 @@
+.update-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.update-branch {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.update-branch select {
+  min-width: 160px;
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.update-note {
+  margin: 10px 0 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.update-warning {
+  color: var(--color-warning-text);
+}
+
+.update-commit-msg {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.update-result {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.update-current {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.update-available {
+  background-color: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+
+.update-commits {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+  line-height: 1.7;
+  color: var(--color-text-primary);
+}
+
+.update-progress {
+  margin-top: 16px;
+}
+
+.update-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.update-state-running,
+.update-state-restarting {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+.update-state-success {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.update-state-failed {
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+}
+
+.update-log {
+  margin: 8px 0 0 0;
+  max-height: 280px;
+  overflow: auto;
+  padding: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}

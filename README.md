@@ -12,6 +12,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Extended Status**: todo / in_progress / blocked / done
 - **Deadlines**: Overdue highlighting plus an in-app notification bell (overdue + due-within-3-days)
 - **Dark Mode**: Toggle in the nav, persisted per browser, defaults to OS preference
+- **In-app Updates**: Settings shows the running version/branch/commit; anyone can check a branch for updates, admins can update or switch branches (pull, migrate, restart)
 - **Self-Hosted**: Bare-metal deployment on an LXC container on Proxmox VE
 
 ## Tech Stack

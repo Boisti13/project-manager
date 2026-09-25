@@ -15,6 +15,20 @@
 
 ## Updating the Live Deployment
 
+### From the app (Settings → Updates)
+
+Any logged-in user can pick a branch and **Check for updates**. Admins additionally get an **Update now** / **Switch to <branch>** button, which runs [`scripts/update.sh`](scripts/update.sh) in the background:
+
+fetch → `git checkout -f -B <branch> origin/<branch>` → `pip install` → `migrate.py` → `npm install` → `supervisorctl restart` both services
+
+The log streams into the Settings page and is kept in `/opt/project-manager/.update/update.log`. If pip, migrations or npm fail, the services are **not** restarted, so the old processes keep running. Any local edits to tracked files in the deployed checkout are discarded.
+
+Requirements: the backend runs as a user that can run `git` in the checkout and `supervisorctl` (root under the default Supervisor setup), and the LXC can reach GitHub.
+
+Switching to an older branch does not roll back database migrations. That's usually harmless because older code ignores newer columns, but check first if a migration dropped or renamed something.
+
+### Manually
+
 ```bash
 ssh root@192.168.100.103
 pct exec 113 -- bash -c '

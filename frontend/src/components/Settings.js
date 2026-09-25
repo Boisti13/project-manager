@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch, useAuth } from '../context/AuthContext';
 import UserManagement from './UserManagement';
+import UpdatePanel from './UpdatePanel';
 import '../styles/Settings.css';
 
 function Settings() {
@@ -79,6 +80,8 @@ function Settings() {
           </div>
         </div>
       </div>
+
+      <UpdatePanel />
 
       {currentUser?.is_admin && <UserManagement />}
     </div>
