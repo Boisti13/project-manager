@@ -21,6 +21,7 @@ function TaskItem({
   matchedIds = null,
   searchText = '',
   canDrag = true,
+  progressOf = null,
   indent = 0,
 }) {
   const subtasks = childrenOf(task);
@@ -133,6 +134,14 @@ function TaskItem({
         </div>
 
         <div className="task-right">
+          {progressOf && progressOf(task).total > 0 && (
+            <span
+              className={`task-progress ${progressOf(task).done === progressOf(task).total ? 'complete' : ''}`}
+              title="Subtasks done"
+            >
+              {progressOf(task).done}/{progressOf(task).total}
+            </span>
+          )}
           {task.priority > 0 && (
             <span className="task-priority" data-priority={task.priority}>
               {priorityLabels[task.priority] || 'P' + task.priority}
@@ -179,6 +188,7 @@ function TaskItem({
               matchedIds={matchedIds}
               searchText={searchText}
               canDrag={canDrag}
+              progressOf={progressOf}
               indent={indent + 1}
             />
           ))}

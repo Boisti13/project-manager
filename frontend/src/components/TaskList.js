@@ -28,6 +28,11 @@ function TaskList() {
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
+  const [archiveAfterDays, setArchiveAfterDays] = useState(null);
+  // Expanded "Completed (n)" rows; collapsed by default, not persisted.
+  const [openCompleted, setOpenCompleted] = useState(new Set());
+  // Phones only: the filter selects are folded away behind a button.
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -92,14 +97,16 @@ function TaskList() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [tasksRes, projectsRes, usersRes] = await Promise.all([
+      const [tasksRes, projectsRes, usersRes, settingsRes] = await Promise.all([
         fetchJson('/api/tasks/'),
         fetchJson('/api/projects/'),
         fetchJson('/api/users/'),
+        fetchJson('/api/settings/'),
       ]);
       setTasks(tasksRes);
       setProjects(projectsRes);
       setUsers(usersRes);
+      setArchiveAfterDays(settingsRes.archive_after_days);
       setError(null);
     } catch (err) {
       setError('Failed to load data: ' + err.message);
@@ -259,8 +266,9 @@ function TaskList() {
       buildTaskTree(tasks, filters, {
         currentUserId: currentUser?.id,
         projectParentOf: projectIndex.parentIdOf,
+        archiveAfterDays,
       }),
-    [tasks, filters, currentUser, projectIndex]
+    [tasks, filters, currentUser, projectIndex, archiveAfterDays]
   );
 
   // While filtering, only sections with results are shown; otherwise every
@@ -304,8 +312,31 @@ function TaskList() {
       matchedIds={tree.matchedIds}
       searchText={filters.q}
       canDrag={canDrag}
+      progressOf={tree.progressOf}
     />
   );
+
+  // Filtering by status "done" or searching opens the Completed rows, so
+  // results are never hidden behind them.
+  const completedAutoOpen = filters.status === 'done' || filters.q.trim() !== '';
+
+  const renderCompleted = (key, list) => {
+    if (list.length === 0) return null;
+    const open = completedAutoOpen || openCompleted.has(key);
+    return (
+      <div className="completed-group">
+        <button
+          className="completed-toggle"
+          onClick={() => toggleIn(setOpenCompleted, key)}
+          aria-expanded={open}
+          disabled={completedAutoOpen}
+        >
+          <span className="project-group-caret">{open ? '▼' : '▶'}</span>✓ Completed ({list.length})
+        </button>
+        {open && <div className="completed-list">{list.map(renderTask)}</div>}
+      </div>
+    );
+  };
 
   return (
     <div className="container">
@@ -359,7 +390,18 @@ function TaskList() {
           />
         </div>
 
-        <div className="filter-row">
+        <button
+          className="btn btn-secondary btn-small filters-toggle"
+          onClick={() => setFiltersOpen((o) => !o)}
+          aria-expanded={filtersOpen}
+        >
+          {filtersOpen ? '▲' : '▼'} Filters & sort
+          {filters.status !== 'all' || filters.project || filters.assignee || filters.due || filters.sort !== 'manual'
+            ? ' •'
+            : ''}
+        </button>
+
+        <div className={`filter-row ${filtersOpen ? 'open' : ''}`}>
           <div className="filter-group">
             <label htmlFor="f-status">Status</label>
             <select id="f-status" value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
@@ -435,6 +477,17 @@ function TaskList() {
         </div>
       </div>
 
+      {tree.archivedCount > 0 && (
+        <p className="archive-note">
+          {tree.archivedCount} task{tree.archivedCount === 1 ? '' : 's'} completed more than {archiveAfterDays}{' '}
+          {archiveAfterDays === 1 ? 'day' : 'days'} ago {tree.archivedCount === 1 ? 'is' : 'are'} archived.{' '}
+          <button className="link-btn" onClick={() => setFilter('status', 'done')}>
+            Show done tasks
+          </button>{' '}
+          or search to find them.
+        </p>
+      )}
+
       <div className="task-list">
         {visibleRoots.length === 0 && filtering ? (
           <p className="no-tasks">
@@ -479,11 +532,22 @@ function TaskList() {
                 {!collapsed && (
                   <div className="project-group-body">
                     {group.tasks.map(renderTask)}
-                    {group.categories.map((cat) => (
-                      <div className="category-group" key={cat.key}>
+                    {renderCompleted(`${group.key}-done`, group.completed)}
+                    {group.categories.map((cat) => {
+                      const catCollapsed = !filtering && collapsedGroups.has(cat.key);
+                      return (
+                      <div className={`category-group ${catCollapsed ? 'collapsed' : ''}`} key={cat.key}>
                         <div className="category-header">
-                          <span className="category-name">{cat.project.name}</span>
-                          <span className="project-group-count">{cat.tasks.length}</span>
+                          <button
+                            className="category-toggle"
+                            onClick={() => toggleGroup(cat.key)}
+                            aria-expanded={!catCollapsed}
+                            disabled={filtering}
+                          >
+                            <span className="project-group-caret">{catCollapsed ? '▶' : '▼'}</span>
+                            <span className="category-name">{cat.project.name}</span>
+                            <span className="project-group-count">{cat.tasks.length}</span>
+                          </button>
                           <button
                             className="task-action-btn"
                             title={`New task in ${group.project.name} / ${cat.project.name}`}
@@ -492,14 +556,20 @@ function TaskList() {
                             +
                           </button>
                         </div>
-                        {cat.tasks.length === 0 ? (
-                          <p className="category-empty">No tasks</p>
-                        ) : (
-                          cat.tasks.map(renderTask)
+                        {!catCollapsed && (
+                          <>
+                            {cat.tasks.length === 0 ? (
+                              <p className="category-empty">{cat.completed.length ? 'All done ✓' : 'No tasks'}</p>
+                            ) : (
+                              cat.tasks.map(renderTask)
+                            )}
+                            {renderCompleted(`${cat.key}-done`, cat.completed)}
+                          </>
                         )}
                       </div>
-                    ))}
-                    {group.tasks.length === 0 && group.categories.length === 0 && (
+                      );
+                    })}
+                    {group.tasks.length === 0 && group.categories.length === 0 && group.completed.length === 0 && (
                       <p className="category-empty">No tasks</p>
                     )}
                   </div>

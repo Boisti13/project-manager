@@ -81,6 +81,7 @@ class TaskUpdate(BaseModel):
 
 class Task(TaskBase):
     id: int
+    completed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
     subtasks: List["Task"] = []
@@ -89,3 +90,8 @@ class Task(TaskBase):
         from_attributes = True
 
 Task.model_rebuild()
+
+
+# Instance settings
+class AppSettings(BaseModel):
+    archive_after_days: int = Field(ge=1, le=3650)

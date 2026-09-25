@@ -81,3 +81,10 @@
   flex: 0;
   min-width: 100px;
 }
+
+@media (max-width: 600px) {
+  .task-form .form-actions .btn {
+    flex: 1;
+    min-height: 44px;
+  }
+}

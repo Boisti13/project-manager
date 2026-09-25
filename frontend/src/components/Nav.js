@@ -17,15 +17,19 @@ function Nav() {
 
   return (
     <nav className="app-nav">
+      <span className="nav-brand">📋 Project Manager</span>
       <div className="nav-links">
         <NavLink to="/" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')} end>
-          Tasks
+          <span className="nav-icon" aria-hidden="true">✓</span>
+          <span className="nav-label">Tasks</span>
         </NavLink>
         <NavLink to="/projects" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-          Projects
+          <span className="nav-icon" aria-hidden="true">▦</span>
+          <span className="nav-label">Projects</span>
         </NavLink>
         <NavLink to="/settings" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-          Settings
+          <span className="nav-icon" aria-hidden="true">⚙</span>
+          <span className="nav-label">Settings</span>
         </NavLink>
       </div>
       <div className="nav-user">
@@ -34,7 +38,7 @@ function Nav() {
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
         <span className="nav-username">{currentUser?.username}</span>
-        <button className="nav-logout" onClick={handleLogout}>
+        <button className="nav-logout" onClick={handleLogout} title="Log out" aria-label="Log out">
           Log Out
         </button>
       </div>

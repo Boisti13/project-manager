@@ -1,5 +1,6 @@
 // Project tree helpers: colors, categories (one level of sub-projects) and
 // grouping of tasks under their project. No React in here.
+import { parseServerDate } from './taskFilters';
 
 // Kept in sync with PALETTE in backend/app/routers/projects.py.
 export const PROJECT_COLORS = [
@@ -59,10 +60,12 @@ export function buildProjectIndex(projects) {
 /**
  * Groups root tasks by their project.
  *
- * Returns [{ key, project, color, tasks, categories: [{ key, project, tasks }] }]
+ * Returns [{ key, project, color, tasks, completed,
+ *            categories: [{ key, project, tasks, completed }] }]
  * in project name order, with tasks that have no (known) project last under
- * project: null. `tasks` holds tasks directly on the project; category tasks
- * are under their category. Root order is preserved within each list.
+ * project: null. `tasks` holds open tasks directly on the project (root order
+ * preserved), `completed` the done ones, most recently completed first;
+ * category tasks are under their category.
  *
  * With includeEmpty, projects and categories without tasks are listed too.
  */
@@ -70,38 +73,50 @@ export function groupTasksByProject(roots, index, { includeEmpty = false } = {})
   const groups = new Map();
   const groupFor = (top) => {
     if (!groups.has(top.id)) {
-      const cats = new Map(index.categoriesOf(top.id).map((c) => [c.id, { key: `c${c.id}`, project: c, tasks: [] }]));
-      groups.set(top.id, { key: `p${top.id}`, project: top, color: index.colorOf(top.id), tasks: [], cats });
+      const cats = new Map(
+        index.categoriesOf(top.id).map((c) => [c.id, { key: `c${c.id}`, project: c, tasks: [], completed: [] }])
+      );
+      groups.set(top.id, { key: `p${top.id}`, project: top, color: index.colorOf(top.id), tasks: [], completed: [], cats });
     }
     return groups.get(top.id);
   };
 
   if (includeEmpty) index.topLevel.forEach(groupFor);
-  const none = { key: 'none', project: null, color: NO_PROJECT_COLOR, tasks: [], categories: [] };
+  const none = { key: 'none', project: null, color: NO_PROJECT_COLOR, tasks: [], completed: [], categories: [] };
+  const add = (bucket, task) => (task.status === 'done' ? bucket.completed : bucket.tasks).push(task);
 
   for (const task of roots) {
     const top = task.project_id != null ? index.topOf(task.project_id) : null;
     if (!top) {
-      none.tasks.push(task);
+      add(none, task);
       continue;
     }
     const g = groupFor(top);
-    if (top.id === task.project_id) g.tasks.push(task);
-    else g.cats.get(task.project_id)?.tasks.push(task);
+    if (top.id === task.project_id) add(g, task);
+    else if (g.cats.has(task.project_id)) add(g.cats.get(task.project_id), task);
   }
+
+  const completedTime = (t) => parseServerDate(t.completed_at)?.getTime() ?? 0;
+  const byCompleted = (a, b) => completedTime(b) - completedTime(a) || b.id - a.id;
+  const hasAny = (b) => b.tasks.length > 0 || b.completed.length > 0;
 
   const result = index.topLevel
     .filter((p) => groups.has(p.id))
     .map((p) => {
       const { cats, ...g } = groups.get(p.id);
-      const categories = [...cats.values()].filter((c) => includeEmpty || c.tasks.length > 0);
+      const categories = [...cats.values()].filter((c) => includeEmpty || hasAny(c));
       return { ...g, categories };
     })
-    .filter((g) => includeEmpty || g.tasks.length > 0 || g.categories.length > 0);
+    .filter((g) => includeEmpty || hasAny(g) || g.categories.length > 0);
 
-  if (none.tasks.length > 0) result.push(none);
+  if (hasAny(none)) result.push(none);
+  for (const g of result) {
+    g.completed.sort(byCompleted);
+    g.categories.forEach((c) => c.completed.sort(byCompleted));
+  }
   return result;
 }
 
+/** Open (not done) root tasks in a project section, categories included. */
 export const groupTaskCount = (group) =>
   group.tasks.length + group.categories.reduce((n, c) => n + c.tasks.length, 0);

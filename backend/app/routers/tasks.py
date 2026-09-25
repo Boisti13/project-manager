@@ -1,15 +1,27 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import Task, User
+from app.models import Task, TaskStatus, User
 from app import schemas
 from app.auth import get_current_user
 
 router = APIRouter()
 
+
+def sync_completed_at(task: Task):
+    if task.status == TaskStatus.DONE:
+        if task.completed_at is None:
+            task.completed_at = datetime.utcnow()
+    else:
+        task.completed_at = None
+
+
 @router.post("/", response_model=schemas.Task)
 def create_task(task: schemas.TaskCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     db_task = Task(**task.model_dump())
+    sync_completed_at(db_task)
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
@@ -42,6 +54,7 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
     update_data = task_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_task, key, value)
+    sync_completed_at(db_task)
 
     db.commit()
     db.refresh(db_task)

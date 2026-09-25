@@ -60,6 +60,13 @@
   background-color: var(--color-border);
 }
 
+.btn:disabled,
+.btn:disabled:hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .error-message {
   background-color: var(--color-error-bg);
   color: var(--color-error-text);
@@ -264,6 +271,23 @@
   border-bottom: 1px dashed var(--color-border);
 }
 
+.category-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.category-toggle:disabled {
+  cursor: default;
+}
+
 .category-name {
   font-size: 13px;
   font-weight: 600;
@@ -290,5 +314,107 @@
 @media (max-width: 600px) {
   .project-group-body {
     padding-left: 6px;
+  }
+}
+
+/* ---- Completed rows & archive note ---------------------------------- */
+
+.completed-group {
+  margin: 4px 0 10px 0;
+}
+
+.completed-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-success-text);
+  cursor: pointer;
+}
+
+.completed-toggle:disabled {
+  cursor: default;
+}
+
+.completed-list .task-item {
+  opacity: 0.75;
+}
+
+.archive-note {
+  margin: -8px 0 16px 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* ---- Phones ------------------------------------------------------------ */
+
+.filters-toggle {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 0 12px;
+  }
+
+  .task-list-header {
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+  }
+
+  .header-left {
+    gap: 8px;
+  }
+
+  .header-left h1 {
+    font-size: 22px;
+  }
+
+  .form-container {
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+
+  .filters {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .filters-toggle {
+    display: inline-flex;
+    align-self: flex-start;
+  }
+
+  /* Filters fold away behind the toggle; search stays visible. */
+  .filter-row {
+    display: none;
+  }
+
+  .filter-row.open {
+    display: flex;
+  }
+
+  .project-group-header {
+    padding: 6px 8px;
+  }
+
+  .project-group-name {
+    font-size: 15px;
+  }
+
+  .project-group-header .task-action-btn,
+  .category-header .task-action-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .completed-toggle {
+    padding: 10px 4px;
   }
 }

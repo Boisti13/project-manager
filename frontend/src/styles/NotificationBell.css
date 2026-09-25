@@ -116,3 +116,14 @@
   background-color: var(--color-warning-bg);
   color: var(--color-warning-text);
 }
+
+@media (max-width: 600px) {
+  .bell-dropdown {
+    position: fixed;
+    top: 110px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-height: 60vh;
+  }
+}

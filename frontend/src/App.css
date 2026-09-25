@@ -6,7 +6,7 @@
 }
 
 .App-header {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  background: linear-gradient(135deg, var(--color-header-from) 0%, var(--color-header-to) 100%);
   padding: 30px 20px;
   color: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -41,4 +41,26 @@ main {
 
 .App-footer p {
   margin: 0;
+}
+
+@media (max-width: 600px) {
+  .App-header {
+    padding: 10px 12px;
+    padding-top: calc(10px + env(safe-area-inset-top));
+  }
+
+  .App-header h1 {
+    margin: 0;
+    font-size: 20px;
+  }
+
+  .App-subtitle,
+  .App-footer,
+  .App-header:has(+ .app-nav) {
+    display: none;
+  }
+
+  main {
+    padding: 12px 0 calc(72px + env(safe-area-inset-bottom));
+  }
 }

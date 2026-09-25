@@ -74,3 +74,49 @@ test('project filter includes categories; same title in two projects stays separ
     ]
   );
 });
+
+test('done tasks split into completed (newest first) and archived tasks hidden', () => {
+  const idx = buildProjectIndex(projects);
+  const NOW = Date.parse('2026-09-25T12:00:00Z');
+  const daysAgo = (n) => new Date(NOW - n * 86400000).toISOString().replace('Z', ''); // naive UTC like the API
+  const tasks = [
+    t(1, 2, { title: 'open' }),
+    t(2, 2, { status: 'done', completed_at: daysAgo(1) }),
+    t(3, 2, { status: 'done', completed_at: daysAgo(5) }),
+    t(4, 2, { status: 'done', completed_at: daysAgo(40) }), // archived with 30 days
+    t(5, 2, { status: 'done', completed_at: daysAgo(3) }),
+    t(6, null, { title: 'sub of archived', parent_task_id: 4 }),
+    t(7, 2, { title: 'parent' }),
+    t(8, null, { status: 'done', parent_task_id: 7 }),
+    t(9, null, { status: 'todo', parent_task_id: 7 }),
+  ];
+  const run = (over) =>
+    buildTaskTree(tasks, { ...DEFAULT_FILTERS, ...over }, { archiveAfterDays: 30, now: NOW, projectParentOf: idx.parentIdOf });
+
+  let tree = run({});
+  assert.strictEqual(tree.archivedCount, 1);
+  assert.ok(!tree.roots.some((r) => r.id === 4));
+  const ordering = groupTasksByProject(tree.roots, idx)[0].categories[0];
+  assert.strictEqual(ordering.project.name, 'Ordering');
+  assert.deepStrictEqual(ordering.tasks.map((x) => x.id), [1, 7]);
+  assert.deepStrictEqual(ordering.completed.map((x) => x.id), [2, 5, 3]); // most recent first
+  assert.deepStrictEqual(tree.progressOf(tasks[6]), { done: 1, total: 2 });
+
+  // Searching or filtering by "done" brings archived tasks back.
+  tree = run({ status: 'done' });
+  assert.strictEqual(tree.archivedCount, 0);
+  assert.ok(tree.roots.some((r) => r.id === 4));
+  tree = run({ q: 'sub of archived' });
+  assert.deepStrictEqual(tree.roots.map((r) => r.id), [4]);
+
+  // No setting loaded yet -> nothing archived.
+  assert.strictEqual(buildTaskTree(tasks, DEFAULT_FILTERS, { now: NOW }).archivedCount, 0);
+});
+
+test('server dates are parsed as UTC', () => {
+  const { parseServerDate } = require('./taskFilters');
+  assert.strictEqual(parseServerDate('2026-09-25T10:00:00').toISOString(), '2026-09-25T10:00:00.000Z');
+  assert.strictEqual(parseServerDate('2026-09-25T10:00:00Z').toISOString(), '2026-09-25T10:00:00.000Z');
+  assert.strictEqual(parseServerDate('2026-09-25T10:00:00+02:00').toISOString(), '2026-09-25T08:00:00.000Z');
+  assert.strictEqual(parseServerDate(null), null);
+});

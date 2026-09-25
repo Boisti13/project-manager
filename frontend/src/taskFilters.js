@@ -12,6 +12,12 @@ export const DEFAULT_FILTERS = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Server timestamps are naive UTC ("2026-09-25T19:38:08"); parse them as UTC. */
+export function parseServerDate(value) {
+  if (!value) return null;
+  return new Date(/(?:[zZ]|[+-]\d\d:?\d\d)$/.test(value) ? value : value + 'Z');
+}
+
 export function filtersFromParams(params) {
   const f = { ...DEFAULT_FILTERS };
   for (const key of Object.keys(DEFAULT_FILTERS)) {
@@ -85,12 +91,27 @@ const SORTERS = {
  *   childrenOf   – (task) => visible children, sorted
  *   matchedIds   – tasks that satisfy every filter (null when no filter is active)
  *   autoExpandIds – ancestors of matches, to be shown expanded
- *   totalRoots   – number of root tasks before filtering
+ *   totalRoots   – number of root tasks before filtering (archived excluded)
+ *   archivedCount – archived root tasks currently hidden
+ *   progressOf   – (task) => { done, total } over its direct subtasks
+ *
+ * Archiving: a done root task whose completed_at is more than
+ * archiveAfterDays old is left out (with its subtasks), unless the user is
+ * searching or filtering by status "done" — then everything is searchable.
  *
  * projectParentOf(projectId) returns the parent of a category (or null), so a
  * project filter also matches tasks in that project's categories.
  */
-export function buildTaskTree(tasks, filters, { currentUserId, now = Date.now(), projectParentOf = () => null } = {}) {
+export function isArchived(task, archiveAfterDays, now = Date.now()) {
+  if (task.status !== 'done' || !task.completed_at || !archiveAfterDays) return false;
+  return parseServerDate(task.completed_at).getTime() < now - archiveAfterDays * DAY_MS;
+}
+
+export function buildTaskTree(
+  tasks,
+  filters,
+  { currentUserId, now = Date.now(), projectParentOf = () => null, archiveAfterDays = null } = {}
+) {
   const children = new Map();
   const byId = new Map();
   for (const t of tasks) {
@@ -102,7 +123,15 @@ export function buildTaskTree(tasks, filters, { currentUserId, now = Date.now(),
   const sorter = SORTERS[filters.sort] || byManual;
   for (const list of children.values()) list.sort(sorter);
 
-  const allRoots = children.get(null) || [];
+  const progressOf = (t) => {
+    const kids = children.get(t.id) || [];
+    return { done: kids.filter((k) => k.status === 'done').length, total: kids.length };
+  };
+
+  const showArchived = filters.q.trim() !== '' || filters.status === 'done';
+  const everyRoot = children.get(null) || [];
+  const allRoots = showArchived ? everyRoot : everyRoot.filter((t) => !isArchived(t, archiveAfterDays, now));
+  const archivedCount = everyRoot.length - allRoots.length;
   const active = hasActiveFilters(filters);
 
   if (!active) {
@@ -112,6 +141,8 @@ export function buildTaskTree(tasks, filters, { currentUserId, now = Date.now(),
       matchedIds: null,
       autoExpandIds: new Set(),
       totalRoots: allRoots.length,
+      archivedCount,
+      progressOf,
     };
   }
 
@@ -151,6 +182,8 @@ export function buildTaskTree(tasks, filters, { currentUserId, now = Date.now(),
     matchedIds,
     autoExpandIds,
     totalRoots: allRoots.length,
+    archivedCount,
+    progressOf,
   };
 }
 

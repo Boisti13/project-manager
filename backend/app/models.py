@@ -50,6 +50,9 @@ class Task(Base):
     priority = Column(Integer, default=0)
     order = Column(Integer, default=0)
     deadline = Column(DateTime, nullable=True)
+    # Set when the task becomes done, cleared when it's reopened; drives the
+    # "Completed" rows and archiving on the Tasks page.
+    completed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -67,3 +70,11 @@ class Task(Base):
         cascade="all, delete-orphan",
         order_by="Task.order"
     )
+
+
+class AppSetting(Base):
+    """Instance-wide settings as key/value strings (see routers/settings.py)."""
+    __tablename__ = "app_settings"
+
+    key = Column(String(64), primary_key=True)
+    value = Column(String, nullable=False)

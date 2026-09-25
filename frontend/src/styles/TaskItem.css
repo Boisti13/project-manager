@@ -220,3 +220,80 @@
   text-decoration: line-through;
   color: var(--color-text-muted);
 }
+
+.task-progress {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface-hover);
+  white-space: nowrap;
+}
+
+.task-progress.complete {
+  color: var(--color-success-text);
+  background-color: var(--color-success-bg);
+}
+
+/* ---- Phones / touch ---------------------------------------------------- */
+
+@media (max-width: 600px) {
+  .task-item {
+    padding: 10px 10px;
+  }
+
+  /* Checkbox + title on the first line, badges and actions below. */
+  .task-header {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .task-left {
+    flex-basis: 100%;
+    gap: 8px;
+  }
+
+  .task-right {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    gap: 6px;
+    padding-left: 30px;
+  }
+
+  /* The colored dot and the checkbox already show the status. */
+  .task-status-badge {
+    display: none;
+  }
+
+  .task-action-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+
+  .task-action-btn.delete-btn {
+    margin-left: auto;
+  }
+
+  .task-description {
+    margin-left: 30px;
+  }
+}
+
+/* Drag-and-drop doesn't work with touch; hide the handle and use a bigger box. */
+@media (pointer: coarse) {
+  .drag-handle {
+    display: none;
+  }
+
+  .task-done-checkbox {
+    width: 22px;
+    height: 22px;
+  }
+
+  .expand-btn {
+    width: 30px;
+    height: 30px;
+  }
+}

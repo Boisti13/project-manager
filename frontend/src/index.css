@@ -21,6 +21,8 @@
   --color-scrollbar-track: #f1f1f1;
   --color-overlay: rgba(0, 0, 0, 0.4);
   --color-highlight-bg: #fff176;
+  --color-header-from: #2196f3;
+  --color-header-to: #1976d2;
 }
 
 :root[data-theme='dark'] {
@@ -46,6 +48,8 @@
   --color-scrollbar-track: #2a2a2a;
   --color-overlay: rgba(0, 0, 0, 0.6);
   --color-highlight-bg: #6d5d12;
+  --color-header-from: #1565c0;
+  --color-header-to: #0d47a1;
 }
 
 * {
@@ -98,4 +102,19 @@ code {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-muted);
+}
+
+/* Touch devices */
+@media (max-width: 600px) {
+  /* iOS zooms into inputs below 16px */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
 }
