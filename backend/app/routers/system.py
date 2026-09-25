@@ -144,7 +144,8 @@ def check(branch: str, current_user: User = Depends(get_current_user)):
         "behind": behind,
         "ahead": ahead,
         "commits": commits,
-        "update_available": head.strip() != target.strip(),
+        # A different branch is always switchable, even at the same commit.
+        "update_available": head.strip() != target.strip() or current_branch.strip() != branch,
     }
 
 

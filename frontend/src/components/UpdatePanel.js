@@ -211,9 +211,12 @@ function UpdatePanel() {
             <>
               <strong>
                 {check.current_branch !== check.branch
-                  ? `Switching to ${check.branch}`
+                  ? `Switch to ${check.branch}` +
+                    (check.behind === 0 && check.ahead === 0 ? ' (same code, only the branch changes)' : '')
                   : `${check.behind} new commit${check.behind === 1 ? '' : 's'} on ${check.branch}`}
-                {check.target_version && ` · v${check.current_version} → v${check.target_version}`}
+                {check.target_version &&
+                  check.target_version !== check.current_version &&
+                  ` · v${check.current_version} → v${check.target_version}`}
               </strong>
               {check.ahead > 0 && (
                 <p className="update-note">
