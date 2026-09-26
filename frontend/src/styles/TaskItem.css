@@ -308,3 +308,17 @@
   outline-offset: 1px;
   border-radius: 2px;
 }
+
+/* Brief highlight after jumping to a task from a notification */
+.task-item.task-flash {
+  animation: task-flash 2s ease-out;
+}
+
+@keyframes task-flash {
+  0%, 30% {
+    box-shadow: 0 0 0 3px var(--color-primary);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}

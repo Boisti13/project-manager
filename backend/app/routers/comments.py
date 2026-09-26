@@ -3,7 +3,7 @@ edit their own, authors and admins can delete."""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app import schemas
+from app import notify, schemas
 from app.timeutil import utcnow
 from app.auth import get_current_user
 from app.database import get_db
@@ -47,6 +47,8 @@ def add_comment(task_id: int, data: schemas.CommentCreate, current_user: User = 
         raise HTTPException(status_code=400, detail="Comment is empty")
     comment = TaskComment(task_id=task_id, author_id=current_user.id, body=body)
     db.add(comment)
+    db.flush()
+    notify.commented(db, comment, current_user)
     db.commit()
     db.refresh(comment)
     return to_schema(comment)

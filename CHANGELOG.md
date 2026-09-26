@@ -2,6 +2,22 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.16.0 — 2026-09-26
+
+### Added
+- **Notifications** in the bell: you're notified when someone **assigns you a task** (on create, edit or bulk add — a bulk add is one notification, "and 4 more tasks") and when someone **comments** on a task assigned to you or one you've commented on. Your own actions never notify you; deactivated users aren't notified. Unread items are highlighted and counted on the badge; opening the bell marks them read.
+- **Jump to the task** from a notification or deadline: its project, category and parent tasks open, it scrolls into view and flashes briefly; comment notifications open the thread.
+- **Assigned to me** switch next to the search, with the number of your open tasks.
+
+### Changed
+- The bell's deadline list only shows tasks assigned to you or to nobody (it showed everyone's before).
+- On phones the bell dropdown sits right under the top bar.
+
+### Under the hood
+- Migration `0005`: `notifications` table (removed with its task or user; read ones are cleaned up after 60 days).
+- New API: `GET /api/notifications/`, `POST /api/notifications/read`.
+- 8 new backend tests (87 in total).
+
 ## v1.15.0 — 2026-09-26
 
 ### Changed

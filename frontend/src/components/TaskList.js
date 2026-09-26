@@ -31,6 +31,8 @@ function TaskList() {
   const [archiveAfterDays, setArchiveAfterDays] = useState(null);
   // Expanded "Completed (n)" rows; collapsed by default, not persisted.
   const [openCompleted, setOpenCompleted] = useState(new Set());
+  // Set from a notification link (?task=ID&comments=1).
+  const [focusCommentsId, setFocusCommentsId] = useState(null);
   // Phones only: the filter selects are folded away behind a button.
   const [filtersOpen, setFiltersOpen] = useState(false);
   // Tasks whose comments match the search text (searched server-side).
@@ -323,6 +325,59 @@ function TaskList() {
 
   const projectIndex = useMemo(() => buildProjectIndex(projects), [projects]);
 
+  const myOpenCount = useMemo(
+    () => tasks.filter((t) => t.assignee_id === currentUser?.id && t.status !== 'done').length,
+    [tasks, currentUser]
+  );
+
+  // Jump to a task from a notification: open everything on the way to it,
+  // scroll it into view and flash it; optionally open its comments.
+  const focusTaskId = searchParams.get('task');
+  useEffect(() => {
+    if (!focusTaskId || loading || tasks.length === 0) return;
+    const byId = new Map(tasks.map((t) => [t.id, t]));
+    const target = byId.get(parseInt(focusTaskId, 10));
+    const withComments = searchParams.get('comments') === '1';
+    const next = new URLSearchParams(searchParams);
+    next.delete('task');
+    next.delete('comments');
+    setSearchParams(next, { replace: true });
+    if (!target) {
+      setError('That task no longer exists.');
+      return;
+    }
+
+    let root = target;
+    const ancestors = [];
+    while (root.parent_task_id != null && byId.has(root.parent_task_id)) {
+      root = byId.get(root.parent_task_id);
+      ancestors.push(root.id);
+    }
+    setExpandedIds((prev) => new Set([...prev, ...ancestors]));
+    setCollapsedIds(new Set());
+
+    const top = root.project_id != null ? projectIndex.topOf(root.project_id) : null;
+    const groupKey = top ? `p${top.id}` : 'none';
+    const bucketKey = top && top.id !== root.project_id ? `c${root.project_id}` : groupKey;
+    setCollapsedGroups((prev) => {
+      const keep = new Set([...prev].filter((k) => k !== groupKey && k !== bucketKey));
+      return keep.size === prev.size ? prev : keep;
+    });
+    if (root.status === 'done') setOpenCompleted((prev) => new Set(prev).add(`${bucketKey}-done`));
+    if (withComments) setFocusCommentsId(target.id);
+
+    // Not cleared on re-run: removing ?task= above re-runs this effect, and
+    // that must not cancel the scroll.
+    setTimeout(() => {
+      const el = document.getElementById(`task-${target.id}`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('task-flash');
+      setTimeout(() => el.classList.remove('task-flash'), 2200);
+    }, 150);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusTaskId, loading, tasks.length]);
+
   const tree = useMemo(
     () =>
       buildTaskTree(tasks, filters, {
@@ -377,6 +432,7 @@ function TaskList() {
       searchText={filters.q}
       canDrag={canDrag}
       progressOf={tree.progressOf}
+      focusCommentsId={focusCommentsId}
     />
   );
 
@@ -439,6 +495,14 @@ function TaskList() {
 
       <div className="filters">
         <div className="filter-search">
+          <button
+            className={`mine-toggle ${filters.assignee === 'me' ? 'active' : ''}`}
+            onClick={() => setFilter('assignee', filters.assignee === 'me' ? '' : 'me')}
+            aria-pressed={filters.assignee === 'me'}
+            title="Show only tasks assigned to you"
+          >
+            Assigned to me{myOpenCount > 0 && <span className="mine-count">{myOpenCount}</span>}
+          </button>
           <input
             ref={searchRef}
             type="search"

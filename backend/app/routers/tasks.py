@@ -3,7 +3,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Project, Task, TaskComment, TaskStatus, User
-from app import schemas
+from app import notify, schemas
 from app.timeutil import utcnow
 from app.auth import get_current_user
 
@@ -23,6 +23,8 @@ def create_task(task: schemas.TaskCreate, current_user: User = Depends(get_curre
     db_task = Task(**task.model_dump())
     sync_completed_at(db_task)
     db.add(db_task)
+    db.flush()
+    notify.assigned(db, db_task, current_user)
     db.commit()
     db.refresh(db_task)
     return db_task
@@ -74,6 +76,9 @@ def create_tasks_bulk(data: schemas.BulkTaskCreate, current_user: User = Depends
                 add(item.children, task.id)
 
     add(data.items, data.parent_task_id)
+    if data.assignee_id is not None and created:
+        # One notification for the whole batch, pointing at the first task.
+        notify.assigned(db, db.get(Task, created[0]), current_user, count=len(created))
     db.commit()
     return {"created": len(created), "ids": created}
 
@@ -107,9 +112,12 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
         raise HTTPException(status_code=404, detail="Task not found")
 
     update_data = task_update.model_dump(exclude_unset=True)
+    previous_assignee = db_task.assignee_id
     for key, value in update_data.items():
         setattr(db_task, key, value)
     sync_completed_at(db_task)
+    if db_task.assignee_id != previous_assignee:
+        notify.assigned(db, db_task, current_user)
 
     db.commit()
     db.refresh(db_task)

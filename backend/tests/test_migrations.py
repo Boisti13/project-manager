@@ -65,7 +65,7 @@ def test_migrate_stamps_pre_alembic_database(scratch_db):
     eng.dispose()
     r = run_backend("migrate.py", db_name=scratch_db)
     assert "stamping baseline 0001" in r.stdout
-    assert q(scratch_db, "SELECT version_num FROM alembic_version")[0][0] == "0004"
+    assert q(scratch_db, "SELECT version_num FROM alembic_version")[0][0] == "0005"
 
 
 def test_migrate_refuses_mismatched_pre_alembic_database(scratch_db):

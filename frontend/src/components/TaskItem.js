@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { highlightParts } from '../taskFilters';
 import TaskComments from './TaskComments';
 import '../styles/TaskItem.css';
@@ -24,6 +24,7 @@ function TaskItem({
   searchText = '',
   canDrag = true,
   progressOf = null,
+  focusCommentsId = null,
   indent = 0,
 }) {
   const subtasks = childrenOf(task);
@@ -37,6 +38,10 @@ function TaskItem({
   const [dragOver, setDragOver] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  // Opened from a comment notification.
+  useEffect(() => {
+    if (focusCommentsId === task.id) setShowComments(true);
+  }, [focusCommentsId, task.id]);
   // Text boxes inside a draggable row can't be selected with the mouse.
   const draggableNow = canDrag && !showComments;
 
@@ -101,6 +106,7 @@ function TaskItem({
 
   return (
     <div
+      id={`task-${task.id}`}
       className={`task-item ${dragOver ? 'drag-over' : ''} ${dragging ? 'dragging' : ''} ${isContext ? 'task-context' : ''} ${isReady ? 'task-ready' : ''}`}
       style={{ marginLeft: `${indent * 20}px` }}
       draggable={draggableNow}
@@ -214,6 +220,7 @@ function TaskItem({
               searchText={searchText}
               canDrag={canDrag}
               progressOf={progressOf}
+              focusCommentsId={focusCommentsId}
               indent={indent + 1}
             />
           ))}

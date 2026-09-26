@@ -105,3 +105,22 @@ class AppSetting(Base):
 
     key = Column(String(64), primary_key=True)
     value = Column(String, nullable=False)
+
+
+class Notification(Base):
+    """Something that happened to a user's tasks: assigned to them, or a new
+    comment on a task they're involved in. Deadlines are computed live."""
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    kind = Column(String(20), nullable=False)  # "assigned" | "comment"
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True)
+    actor_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    # Short text shown in the bell: a comment excerpt, or "and 4 more tasks".
+    excerpt = Column(String(300), nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+    read_at = Column(DateTime, nullable=True)
+
+    task = relationship("Task")
+    actor = relationship("User", foreign_keys=[actor_id])
