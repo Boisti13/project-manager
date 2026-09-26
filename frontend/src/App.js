@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Nav from './components/Nav';
@@ -8,9 +8,28 @@ import ProtectedRoute from './components/ProtectedRoute';
 import TaskList from './components/TaskList';
 import ProjectList from './components/ProjectList';
 import Settings from './components/Settings';
+import MyDay, { START_KEY } from './components/MyDay';
 import './App.css';
 
 const REPO_URL = 'https://github.com/Boisti13/project-manager';
+
+// "Open My day when I start the app": once per browser session, only when
+// the app is opened plainly (not from a link to a task or a filter).
+function StartPage({ children }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    try {
+      const first = !sessionStorage.getItem('pm.started');
+      sessionStorage.setItem('pm.started', '1');
+      if (first && !location.search && localStorage.getItem(START_KEY) === '1') navigate('/today', { replace: true });
+    } catch {
+      // storage unavailable: just show the tasks
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return children;
+}
 
 function AppShell() {
   const { currentUser } = useAuth();
@@ -29,7 +48,17 @@ function AppShell() {
             path="/"
             element={
               <ProtectedRoute>
-                <TaskList />
+                <StartPage>
+                  <TaskList />
+                </StartPage>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/today"
+            element={
+              <ProtectedRoute>
+                <MyDay />
               </ProtectedRoute>
             }
           />

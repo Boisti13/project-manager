@@ -10,6 +10,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 
 - **Authentication**: JWT-based login; the first account registered becomes the admin, after that self-registration is **closed** unless an admin allows it (Settings → User Management). New passwords need at least 8 characters; everyone can change their own password under Settings → *Your account*
 - **User Management**: Admins add accounts, set passwords, promote/demote and activate/deactivate users (deactivated users are locked out immediately)
+- **My Day**: A start page (☀ *My day*) with counters and lists of what's **overdue**, **due today**, **due this week**, **in progress** and **waiting for others** — your tasks and, optionally, unassigned ones, subtasks included — plus **recently assigned** tasks and **recent comments**. Tick tasks off right there; titles open the task in the list. Optionally open it automatically when you start the app
 - **Hierarchical Tasks**: Main tasks with subtasks in a tree structure, drag-to-reorder at any level (in manual sort order) or **Move up / Move down** in each task's **⋯ menu** (works on touchscreens), **Move to…** another project or category (subtasks come along), subtask progress (e.g. *1/2*) on the parent; when all subtasks are ticked the parent is highlighted as ready (*✓ 2/2*) but stays open — it only moves to *Completed* when you tick it yourself, so more subtasks can still be added
 - **Bulk Entry**: *Several (one per line)* in the task form — type or paste a list, indent lines (Tab or two spaces) to make subtasks at any depth; bullets and Markdown checkboxes (`- [x] done`) are understood, a live preview shows the resulting tree, and project, status, priority, deadline and assignee apply to all of them. Works from *+ New Task*, a project/category section's **+**, or a task's **+** (all lines become its subtasks)
 - **Recurring Tasks**: *Repeat* every N days, weeks, months or years. Ticking a repeating task creates the next one with the deadline moved forward on its schedule (month ends handled, never already overdue) and its subtasks as a fresh checklist; shown with a ↻ badge
@@ -38,6 +39,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 
 | Desktop | Phone |
 |---|---|
+| ![My day](docs/screenshots/myday-desktop.png) | ![My day on a phone](docs/screenshots/myday-phone.png) |
 | ![Tasks, dark mode](docs/screenshots/tasks-desktop-dark.png) | ![Tasks on a phone](docs/screenshots/tasks-phone.png) |
 | ![Board view](docs/screenshots/board-desktop.png) | ![Calendar on a phone](docs/screenshots/calendar-phone.png) |
 | ![Calendar view](docs/screenshots/calendar-desktop.png) | |
@@ -137,7 +139,7 @@ With no configuration it starts a throwaway PostgreSQL via the `pgserver` packag
 
 ```bash
 cd frontend
-npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, views (board/calendar), labels, dependencies, exportCsv, bulkParse, recurrence, activity
+npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, views (board/calendar), labels, dependencies, myday, exportCsv, bulkParse, recurrence, activity
 ```
 
 **CI** — [GitHub Actions](.github/workflows/ci.yml) runs the backend tests (PostgreSQL 16, Python 3.10 and 3.12), the frontend tests and production build, and shellcheck on every push to `main`/`dev` and on pull requests.
@@ -164,6 +166,7 @@ project-manager/
 │       ├── activity.js      # Task history entries as sentences
 │       ├── dependencies.js  # Blockers, waiting tasks, picker suggestions
 │       ├── labels.js        # Label index, readable text color on a label
+│       ├── myday.js         # Sections of the My day page
 │       ├── progress.js      # Per-project progress for the Projects page
 │       ├── views.js         # Board columns, calendar grid and deadlines by day
 │       └── projects.js      # Project tree, colors, grouping tasks by project/category

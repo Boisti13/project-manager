@@ -2,6 +2,16 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.26.0 — 2026-09-26
+
+### Added
+- **My day** (☀ in the navigation, `/today`): a start page with a greeting, four counters (**overdue**, **due today**, **this week**, **in progress** — each jumps to its list) and sections:
+  - *Overdue*, *Due today*, *This week* (next 7 days), *In progress* and, when there are any, *⏳ Waiting for others* — your open tasks and subtasks, with project/category (and parent task), labels, priority, ⏳ and deadline;
+  - *Recently assigned to you* and *Recent comments* (last 7 days, from your notifications).
+  - Tick tasks off right on the page (repeating tasks and *Ready to start* notifications work as usual); titles open the task in the list, comments open with the thread.
+  - **Include unassigned tasks** (on by default) and **Open My day when I start the app** (off by default; only when the app is opened plainly, not from a link to a task) — both remembered in the browser.
+- The phone navigation has four tabs now: My day, Tasks, Projects, Settings.
+
 ## v1.25.0 — 2026-09-26
 
 ### Added

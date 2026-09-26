@@ -19,6 +19,10 @@ function Nav() {
     <nav className="app-nav">
       <span className="nav-brand">📋 Project Manager</span>
       <div className="nav-links">
+        <NavLink to="/today" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+          <span className="nav-icon" aria-hidden="true">☀</span>
+          <span className="nav-label">My day</span>
+        </NavLink>
         <NavLink to="/" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')} end>
           <span className="nav-icon" aria-hidden="true">✓</span>
           <span className="nav-label">Tasks</span>
