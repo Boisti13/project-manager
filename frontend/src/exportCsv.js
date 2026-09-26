@@ -1,5 +1,7 @@
 // CSV export of all tasks. Semicolon-separated with a UTF-8 BOM so Excel
 // (including German-locale Excel) opens it with columns and umlauts intact.
+import { t } from './i18n';
+import { statusName, priorityName } from './names';
 
 const SEP = ';';
 
@@ -11,12 +13,9 @@ const cell = (value) => {
 
 const day = (iso) => (iso ? iso.slice(0, 10) : '');
 
-const STATUS_LABELS = { todo: 'To Do', in_progress: 'In Progress', blocked: 'Blocked', done: 'Done' };
-const PRIORITY_LABELS = { 0: 'Low', 1: 'Medium', 2: 'High', 3: 'Critical' };
-
-export const CSV_COLUMNS = [
-  'ID', 'Project', 'Category', 'Task', 'Parent task', 'Status', 'Priority',
-  'Assignee', 'Deadline', 'Created', 'Completed', 'Description', 'Labels',
+export const csvColumns = () => [
+  t('ID'), t('Project'), t('Category'), t('Task'), t('Parent task'), t('Status'), t('Priority'),
+  t('Assignee'), t('Deadline'), t('Created'), t('Completed'), t('Description'), t('Labels'),
 ];
 
 export function tasksToCsv(tasks, projectIndex, users, labels = []) {
@@ -44,8 +43,8 @@ export function tasksToCsv(tasks, projectIndex, users, labels = []) {
         category,
         t.title,
         t.parent_task_id != null ? byId.get(t.parent_task_id)?.title ?? '' : '',
-        STATUS_LABELS[t.status] || t.status,
-        PRIORITY_LABELS[t.priority] ?? t.priority,
+        statusName(t.status),
+        priorityName(t.priority),
         t.assignee_id != null ? userName.get(t.assignee_id) ?? '' : '',
         day(t.deadline),
         day(t.created_at),
@@ -55,5 +54,5 @@ export function tasksToCsv(tasks, projectIndex, users, labels = []) {
       ];
     });
 
-  return '﻿' + [CSV_COLUMNS, ...rows].map((r) => r.map(cell).join(SEP)).join('\r\n') + '\r\n';
+  return '﻿' + [csvColumns(), ...rows].map((r) => r.map(cell).join(SEP)).join('\r\n') + '\r\n';
 }

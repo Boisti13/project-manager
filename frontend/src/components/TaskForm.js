@@ -3,14 +3,29 @@ import LabelPicker from './LabelPicker';
 import DependencyPicker from './DependencyPicker';
 import { parseBulk, countNested } from '../bulkParse';
 import '../styles/TaskForm.css';
+import { t, tn } from '../i18n';
+import { STATUSES, statusName } from '../names';
 
-const BULK_PLACEHOLDER = `One task per line. Indent (Tab) for subtasks:
+const bulkPlaceholder = () =>
+  t(
+    'One task per line. Indent (Tab) for subtasks:\n\nOrder parts\n  Antenna modules\n  Cables\nWrite setup guide\n- [x] Flash firmware   (bullets and [x] checkboxes work too)'
+  );
 
-Order parts
-  Antenna modules
-  Cables
-Write setup guide
-- [x] Flash firmware   (bullets and [x] checkboxes work too)`;
+// "day" / "days" etc. after the repeat interval.
+function unitWord(unit, n) {
+  switch (unit) {
+    case 'day':
+      return tn(n, 'day', 'days');
+    case 'week':
+      return tn(n, 'week', 'weeks');
+    case 'month':
+      return tn(n, 'month', 'months');
+    case 'year':
+      return tn(n, 'year', 'years');
+    default:
+      return unit;
+  }
+}
 
 function BulkPreview({ items }) {
   return (
@@ -147,7 +162,7 @@ function TaskForm({
     <form className="task-form" onSubmit={handleSubmit}>
       {parentTask && (
         <div className="subtask-of-banner">
-          {mode === 'bulk' ? 'Subtasks of' : 'Subtask of'}: <strong>{parentTask.title}</strong>
+          {mode === 'bulk' ? t('Subtasks of') : t('Subtask of')}: <strong>{parentTask.title}</strong>
         </div>
       )}
 
@@ -160,7 +175,7 @@ function TaskForm({
             className={mode === 'single' ? 'active' : ''}
             onClick={() => setMode('single')}
           >
-            One task
+            {t('One task')}
           </button>
           <button
             type="button"
@@ -169,7 +184,7 @@ function TaskForm({
             className={mode === 'bulk' ? 'active' : ''}
             onClick={() => setMode('bulk')}
           >
-            Several (one per line)
+            {t('Several (one per line)')}
           </button>
         </div>
       )}
@@ -177,24 +192,24 @@ function TaskForm({
       {mode === 'single' ? (
         <>
           <div className="form-group">
-            <label>Title *</label>
+            <label>{t('Title *')}</label>
             <input
               type="text"
               name="title"
               value={formData.title}
               onChange={handleChange}
               required
-              placeholder="Enter task title"
+              placeholder={t('Enter task title')}
             />
           </div>
 
           <div className="form-group">
-            <label>Description</label>
+            <label>{t('Description')}</label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Task description"
+              placeholder={t('Task description')}
               rows="3"
             />
           </div>
@@ -202,29 +217,31 @@ function TaskForm({
       ) : (
         <div className="bulk-entry">
           <div className="form-group">
-            <label htmlFor="bulk-text">Tasks</label>
+            <label htmlFor="bulk-text">{t('Tasks')}</label>
             <textarea
               id="bulk-text"
               className="bulk-textarea"
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
               onKeyDown={(e) => handleIndentKeys(e, setBulkText)}
-              placeholder={BULK_PLACEHOLDER}
+              placeholder={bulkPlaceholder()}
               rows="9"
               autoFocus
               spellCheck
             />
-            <small className="bulk-hint">Indent with Tab (Shift+Tab to outdent) or two spaces. The fields below apply to every task.</small>
+            <small className="bulk-hint">
+              {t('Indent with Tab (Shift+Tab to outdent) or two spaces. The fields below apply to every task.')}
+            </small>
           </div>
           <div className="bulk-preview" aria-live="polite">
             <div className="bulk-preview-head">
               {bulk.count === 0
-                ? 'Preview'
-                : `${bulk.count} task${bulk.count === 1 ? '' : 's'}` +
-                  (nested ? ` (${nested} as subtask${nested === 1 ? '' : 's'})` : '')}
+                ? t('Preview')
+                : tn(bulk.count, 'one task', '{n} tasks') +
+                  (nested ? ' ' + tn(nested, '(one as a subtask)', '({n} as subtasks)') : '')}
             </div>
             {bulk.count === 0 ? (
-              <p className="bulk-empty">Type or paste a list on the left.</p>
+              <p className="bulk-empty">{t('Type or paste a list on the left.')}</p>
             ) : (
               <BulkPreview items={bulk.items} />
             )}
@@ -234,17 +251,18 @@ function TaskForm({
 
       <div className="form-row">
         <div className="form-group">
-          <label>Status</label>
+          <label>{t('Status')}</label>
           <select name="status" value={formData.status} onChange={handleChange}>
-            <option value="todo">To Do</option>
-            <option value="in_progress">In Progress</option>
-            <option value="blocked">Blocked</option>
-            <option value="done">Done</option>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {statusName(s)}
+              </option>
+            ))}
           </select>
         </div>
 
         <div className="form-group">
-          <label>Priority</label>
+          <label>{t('Priority')}</label>
           <input
             type="number"
             name="priority"
@@ -258,7 +276,7 @@ function TaskForm({
 
       <div className="form-row">
         <div className="form-group">
-          <label>Deadline</label>
+          <label>{t('Deadline')}</label>
           <input
             type="date"
             name="deadline"
@@ -268,9 +286,9 @@ function TaskForm({
         </div>
 
         <div className="form-group">
-          <label>Project</label>
+          <label>{t('Project')}</label>
           <select name="project_id" value={formData.project_id || ''} onChange={handleChange}>
-            <option value="">None</option>
+            <option value="">{t('None')}</option>
             {projectIndex.topLevel.map((p) => {
               const categories = projectIndex.categoriesOf(p.id);
               if (categories.length === 0) {
@@ -282,7 +300,7 @@ function TaskForm({
               }
               return (
                 <optgroup key={p.id} label={p.name}>
-                  <option value={p.id}>{p.name} (no category)</option>
+                  <option value={p.id}>{t('{name} (no category)', { name: p.name })}</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -297,7 +315,7 @@ function TaskForm({
 
       {mode === 'single' && (
         <div className="form-group">
-          <label htmlFor="repeat-unit">Repeat</label>
+          <label htmlFor="repeat-unit">{t('Repeat')}</label>
           <div className="repeat-row">
             <select
               id="repeat-unit"
@@ -305,15 +323,15 @@ function TaskForm({
               value={formData.recurrence_unit || ''}
               onChange={handleChange}
             >
-              <option value="">Doesn't repeat</option>
-              <option value="day">Every day</option>
-              <option value="week">Every week</option>
-              <option value="month">Every month</option>
-              <option value="year">Every year</option>
+              <option value="">{t("Doesn't repeat")}</option>
+              <option value="day">{t('Every day')}</option>
+              <option value="week">{t('Every week')}</option>
+              <option value="month">{t('Every month')}</option>
+              <option value="year">{t('Every year')}</option>
             </select>
             {formData.recurrence_unit && (
               <label className="repeat-interval">
-                every
+                {t('every')}
                 <input
                   type="number"
                   name="recurrence_interval"
@@ -321,25 +339,24 @@ function TaskForm({
                   max="365"
                   value={formData.recurrence_interval}
                   onChange={handleChange}
-                  aria-label="Repeat interval"
+                  aria-label={t('Repeat interval')}
                 />
-                {formData.recurrence_unit}
-                {formData.recurrence_interval === 1 ? '' : 's'}
+                {unitWord(formData.recurrence_unit, formData.recurrence_interval)}
               </label>
             )}
           </div>
           {formData.recurrence_unit && (
             <small className="repeat-hint">
-              Ticking it off creates the next one
-              {formData.deadline ? ' with the deadline moved forward' : ', due one interval after today'}; subtasks
-              come along as a fresh checklist.
+              {formData.deadline
+                ? t('Ticking it off creates the next one with the deadline moved forward; subtasks come along as a fresh checklist.')
+                : t('Ticking it off creates the next one, due one interval after today; subtasks come along as a fresh checklist.')}
             </small>
           )}
         </div>
       )}
 
       <div className="form-group">
-        <label>Labels</label>
+        <label>{t('Labels')}</label>
         <LabelPicker
           labels={labels}
           value={formData.label_ids}
@@ -350,7 +367,7 @@ function TaskForm({
 
       {mode === 'single' && (
         <div className="form-group">
-          <label>Waits for</label>
+          <label>{t('Waits for')}</label>
           <DependencyPicker
             tasks={allTasks}
             task={task}
@@ -359,15 +376,15 @@ function TaskForm({
             projectIndex={projectIndex}
           />
           <small className="repeat-hint">
-            Shown as ⏳ waiting until these are done; then the assignee is notified that it can start.
+            {t('Shown as ⏳ waiting until these are done; then the assignee is notified that it can start.')}
           </small>
         </div>
       )}
 
       <div className="form-group">
-        <label>Assign To</label>
+        <label>{t('Assign To')}</label>
         <select name="assignee_id" value={formData.assignee_id || ''} onChange={handleChange}>
-          <option value="">Unassigned</option>
+          <option value="">{t('Unassigned')}</option>
           {assignable.map((u) => (
             <option key={u.id} value={u.id}>
               {u.username}
@@ -375,25 +392,27 @@ function TaskForm({
           ))}
           {formData.assignee_id && !assignable.some((u) => u.id === formData.assignee_id) && (
             <option value={formData.assignee_id} disabled>
-              {users.find((u) => u.id === formData.assignee_id)?.username || 'Unknown'} (not a member)
+              {t('{name} (not a member)', { name: users.find((u) => u.id === formData.assignee_id)?.username || t('Unknown') })}
             </option>
           )}
         </select>
         {privateProject && (
-          <small className="repeat-hint">🔒 Private project: only its members and admins can be assigned.</small>
+          <small className="repeat-hint">{t('🔒 Private project: only its members and admins can be assigned.')}</small>
         )}
       </div>
 
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={mode === 'bulk' && bulk.count === 0}>
           {task
-            ? 'Update Task'
+            ? t('Update Task')
             : mode === 'bulk'
-            ? `Create ${bulk.count || ''} task${bulk.count === 1 ? '' : 's'}`.replace('  ', ' ')
-            : 'Create Task'}
+            ? bulk.count
+              ? tn(bulk.count, 'Create one task', 'Create {n} tasks')
+              : t('Create tasks')
+            : t('Create Task')}
         </button>
         <button type="button" className="btn btn-secondary" onClick={onCancel}>
-          Cancel
+          {t('Cancel')}
         </button>
       </div>
     </form>

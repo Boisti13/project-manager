@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch, useAuth } from '../context/AuthContext';
+import { t } from '../i18n';
 
 // Settings → Completed tasks: how long done tasks stay in the "Completed"
 // rows before they're archived. Everyone sees it, admins can change it.
@@ -17,7 +18,7 @@ function ArchiveSettings() {
         setSaved(d.archive_after_days);
         setDays(String(d.archive_after_days));
       })
-      .catch((err) => setStatus({ ok: false, text: 'Could not load settings: ' + err.message }));
+      .catch((err) => setStatus({ ok: false, text: t('Could not load settings: {error}', { error: err.message }) }));
   }, []);
 
   const save = async (e) => {
@@ -36,22 +37,25 @@ function ArchiveSettings() {
       const d = await res.json();
       setSaved(d.archive_after_days);
       setDays(String(d.archive_after_days));
-      setStatus({ ok: true, text: 'Saved.' });
+      setStatus({ ok: true, text: t('Saved.') });
     } catch (err) {
-      setStatus({ ok: false, text: 'Could not save: ' + err.message });
+      setStatus({ ok: false, text: t('Could not save: {error}', { error: err.message }) });
     }
   };
 
+  // The number box sits inside the sentence; languages put it in different places.
+  const [archiveBefore, archiveAfter] = t('Archive completed tasks after {days} days').split('{days}');
+
   return (
     <div className="settings-section">
-      <h2>Completed tasks</h2>
+      <h2>{t('Completed tasks')}</h2>
       <p className="settings-help">
-        Ticked-off tasks move into a collapsed <em>Completed</em> row in their project. After the number of days
-        below they're archived: hidden from the Tasks page, but still found by search or the <em>Done</em> status
-        filter. Nothing is deleted.
+        {t(
+          "Ticked-off tasks move into a collapsed “Completed” row in their project. After the number of days below they're archived: hidden from the Tasks page, but still found by search or the “Done” status filter. Nothing is deleted."
+        )}
       </p>
       <form className="archive-form" onSubmit={save}>
-        <label htmlFor="archive-days">Archive completed tasks after</label>
+        <label htmlFor="archive-days">{archiveBefore}</label>
         <input
           id="archive-days"
           type="number"
@@ -63,14 +67,14 @@ function ArchiveSettings() {
           disabled={!isAdmin || saved === null}
           required
         />
-        <span>days</span>
+        <span>{archiveAfter}</span>
         {isAdmin && (
           <button type="submit" className="btn btn-primary btn-small" disabled={String(saved) === days}>
-            Save
+            {t('Save')}
           </button>
         )}
       </form>
-      {!isAdmin && <p className="settings-help">Only admins can change this.</p>}
+      {!isAdmin && <p className="settings-help">{t('Only admins can change this.')}</p>}
       {status && <p className={status.ok ? 'settings-ok' : 'error-message'}>{status.text}</p>}
     </div>
   );

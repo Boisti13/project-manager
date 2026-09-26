@@ -9,6 +9,7 @@ import TaskList from './components/TaskList';
 import ProjectList from './components/ProjectList';
 import Settings from './components/Settings';
 import MyDay, { START_KEY } from './components/MyDay';
+import { detectLanguage, getLanguage, setLanguage, t } from './i18n';
 import './App.css';
 
 const REPO_URL = 'https://github.com/Boisti13/project-manager';
@@ -31,6 +32,15 @@ function StartPage({ children }) {
   return children;
 }
 
+// Sets the interface language (the user's choice, else the browser's) and
+// re-renders everything when it changes.
+function LanguageGate({ children }) {
+  const { currentUser } = useAuth();
+  const lang = detectLanguage(currentUser?.language);
+  if (getLanguage() !== lang) setLanguage(lang);
+  return <React.Fragment key={lang}>{children}</React.Fragment>;
+}
+
 function AppShell() {
   const { currentUser } = useAuth();
 
@@ -38,7 +48,7 @@ function AppShell() {
     <div className="App">
       <header className="App-header">
         <h1>📋 Project Manager</h1>
-        <p className="App-subtitle">Organize your tasks hierarchically</p>
+        <p className="App-subtitle">{t('Organize your tasks hierarchically')}</p>
       </header>
       {currentUser && <Nav />}
       <main>
@@ -84,7 +94,7 @@ function AppShell() {
         <p>
           © 2026 Project Manager | FastAPI + React |{' '}
           <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
-            Source on GitHub
+            {t('Source on GitHub')}
           </a>
         </p>
       </footer>
@@ -97,7 +107,9 @@ function App() {
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <AppShell />
+          <LanguageGate>
+            <AppShell />
+          </LanguageGate>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

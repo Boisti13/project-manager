@@ -19,11 +19,13 @@ import {
 import { buildProjectIndex, groupTasksByProject, groupTaskCount } from '../projects';
 import '../styles/TaskList.css';
 import '../styles/TaskViews.css';
+import { t, tn } from '../i18n';
+import { STATUSES, statusName } from '../names';
 
 const VIEWS = [
-  { id: 'list', label: '☰ List' },
-  { id: 'board', label: '▦ Board' },
-  { id: 'calendar', label: '📅 Calendar' },
+  { id: 'list', label: () => t('☰ List') },
+  { id: 'board', label: () => t('▦ Board') },
+  { id: 'calendar', label: () => t('📅 Calendar') },
 ];
 
 const COLLAPSED_KEY = 'pm.collapsedGroups';
@@ -153,7 +155,7 @@ function TaskList() {
       setArchiveAfterDays(settingsRes.archive_after_days);
       setError(null);
     } catch (err) {
-      setError('Failed to load data: ' + err.message);
+      setError(t('Failed to load data: {error}', { error: err.message }));
       console.error(err);
     } finally {
       setLoading(false);
@@ -174,7 +176,7 @@ function TaskList() {
       setParentTaskForNew(null);
       await loadData();
     } catch (err) {
-      setError('Failed to create task: ' + err.message);
+      setError(t('Failed to create task: {error}', { error: err.message }));
     }
   };
 
@@ -208,7 +210,7 @@ function TaskList() {
       setProjectForNew(null);
       await loadData();
     } catch (err) {
-      setError('Failed to create tasks: ' + err.message);
+      setError(t('Failed to create tasks: {error}', { error: err.message }));
     }
   };
 
@@ -223,18 +225,18 @@ function TaskList() {
       setShowForm(false);
       await loadData();
     } catch (err) {
-      setError('Failed to update task: ' + err.message);
+      setError(t('Failed to update task: {error}', { error: err.message }));
     }
   };
 
   const handleDeleteTask = async (taskId) => {
-    if (!window.confirm('Are you sure you want to delete this task? Subtasks will be deleted too.')) return;
+    if (!window.confirm(t('Are you sure you want to delete this task? Subtasks will be deleted too.'))) return;
     try {
       const response = await authFetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
       if (!response.ok) throw new Error(await parseApiError(response));
       await loadData();
     } catch (err) {
-      setError('Failed to delete task: ' + err.message);
+      setError(t('Failed to delete task: {error}', { error: err.message }));
     }
   };
 
@@ -254,7 +256,7 @@ function TaskList() {
       if (status === 'done' && task.recurrence_unit) await loadData();
     } catch (err) {
       setTasks(previous);
-      setError('Failed to update task: ' + err.message);
+      setError(t('Failed to update task: {error}', { error: err.message }));
     }
   };
 
@@ -272,7 +274,7 @@ function TaskList() {
       if (status === 'done' || task.status === 'done') await loadData();
     } catch (err) {
       setTasks(previous);
-      setError('Failed to update task: ' + err.message);
+      setError(t('Failed to update task: {error}', { error: err.message }));
     }
   };
 
@@ -289,7 +291,7 @@ function TaskList() {
       });
     } catch (err) {
       setTasks(previous);
-      setError('Failed to move the deadline: ' + err.message);
+      setError(t('Failed to move the deadline: {error}', { error: err.message }));
     }
   };
 
@@ -336,7 +338,7 @@ function TaskList() {
       await loadData();
       navigate(`/?task=${task.id}`, { replace: true });
     } catch (err) {
-      setError('Failed to move task: ' + err.message);
+      setError(t('Failed to move task: {error}', { error: err.message }));
     }
   };
 
@@ -420,7 +422,7 @@ function TaskList() {
       );
       await loadData();
     } catch (err) {
-      setError('Failed to reorder tasks: ' + err.message);
+      setError(t('Failed to reorder tasks: {error}', { error: err.message }));
     }
   };
 
@@ -447,7 +449,7 @@ function TaskList() {
     next.delete('comments');
     setSearchParams(next, { replace: true });
     if (!target) {
-      setError('That task no longer exists.');
+      setError(t('That task no longer exists.'));
       return;
     }
 
@@ -515,7 +517,7 @@ function TaskList() {
   const handleToggleExpand = (taskId) =>
     toggleIn(tree.autoExpandIds.has(taskId) ? setCollapsedIds : setExpandedIds, taskId);
 
-  if (loading) return <div className="container"><p>Loading tasks...</p></div>;
+  if (loading) return <div className="container"><p>{t('Loading tasks…')}</p></div>;
 
   const visibleRoots = tree.roots;
   const canDrag = filters.sort === 'manual';
@@ -563,7 +565,8 @@ function TaskList() {
           aria-expanded={open}
           disabled={completedAutoOpen}
         >
-          <span className="project-group-caret">{open ? '▼' : '▶'}</span>✓ Completed ({list.length})
+          <span className="project-group-caret">{open ? '▼' : '▶'}</span>
+          {t('✓ Completed ({n})', { n: list.length })}
         </button>
         {open && <div className="completed-list">{list.map(renderTask)}</div>}
       </div>
@@ -574,13 +577,13 @@ function TaskList() {
     <div className="container">
       <div className="task-list-header">
         <div className="header-left">
-          <h1>Tasks</h1>
+          <h1>{t('Tasks')}</h1>
           <span className="task-count">
-            ({filtering ? `${visibleRoots.length} of ${tree.totalRoots}` : tree.totalRoots})
+            ({filtering ? t('{n} of {total}', { n: visibleRoots.length, total: tree.totalRoots }) : tree.totalRoots})
           </span>
         </div>
         <div className="header-actions tasks-header-actions">
-          <div className="view-switch" role="group" aria-label="View">
+          <div className="view-switch" role="group" aria-label={t('View')}>
             {VIEWS.map((v) => (
               <button
                 key={v.id}
@@ -588,7 +591,7 @@ function TaskList() {
                 aria-pressed={filters.view === v.id}
                 onClick={() => setView(v.id)}
               >
-                {v.label}
+                {v.label()}
               </button>
             ))}
           </div>
@@ -596,7 +599,7 @@ function TaskList() {
             className="btn btn-primary"
             onClick={() => openNewTask(filters.project ? parseInt(filters.project, 10) : null)}
           >
-            + New Task
+            {t('+ New Task')}
           </button>
         </div>
       </div>
@@ -628,14 +631,15 @@ function TaskList() {
             className={`mine-toggle ${filters.assignee === 'me' ? 'active' : ''}`}
             onClick={() => setFilter('assignee', filters.assignee === 'me' ? '' : 'me')}
             aria-pressed={filters.assignee === 'me'}
-            title="Show only tasks assigned to you"
+            title={t('Show only tasks assigned to you')}
           >
-            Assigned to me{myOpenCount > 0 && <span className="mine-count">{myOpenCount}</span>}
+            {t('Assigned to me')}
+            {myOpenCount > 0 && <span className="mine-count">{myOpenCount}</span>}
           </button>
           <input
             ref={searchRef}
             type="search"
-            placeholder="Search tasks…  ( / )"
+            placeholder={t('Search tasks…  ( / )')}
             value={filters.q}
             onChange={(e) => setFilter('q', e.target.value)}
             onKeyDown={(e) => {
@@ -644,7 +648,7 @@ function TaskList() {
                 e.target.blur();
               }
             }}
-            aria-label="Search tasks"
+            aria-label={t('Search tasks')}
           />
         </div>
 
@@ -653,7 +657,7 @@ function TaskList() {
           onClick={() => setFiltersOpen((o) => !o)}
           aria-expanded={filtersOpen}
         >
-          {filtersOpen ? '▲' : '▼'} Filters & sort
+          {filtersOpen ? '▲' : '▼'} {t('Filters & sort')}
           {filters.status !== 'all' ||
           filters.project ||
           filters.assignee ||
@@ -666,22 +670,23 @@ function TaskList() {
 
         <div className={`filter-row ${filtersOpen ? 'open' : ''}`}>
           <div className="filter-group">
-            <label htmlFor="f-status">Status</label>
+            <label htmlFor="f-status">{t('Status')}</label>
             <select id="f-status" value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
-              <option value="all">All</option>
-              <option value="open">Not done</option>
-              <option value="todo">To Do</option>
-              <option value="in_progress">In Progress</option>
-              <option value="blocked">Blocked</option>
-              <option value="done">Done</option>
-              <option value="waiting">⏳ Waiting for other tasks</option>
+              <option value="all">{t('All')}</option>
+              <option value="open">{t('Not done')}</option>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {statusName(s)}
+                </option>
+              ))}
+              <option value="waiting">{t('⏳ Waiting for other tasks')}</option>
             </select>
           </div>
 
           <div className="filter-group">
-            <label htmlFor="f-project">Project</label>
+            <label htmlFor="f-project">{t('Project')}</label>
             <select id="f-project" value={filters.project} onChange={(e) => setFilter('project', e.target.value)}>
-              <option value="">All</option>
+              <option value="">{t('All')}</option>
               {projectIndex.topLevel.map((p) => [
                 <option key={p.id} value={String(p.id)}>
                   {p.name}
@@ -697,11 +702,11 @@ function TaskList() {
           </div>
 
           <div className="filter-group">
-            <label htmlFor="f-assignee">Assignee</label>
+            <label htmlFor="f-assignee">{t('Assignee')}</label>
             <select id="f-assignee" value={filters.assignee} onChange={(e) => setFilter('assignee', e.target.value)}>
-              <option value="">Anyone</option>
-              <option value="me">Me</option>
-              <option value="none">Unassigned</option>
+              <option value="">{t('Anyone')}</option>
+              <option value="me">{t('Me')}</option>
+              <option value="none">{t('Unassigned')}</option>
               {users
                 .filter((u) => u.id !== currentUser?.id)
                 .map((u) => (
@@ -714,9 +719,9 @@ function TaskList() {
 
           {labels.length > 0 && (
             <div className="filter-group">
-              <label htmlFor="f-label">Label</label>
+              <label htmlFor="f-label">{t('Label')}</label>
               <select id="f-label" value={filters.label} onChange={(e) => setFilter('label', e.target.value)}>
-                <option value="">Any</option>
+                <option value="">{t('Any')}</option>
                 {labelIndex.list.map((l) => (
                   <option key={l.id} value={String(l.id)}>
                     {l.name}
@@ -727,29 +732,29 @@ function TaskList() {
           )}
 
           <div className="filter-group">
-            <label htmlFor="f-due">Deadline</label>
+            <label htmlFor="f-due">{t('Deadline')}</label>
             <select id="f-due" value={filters.due} onChange={(e) => setFilter('due', e.target.value)}>
-              <option value="">Any</option>
-              <option value="overdue">Overdue</option>
-              <option value="week">Due in 7 days</option>
-              <option value="none">No deadline</option>
+              <option value="">{t('Any')}</option>
+              <option value="overdue">{t('Overdue')}</option>
+              <option value="week">{t('Due in 7 days')}</option>
+              <option value="none">{t('No deadline')}</option>
             </select>
           </div>
 
           <div className="filter-group">
-            <label htmlFor="f-sort">Sort</label>
+            <label htmlFor="f-sort">{t('Sort')}</label>
             <select id="f-sort" value={filters.sort} onChange={(e) => setFilter('sort', e.target.value)}>
-              <option value="manual">Manual order</option>
-              <option value="deadline">Deadline</option>
-              <option value="priority">Priority</option>
-              <option value="created">Newest first</option>
-              <option value="title">Title</option>
+              <option value="manual">{t('Manual order')}</option>
+              <option value="deadline">{t('Deadline')}</option>
+              <option value="priority">{t('Priority')}</option>
+              <option value="created">{t('Newest first')}</option>
+              <option value="title">{t('Title')}</option>
             </select>
           </div>
 
           {filtering && (
             <button className="btn btn-secondary btn-small filter-clear" onClick={clearFilters}>
-              Clear filters
+              {t('Clear filters')}
             </button>
           )}
         </div>
@@ -757,21 +762,25 @@ function TaskList() {
 
       {filters.label && labelIndex.byId.has(parseInt(filters.label, 10)) && (
         <p className="archive-note label-filter-note">
-          Label: <LabelChips labels={[labelIndex.byId.get(parseInt(filters.label, 10))]} />{' '}
+          {t('Label:')} <LabelChips labels={[labelIndex.byId.get(parseInt(filters.label, 10))]} />{' '}
           <button className="link-btn" onClick={() => setFilter('label', '')}>
-            Show all
+            {t('Show all')}
           </button>
         </p>
       )}
 
       {tree.archivedCount > 0 && (
         <p className="archive-note">
-          {tree.archivedCount} task{tree.archivedCount === 1 ? '' : 's'} completed more than {archiveAfterDays}{' '}
-          {archiveAfterDays === 1 ? 'day' : 'days'} ago {tree.archivedCount === 1 ? 'is' : 'are'} archived.{' '}
+          {tn(
+            tree.archivedCount,
+            'One task completed more than {days} days ago is archived.',
+            '{n} tasks completed more than {days} days ago are archived.',
+            { days: archiveAfterDays }
+          )}{' '}
           <button className="link-btn" onClick={() => setFilter('status', 'done')}>
-            Show done tasks
+            {t('Show done tasks')}
           </button>{' '}
-          or search to find them.
+          {t('or search to find them.')}
         </p>
       )}
 
@@ -806,13 +815,13 @@ function TaskList() {
       <div className="task-list">
         {visibleRoots.length === 0 && filtering ? (
           <p className="no-tasks">
-            No tasks match these filters.{' '}
+            {t('No tasks match these filters.')}{' '}
             <button className="link-btn" onClick={clearFilters}>
-              Clear filters
+              {t('Clear filters')}
             </button>
           </p>
         ) : groups.length === 0 ? (
-          <p className="no-tasks">No tasks or projects yet.</p>
+          <p className="no-tasks">{t('No tasks or projects yet.')}</p>
         ) : (
           groups.map((group) => {
             // Filters auto-open sections so results are never hidden.
@@ -832,9 +841,9 @@ function TaskList() {
                   >
                     <span className="project-group-caret">{collapsed ? '▶' : '▼'}</span>
                     <span className="project-swatch" />
-                    <span className="project-group-name">{group.project ? group.project.name : 'No project'}</span>
+                    <span className="project-group-name">{group.project ? group.project.name : t('No project')}</span>
                     {group.project?.is_private && (
-                      <span className="private-lock" title="Private project: only members and admins see it">
+                      <span className="private-lock" title={t('Private project: only members and admins see it')}>
                         🔒
                       </span>
                     )}
@@ -842,7 +851,7 @@ function TaskList() {
                   </button>
                   <button
                     className="task-action-btn"
-                    title={group.project ? `New task in ${group.project.name}` : 'New task without project'}
+                    title={group.project ? t('New task in {name}', { name: group.project.name }) : t('New task without project')}
                     onClick={() => openNewTask(group.project ? group.project.id : null)}
                   >
                     +
@@ -870,7 +879,7 @@ function TaskList() {
                           </button>
                           <button
                             className="task-action-btn"
-                            title={`New task in ${group.project.name} / ${cat.project.name}`}
+                            title={t('New task in {name}', { name: `${group.project.name} / ${cat.project.name}` })}
                             onClick={() => openNewTask(cat.project.id)}
                           >
                             +
@@ -879,7 +888,7 @@ function TaskList() {
                         {!catCollapsed && (
                           <>
                             {cat.tasks.length === 0 ? (
-                              <p className="category-empty">{cat.completed.length ? 'All done ✓' : 'No tasks'}</p>
+                              <p className="category-empty">{cat.completed.length ? t('All done ✓') : t('No tasks')}</p>
                             ) : (
                               cat.tasks.map(renderTask)
                             )}
@@ -890,7 +899,7 @@ function TaskList() {
                       );
                     })}
                     {group.tasks.length === 0 && group.categories.length === 0 && group.completed.length === 0 && (
-                      <p className="category-empty">No tasks</p>
+                      <p className="category-empty">{t('No tasks')}</p>
                     )}
                   </div>
                 )}

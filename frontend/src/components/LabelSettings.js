@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { authFetch } from '../context/AuthContext';
 import { labelTextColor } from '../labels';
 import '../styles/Labels.css';
+import { t, tn } from '../i18n';
 
 const errorText = async (res) => {
   const data = await res.json().catch(() => ({}));
@@ -59,8 +60,10 @@ function LabelSettings() {
     });
 
   const remove = (l) => {
-    const used = l.task_count ? ` It's on ${l.task_count} task${l.task_count === 1 ? '' : 's'}; they keep everything else.` : '';
-    if (!window.confirm(`Delete the label "${l.name}"?${used}`)) return;
+    const used = l.task_count
+      ? ' ' + tn(l.task_count, "It's on one task; it keeps everything else.", "It's on {n} tasks; they keep everything else.")
+      : '';
+    if (!window.confirm(t('Delete the label “{name}”?', { name: l.name }) + used)) return;
     run(async () => {
       const res = await authFetch(`/api/labels/${l.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(await errorText(res));
@@ -69,13 +72,14 @@ function LabelSettings() {
 
   return (
     <div className="settings-section">
-      <h2>Labels</h2>
+      <h2>{t('Labels')}</h2>
       <p className="settings-help">
-        Colored tags for tasks across all projects, shared by everyone. Add them here or right in the task form; click a
-        label on a task to show all tasks with it.
+        {t(
+          'Colored tags for tasks across all projects, shared by everyone. Add them here or right in the task form; click a label on a task to show all tasks with it.'
+        )}
       </p>
 
-      {labels && labels.length === 0 && <p className="settings-help">No labels yet.</p>}
+      {labels && labels.length === 0 && <p className="settings-help">{t('No labels yet.')}</p>}
       {labels && labels.length > 0 && (
         <ul className="label-list">
           {labels.map((l) =>
@@ -85,7 +89,7 @@ function LabelSettings() {
                   type="color"
                   value={editing.color}
                   onChange={(e) => setEditing({ ...editing, color: e.target.value })}
-                  aria-label="Label color"
+                  aria-label={t('Label color')}
                 />
                 <input
                   type="text"
@@ -93,14 +97,14 @@ function LabelSettings() {
                   maxLength={40}
                   onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                   onKeyDown={(e) => e.key === 'Enter' && save()}
-                  aria-label="Label name"
+                  aria-label={t('Label name')}
                   autoFocus
                 />
                 <button className="btn btn-primary btn-small" onClick={save} disabled={!editing.name.trim()}>
-                  Save
+                  {t('Save')}
                 </button>
                 <button className="btn btn-secondary btn-small" onClick={() => setEditing(null)}>
-                  Cancel
+                  {t('Cancel')}
                 </button>
               </li>
             ) : (
@@ -108,14 +112,12 @@ function LabelSettings() {
                 <span className="label-chip" style={{ backgroundColor: l.color, color: labelTextColor(l.color) }}>
                   {l.name}
                 </span>
-                <span className="label-usage">
-                  {l.task_count} task{l.task_count === 1 ? '' : 's'}
-                </span>
+                <span className="label-usage">{tn(l.task_count, 'one task', '{n} tasks')}</span>
                 <span className="label-actions">
-                  <button className="task-action-btn" onClick={() => setEditing({ ...l })} title="Rename / recolor">
+                  <button className="task-action-btn" onClick={() => setEditing({ ...l })} title={t('Rename / recolor')}>
                     ✎
                   </button>
-                  <button className="task-action-btn delete-btn" onClick={() => remove(l)} title="Delete label">
+                  <button className="task-action-btn delete-btn" onClick={() => remove(l)} title={t('Delete label')}>
                     ✕
                   </button>
                 </span>
@@ -126,7 +128,7 @@ function LabelSettings() {
       )}
 
       <form className="archive-form" onSubmit={add}>
-        <label htmlFor="new-label">New label</label>
+        <label htmlFor="new-label">{t('New label')}</label>
         <input
           id="new-label"
           type="text"
@@ -134,10 +136,10 @@ function LabelSettings() {
           maxLength={40}
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          placeholder="e.g. waiting for supplier"
+          placeholder={t('e.g. waiting for supplier')}
         />
         <button type="submit" className="btn btn-primary btn-small" disabled={!newName.trim()}>
-          Add
+          {t('Add')}
         </button>
       </form>
       {status && <p className={status.ok ? 'settings-ok' : 'error-message'}>{status.text}</p>}

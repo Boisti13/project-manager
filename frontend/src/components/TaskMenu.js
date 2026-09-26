@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/TaskMenu.css';
+import { t } from '../i18n';
 
 // "⋯" menu on a task row: add subtask, edit, move to another project/category,
 // move up/down (manual order), delete. On phones it replaces the row's
@@ -40,7 +41,7 @@ function TaskMenu({ task, projectIndex, moveState, onAddSubtask, onEdit, onDelet
           setView('main');
           setOpen((o) => !o);
         }}
-        title="More actions"
+        title={t('More actions')}
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -49,42 +50,42 @@ function TaskMenu({ task, projectIndex, moveState, onAddSubtask, onEdit, onDelet
       {open && view === 'main' && (
         <div className="task-menu-list" role="menu">
           <button role="menuitem" onClick={run(() => onAddSubtask(task))}>
-            <span className="tm-icon">＋</span> Add subtask
+            <span className="tm-icon">＋</span> {t('Add subtask')}
           </button>
           <button role="menuitem" onClick={run(() => onEdit(task))}>
-            <span className="tm-icon">✎</span> Edit
+            <span className="tm-icon">✎</span> {t('Edit')}
           </button>
           <button role="menuitem" onClick={() => setView('move')}>
-            <span className="tm-icon">⇢</span> Move to…
+            <span className="tm-icon">⇢</span> {t('Move to…')}
           </button>
           <button
             role="menuitem"
             onClick={run(() => onMove(task, -1))}
             disabled={!up}
-            title={reorderable ? '' : 'Switch the sort to "Manual order" to reorder'}
+            title={reorderable ? '' : t('Switch the sort to “Manual order” to reorder')}
           >
-            <span className="tm-icon">↑</span> Move up
+            <span className="tm-icon">↑</span> {t('Move up')}
           </button>
           <button
             role="menuitem"
             onClick={run(() => onMove(task, 1))}
             disabled={!down}
-            title={reorderable ? '' : 'Switch the sort to "Manual order" to reorder'}
+            title={reorderable ? '' : t('Switch the sort to “Manual order” to reorder')}
           >
-            <span className="tm-icon">↓</span> Move down
+            <span className="tm-icon">↓</span> {t('Move down')}
           </button>
           <button role="menuitem" className="tm-danger" onClick={run(() => onDelete(task.id))}>
-            <span className="tm-icon">✕</span> Delete
+            <span className="tm-icon">✕</span> {t('Delete')}
           </button>
         </div>
       )}
       {open && view === 'move' && (
         <div className="task-menu-list task-menu-move" role="menu">
           <div className="tm-head">
-            <button className="tm-back" onClick={() => setView('main')} aria-label="Back">
+            <button className="tm-back" onClick={() => setView('main')} aria-label={t('Back')}>
               ←
             </button>
-            Move “{task.title}” to
+            {t('Move “{title}” to', { title: task.title })}
           </div>
           <div className="tm-scroll">
             <button
@@ -93,7 +94,7 @@ function TaskMenu({ task, projectIndex, moveState, onAddSubtask, onEdit, onDelet
               className={task.project_id == null ? 'tm-current' : ''}
               onClick={run(() => onMoveTo(task, null))}
             >
-              No project
+              {t('No project')}
             </button>
             {projectIndex.topLevel.map((p) => [
               <button

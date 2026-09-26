@@ -7,6 +7,7 @@ import AccountSettings from './AccountSettings';
 import BackupSettings from './BackupSettings';
 import LabelSettings from './LabelSettings';
 import '../styles/Settings.css';
+import { t } from '../i18n';
 
 function Settings() {
   const { currentUser } = useAuth();
@@ -41,45 +42,45 @@ function Settings() {
     <div className="container">
       <div className="task-list-header">
         <div className="header-left">
-          <h1>Settings</h1>
+          <h1>{t('Settings')}</h1>
         </div>
       </div>
 
       <div className="settings-section">
-        <h2>Overview</h2>
+        <h2>{t('Overview')}</h2>
         <div className="stats-grid">
           <div className="stat-card">
             <span className="stat-value">{loading ? '—' : stats.tasks}</span>
-            <span className="stat-label">Tasks</span>
+            <span className="stat-label">{t('Tasks')}</span>
           </div>
           <div className="stat-card">
             <span className="stat-value">{loading ? '—' : stats.projects}</span>
-            <span className="stat-label">Projects</span>
+            <span className="stat-label">{t('Projects')}</span>
           </div>
           <div className="stat-card">
             <span className="stat-value">{loading ? '—' : stats.users}</span>
-            <span className="stat-label">Users</span>
+            <span className="stat-label">{t('Users')}</span>
           </div>
         </div>
       </div>
 
       <div className="settings-section">
-        <h2>About</h2>
+        <h2>{t('About')}</h2>
         <div className="settings-info">
           <div className="info-row">
-            <span className="info-label">Logged in as</span>
+            <span className="info-label">{t('Logged in as')}</span>
             <span className="info-value">{currentUser?.username} ({currentUser?.email})</span>
           </div>
           <div className="info-row">
-            <span className="info-label">Application</span>
+            <span className="info-label">{t('Application')}</span>
             <span className="info-value">Project Manager{version ? ` v${version}` : ''}</span>
           </div>
           <div className="info-row">
-            <span className="info-label">Stack</span>
+            <span className="info-label">{t('Stack')}</span>
             <span className="info-value">FastAPI + React + PostgreSQL</span>
           </div>
           <div className="info-row">
-            <span className="info-label">Hosted on</span>
+            <span className="info-label">{t('Hosted on')}</span>
             <span className="info-value">LXC 113 · PVE .103</span>
           </div>
         </div>

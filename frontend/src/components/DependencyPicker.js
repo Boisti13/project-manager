@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { blockerSuggestions } from '../dependencies';
 import '../styles/Dependencies.css';
+import { t } from '../i18n';
 
 // "Waits for": pick other tasks by typing part of their title.
 function DependencyPicker({ tasks, task, value, onChange, projectIndex }) {
@@ -22,16 +23,16 @@ function DependencyPicker({ tasks, task, value, onChange, projectIndex }) {
     <div className="dep-picker">
       {chosen.length > 0 && (
         <ul className="dep-chosen">
-          {chosen.map((t) => (
-            <li key={t.id} className={t.status === 'done' ? 'done' : ''}>
-              <span className="dep-state">{t.status === 'done' ? '✓' : '⏳'}</span>
-              <span className="dep-title">{t.title}</span>
-              {where(t) && <span className="dep-where">{where(t)}</span>}
+          {chosen.map((task) => (
+            <li key={task.id} className={task.status === 'done' ? 'done' : ''}>
+              <span className="dep-state">{task.status === 'done' ? '✓' : '⏳'}</span>
+              <span className="dep-title">{task.title}</span>
+              {where(task) && <span className="dep-where">{where(task)}</span>}
               <button
                 type="button"
                 className="link-btn"
-                onClick={() => onChange(value.filter((id) => id !== t.id))}
-                aria-label={`Remove ${t.title}`}
+                onClick={() => onChange(value.filter((id) => id !== task.id))}
+                aria-label={t('Remove {title}', { title: task.title })}
               >
                 ✕
               </button>
@@ -43,8 +44,8 @@ function DependencyPicker({ tasks, task, value, onChange, projectIndex }) {
         <input
           type="text"
           value={query}
-          placeholder="Search a task this one waits for…"
-          aria-label="Add a task this one waits for"
+          placeholder={t('Search a task this one waits for…')}
+          aria-label={t('Add a task this one waits for')}
           onChange={(e) => {
             setQuery(e.target.value);
             setOpen(true);
@@ -62,11 +63,11 @@ function DependencyPicker({ tasks, task, value, onChange, projectIndex }) {
         />
         {suggestions.length > 0 && (
           <ul className="dep-suggestions" role="listbox">
-            {suggestions.map((t) => (
-              <li key={t.id}>
-                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => add(t)}>
-                  <span className={t.status === 'done' ? 'dep-title done' : 'dep-title'}>{t.title}</span>
-                  {where(t) && <span className="dep-where">{where(t)}</span>}
+            {suggestions.map((task) => (
+              <li key={task.id}>
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => add(task)}>
+                  <span className={task.status === 'done' ? 'dep-title done' : 'dep-title'}>{task.title}</span>
+                  {where(task) && <span className="dep-where">{where(task)}</span>}
                 </button>
               </li>
             ))}

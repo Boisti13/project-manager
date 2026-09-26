@@ -1,63 +1,59 @@
 // Activity log entries (GET /api/tasks/:id/activity) as sentences.
-import { describeRecurrence } from './recurrence';
-
-const STATUS = { todo: 'To Do', in_progress: 'In Progress', blocked: 'Blocked', done: 'Done' };
-const PRIORITY = { 0: 'Low', 1: 'Medium', 2: 'High', 3: 'Critical' };
-
-const status = (s) => STATUS[s] || s;
-const priority = (p) => PRIORITY[p] || `P${p}`;
+import { recurrenceHow } from './recurrence';
+import { statusName, priorityName } from './names';
+import { t, locale } from './i18n';
 
 // "2026-10-01" -> local date text, without timezone shifts.
 export function formatDay(iso) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
-  return m ? new Date(+m[1], m[2] - 1, +m[3]).toLocaleDateString() : iso || '';
+  return m ? new Date(+m[1], m[2] - 1, +m[3]).toLocaleDateString(locale()) : iso || '';
 }
 
 function repeatText(value) {
   const [unit, n] = (value || '').split(':');
-  return describeRecurrence(unit, parseInt(n, 10) || 1).replace(/^Repeats /, '');
+  return recurrenceHow(unit, parseInt(n, 10) || 1);
 }
 
 /** What happened, without the actor: "changed status from To Do to Done". */
 export function describeActivity({ kind, actor, old_value: o, new_value: n }, fmtDay = formatDay) {
   switch (kind) {
     case 'created':
-      return 'created the task';
+      return t('created the task');
     case 'title':
-      return `renamed it from “${o}” to “${n}”`;
+      return t('renamed it from “{old}” to “{new}”', { old: o, new: n });
     case 'description':
-      return 'edited the description';
+      return t('edited the description');
     case 'status':
-      if (n === 'done') return 'completed it';
-      if (o === 'done') return `reopened it (${status(n)})`;
-      return `changed status from ${status(o)} to ${status(n)}`;
+      if (n === 'done') return t('completed it');
+      if (o === 'done') return t('reopened it ({status})', { status: statusName(n) });
+      return t('changed status from {old} to {new}', { old: statusName(o), new: statusName(n) });
     case 'priority':
-      return `changed priority from ${priority(o)} to ${priority(n)}`;
+      return t('changed priority from {old} to {new}', { old: priorityName(o), new: priorityName(n) });
     case 'deadline':
-      if (!n) return 'removed the deadline';
-      if (!o) return `set the deadline to ${fmtDay(n)}`;
-      return `moved the deadline from ${fmtDay(o)} to ${fmtDay(n)}`;
+      if (!n) return t('removed the deadline');
+      if (!o) return t('set the deadline to {date}', { date: fmtDay(n) });
+      return t('moved the deadline from {old} to {new}', { old: fmtDay(o), new: fmtDay(n) });
     case 'assignee':
-      if (!n) return o ? `unassigned ${o}` : 'unassigned it';
-      if (n === actor) return o ? `took it over from ${o}` : 'took it on';
-      if (!o) return `assigned it to ${n}`;
-      return `reassigned it from ${o} to ${n}`;
+      if (!n) return o ? t('unassigned {name}', { name: o }) : t('unassigned it');
+      if (n === actor) return o ? t('took it over from {name}', { name: o }) : t('took it on');
+      if (!o) return t('assigned it to {name}', { name: n });
+      return t('reassigned it from {old} to {new}', { old: o, new: n });
     case 'project':
-      return `moved it from ${o || 'No project'} to ${n || 'No project'}`;
+      return t('moved it from {old} to {new}', { old: o || t('No project'), new: n || t('No project') });
     case 'labels':
-      if (!o) return `labeled it ${n}`;
-      if (!n) return `removed the labels (${o})`;
-      return `changed labels from ${o} to ${n}`;
+      if (!o) return t('labeled it {labels}', { labels: n });
+      if (!n) return t('removed the labels ({labels})', { labels: o });
+      return t('changed labels from {old} to {new}', { old: o, new: n });
     case 'blocked_by':
-      if (!o) return `made it wait for ${n}`;
-      if (!n) return `removed what it waited for (${o})`;
-      return `changed what it waits for from ${o} to ${n}`;
+      if (!o) return t('made it wait for {tasks}', { tasks: n });
+      if (!n) return t('removed what it waited for ({tasks})', { tasks: o });
+      return t('changed what it waits for from {old} to {new}', { old: o, new: n });
     case 'recurrence':
-      return n ? `made it repeat ${repeatText(n)}` : 'stopped repeating it';
+      return n ? t('made it repeat {how}', { how: repeatText(n) }) : t('stopped repeating it');
     case 'next_created':
-      return n ? `created the next occurrence (due ${fmtDay(n)})` : 'created the next occurrence';
+      return n ? t('created the next occurrence (due {date})', { date: fmtDay(n) }) : t('created the next occurrence');
     case 'repeat_of':
-      return 'created it as the next occurrence of a repeating task';
+      return t('created it as the next occurrence of a repeating task');
     default:
       return kind;
   }

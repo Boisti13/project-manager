@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { authFetch } from '../context/AuthContext';
 import { labelTextColor } from '../labels';
 import '../styles/Labels.css';
+import { t } from '../i18n';
 
 // Toggle labels on a task; new labels can be created right here.
 // onCreated(label) lets the parent add it to its label list.
@@ -74,20 +75,20 @@ function LabelPicker({ labels, value, onChange, onCreated }) {
                 setAdding(false);
               }
             }}
-            placeholder="New label"
-            aria-label="New label name"
+            placeholder={t('New label')}
+            aria-label={t('New label name')}
             autoFocus
           />
           <button type="button" className="btn btn-primary btn-small" onClick={create} disabled={!name.trim()}>
-            Add
+            {t('Add')}
           </button>
           <button type="button" className="link-btn" onClick={() => setAdding(false)}>
-            Cancel
+            {t('Cancel')}
           </button>
         </span>
       ) : (
         <button type="button" className="label-chip label-add" onClick={() => setAdding(true)}>
-          + New label
+          {t('+ New label')}
         </button>
       )}
       {error && <small className="label-error">{error}</small>}

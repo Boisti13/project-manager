@@ -10,6 +10,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 
 - **Authentication**: JWT-based login; the first account registered becomes the admin, after that self-registration is **closed** unless an admin allows it (Settings → User Management). New passwords need at least 8 characters; everyone can change their own password under Settings → *Your account*
 - **User Management**: Admins add accounts, set passwords, promote/demote and activate/deactivate users (deactivated users are locked out immediately)
+- **English & German**: The whole interface in English or German (*Deutsch*) — texts, dates, weekdays, the task history and the CSV export. Each user picks it under Settings → *Your account*; until then it follows the browser language
 - **My Day**: A start page (☀ *My day*) with counters and lists of what's **overdue**, **due today**, **due this week**, **in progress** and **waiting for others** — your tasks and, optionally, unassigned ones, subtasks included — plus **recently assigned** tasks and **recent comments**. Tick tasks off right there; titles open the task in the list. Optionally open it automatically when you start the app
 - **Hierarchical Tasks**: Main tasks with subtasks in a tree structure, drag-to-reorder at any level (in manual sort order) or **Move up / Move down** in each task's **⋯ menu** (works on touchscreens), **Move to…** another project or category (subtasks come along), subtask progress (e.g. *1/2*) on the parent; when all subtasks are ticked the parent is highlighted as ready (*✓ 2/2*) but stays open — it only moves to *Completed* when you tick it yourself, so more subtasks can still be added
 - **Bulk Entry**: *Several (one per line)* in the task form — type or paste a list, indent lines (Tab or two spaces) to make subtasks at any depth; bullets and Markdown checkboxes (`- [x] done`) are understood, a live preview shows the resulting tree, and project, status, priority, deadline and assignee apply to all of them. Works from *+ New Task*, a project/category section's **+**, or a task's **+** (all lines become its subtasks)
@@ -40,6 +41,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 | Desktop | Phone |
 |---|---|
 | ![My day](docs/screenshots/myday-desktop.png) | ![My day on a phone](docs/screenshots/myday-phone.png) |
+| | ![My day in German](docs/screenshots/myday-de-phone.png) |
 | ![Tasks, dark mode](docs/screenshots/tasks-desktop-dark.png) | ![Tasks on a phone](docs/screenshots/tasks-phone.png) |
 | ![Board view](docs/screenshots/board-desktop.png) | ![Calendar on a phone](docs/screenshots/calendar-phone.png) |
 | ![Calendar view](docs/screenshots/calendar-desktop.png) | |
@@ -139,8 +141,10 @@ With no configuration it starts a throwaway PostgreSQL via the `pgserver` packag
 
 ```bash
 cd frontend
-npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, views (board/calendar), labels, dependencies, myday, exportCsv, bulkParse, recurrence, activity
+npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, views (board/calendar), labels, dependencies, myday, exportCsv, bulkParse, recurrence, activity, i18n
 ```
+
+**Translations** — every UI text goes through `t('English text')` (or `tn(n, 'one …', '{n} …')` for plurals) from `frontend/src/i18n.js`; the German text for it lives in `frontend/src/locales/de.js`, keyed by the English text. `i18n.test.js` fails when a text used in the code has no German entry, or when the placeholders (`{name}`) differ. Server error messages stay English.
 
 **CI** — [GitHub Actions](.github/workflows/ci.yml) runs the backend tests (PostgreSQL 16, Python 3.10 and 3.12), the frontend tests and production build, and shellcheck on every push to `main`/`dev` and on pull requests.
 
@@ -161,6 +165,8 @@ project-manager/
 │       ├── components/      # React components (TaskList, Settings, UpdatePanel, ...)
 │       ├── taskFilters.js   # Pure search/filter/sort/archive logic for the task tree
 │       ├── exportCsv.js     # CSV export of all tasks
+│       ├── i18n.js          # t()/tn(), language detection; texts in locales/de.js
+│       ├── names.js         # Status and priority names
 │       ├── bulkParse.js     # "One task per line" text → task tree
 │       ├── recurrence.js    # Repeat settings as text
 │       ├── activity.js      # Task history entries as sentences

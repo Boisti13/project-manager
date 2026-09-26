@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Login.css';
+import { t } from '../i18n';
 
 function Login() {
   const [mode, setMode] = useState('login');
@@ -54,14 +55,14 @@ function Login() {
               className={mode === 'login' ? 'login-tab active' : 'login-tab'}
               onClick={() => setMode('login')}
             >
-              Log In
+              {t('Log In')}
             </button>
             <button
               type="button"
               className={mode === 'register' ? 'login-tab active' : 'login-tab'}
               onClick={() => setMode('register')}
             >
-              Register
+              {t('Register')}
             </button>
           </div>
         )}
@@ -70,19 +71,19 @@ function Login() {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label>Username</label>
+            <label>{t('Username')}</label>
             <input value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
           </div>
 
           {mode === 'register' && (
             <div className="form-group">
-              <label>Email</label>
+              <label>{t('Email')}</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
           )}
 
           <div className="form-group">
-            <label>Password</label>
+            <label>{t('Password')}</label>
             <input
               type="password"
               value={password}
@@ -91,16 +92,16 @@ function Login() {
               minLength={mode === 'register' ? 8 : undefined}
               autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
             />
-            {mode === 'register' && <small className="login-hint">At least 8 characters.</small>}
+            {mode === 'register' && <small className="login-hint">{t('At least 8 characters.')}</small>}
           </div>
 
           <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? 'Please wait...' : mode === 'login' ? 'Log In' : 'Create Account'}
+            {submitting ? t('Please wait...') : mode === 'login' ? t('Log In') : t('Create Account')}
           </button>
         </form>
 
         {registrationOpen === false && (
-          <p className="login-note">No account yet? Registration is closed — ask an admin to create one for you.</p>
+          <p className="login-note">{t('No account yet? Registration is closed — ask an admin to create one for you.')}</p>
         )}
       </div>
     </div>

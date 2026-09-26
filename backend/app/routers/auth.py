@@ -69,6 +69,16 @@ def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
 
 
+@router.put("/me/preferences", response_model=schemas.User)
+def update_preferences(data: schemas.Preferences, current_user: User = Depends(get_current_user),
+                       db: Session = Depends(get_db)):
+    user = db.get(User, current_user.id)
+    user.language = data.language
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 @router.post("/change-password")
 def change_password(data: schemas.PasswordChange, current_user: User = Depends(get_current_user),
                     db: Session = Depends(get_db)):

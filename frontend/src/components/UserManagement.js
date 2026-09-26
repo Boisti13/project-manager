@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch, useAuth } from '../context/AuthContext';
 import '../styles/UserManagement.css';
+import { t } from '../i18n';
 
 const EMPTY_NEW_USER = { username: '', email: '', password: '', is_admin: false };
 
@@ -44,7 +45,7 @@ function UserManagement() {
       setUsers(await res.json());
       setError(null);
     } catch (err) {
-      setError('Failed to load users: ' + err.message);
+      setError(t('Failed to load users: {error}', { error: err.message }));
     } finally {
       setLoading(false);
     }
@@ -62,7 +63,7 @@ function UserManagement() {
       setUsers(users.map((u) => (u.id === userId ? updated : u)));
       setError(null);
     } catch (err) {
-      setError('Failed to update user: ' + err.message);
+      setError(t('Failed to update user: {error}', { error: err.message }));
     }
   };
 
@@ -80,7 +81,7 @@ function UserManagement() {
       setRegistrationOpen((await res.json()).allow_registration);
       setError(null);
     } catch (err) {
-      setError('Failed to change registration: ' + err.message);
+      setError(t('Failed to change registration: {error}', { error: err.message }));
     }
   };
 
@@ -97,9 +98,13 @@ function UserManagement() {
       setUsers([...users, created]);
       setNewUser(null);
       setError(null);
-      setNotice(`Created ${created.username}. Share the password with them; they can change it under Settings → Your account.`);
+      setNotice(
+        t('Created {name}. Share the password with them; they can change it under Settings → Your account.', {
+          name: created.username,
+        })
+      );
     } catch (err) {
-      setError('Failed to create user: ' + err.message);
+      setError(t('Failed to create user: {error}', { error: err.message }));
     }
   };
 
@@ -112,19 +117,19 @@ function UserManagement() {
         body: JSON.stringify({ password: passwordFor.password }),
       });
       if (!res.ok) throw new Error(await parseApiError(res));
-      setNotice(`New password set for ${passwordFor.username}.`);
+      setNotice(t('New password set for {name}.', { name: passwordFor.username }));
       setPasswordFor(null);
       setError(null);
     } catch (err) {
-      setError('Failed to set password: ' + err.message);
+      setError(t('Failed to set password: {error}', { error: err.message }));
     }
   };
 
-  if (loading) return <p>Loading users...</p>;
+  if (loading) return <p>{t('Loading users…')}</p>;
 
   return (
     <div className="settings-section">
-      <h2>User Management</h2>
+      <h2>{t('User Management')}</h2>
       {error && <div className="error-message">{error}</div>}
       {notice && <p className="settings-ok user-notice">{notice}</p>}
 
@@ -137,11 +142,11 @@ function UserManagement() {
             disabled={registrationOpen === null}
           />
           <span>
-            <strong>Allow new registrations</strong>
+            <strong>{t('Allow new registrations')}</strong>
             <small>
               {registrationOpen
-                ? 'Anyone who can reach this server can create an account on the login page.'
-                : 'Closed — only admins can add accounts (below).'}
+                ? t('Anyone who can reach this server can create an account on the login page.')
+                : t('Closed — only admins can add accounts (below).')}
             </small>
           </span>
         </label>
@@ -153,7 +158,7 @@ function UserManagement() {
               setNotice(null);
             }}
           >
-            + Add user
+            {t('+ Add user')}
           </button>
         )}
       </div>
@@ -161,7 +166,7 @@ function UserManagement() {
       {newUser && (
         <form className="user-form" onSubmit={createUser}>
           <input
-            placeholder="Username"
+            placeholder={t('Username')}
             value={newUser.username}
             onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
             required
@@ -170,7 +175,7 @@ function UserManagement() {
           />
           <input
             type="email"
-            placeholder="Email"
+            placeholder={t('Email')}
             value={newUser.email}
             onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
             required
@@ -178,7 +183,7 @@ function UserManagement() {
           />
           <input
             type="password"
-            placeholder="Initial password (min. 8)"
+            placeholder={t('Initial password (min. 8)')}
             value={newUser.password}
             onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
             required
@@ -191,14 +196,14 @@ function UserManagement() {
               checked={newUser.is_admin}
               onChange={(e) => setNewUser({ ...newUser, is_admin: e.target.checked })}
             />
-            Admin
+            {t('Admin')}
           </label>
           <div className="user-form-buttons">
             <button type="submit" className="btn btn-primary btn-small">
-              Create
+              {t('Create')}
             </button>
             <button type="button" className="btn btn-secondary btn-small" onClick={() => setNewUser(null)}>
-              Cancel
+              {t('Cancel')}
             </button>
           </div>
         </form>
@@ -213,16 +218,16 @@ function UserManagement() {
                 <div className="user-info">
                   <span className="user-name">
                     {user.username}
-                    {isSelf && <span className="user-you"> (you)</span>}
+                    {isSelf && <span className="user-you"> {t('(you)')}</span>}
                   </span>
                   <span className="user-email">{user.email}</span>
                 </div>
                 <div className="user-badges">
                   <span className={`user-badge ${user.is_admin ? 'badge-admin' : 'badge-user'}`}>
-                    {user.is_admin ? 'Admin' : 'User'}
+                    {user.is_admin ? t('Admin') : t('User')}
                   </span>
                   <span className={`user-badge ${user.is_active ? 'badge-active' : 'badge-inactive'}`}>
-                    {user.is_active ? 'Active' : 'Inactive'}
+                    {user.is_active ? t('Active') : t('Inactive')}
                   </span>
                 </div>
                 <div className="user-actions">
@@ -232,26 +237,26 @@ function UserManagement() {
                       setPasswordFor({ id: user.id, username: user.username, password: '' });
                       setNotice(null);
                     }}
-                    title={isSelf ? 'Use Settings → Your account to change your own password' : 'Set a new password'}
+                    title={isSelf ? t('Use Settings → Your account to change your own password') : t('Set a new password')}
                     disabled={isSelf}
                   >
-                    Set password
+                    {t('Set password')}
                   </button>
                   <button
                     className="btn btn-secondary btn-small"
                     onClick={() => toggleAdmin(user)}
                     disabled={isSelf && user.is_admin}
-                    title={isSelf && user.is_admin ? "You can't remove your own admin rights" : ''}
+                    title={isSelf && user.is_admin ? t("You can't remove your own admin rights") : ''}
                   >
-                    {user.is_admin ? 'Remove Admin' : 'Make Admin'}
+                    {user.is_admin ? t('Remove Admin') : t('Make Admin')}
                   </button>
                   <button
                     className="btn btn-secondary btn-small"
                     onClick={() => toggleActive(user)}
                     disabled={isSelf}
-                    title={isSelf ? "You can't deactivate your own account" : ''}
+                    title={isSelf ? t("You can't deactivate your own account") : ''}
                   >
-                    {user.is_active ? 'Deactivate' : 'Activate'}
+                    {user.is_active ? t('Deactivate') : t('Activate')}
                   </button>
                 </div>
               </div>
@@ -259,7 +264,7 @@ function UserManagement() {
                 <form className="user-form user-password-form" onSubmit={setPassword}>
                   <input
                     type="password"
-                    placeholder={`New password for ${user.username} (min. 8)`}
+                    placeholder={t('New password for {name} (min. 8)', { name: user.username })}
                     value={passwordFor.password}
                     onChange={(e) => setPasswordFor({ ...passwordFor, password: e.target.value })}
                     required
@@ -269,10 +274,10 @@ function UserManagement() {
                   />
                   <div className="user-form-buttons">
                     <button type="submit" className="btn btn-primary btn-small">
-                      Set password
+                      {t('Set password')}
                     </button>
                     <button type="button" className="btn btn-secondary btn-small" onClick={() => setPasswordFor(null)}>
-                      Cancel
+                      {t('Cancel')}
                     </button>
                   </div>
                 </form>

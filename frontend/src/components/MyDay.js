@@ -9,11 +9,13 @@ import { timeAgo } from './TaskComments';
 import { formatDay, isOverdue } from './TaskBoard';
 import LabelChips from './LabelChips';
 import '../styles/MyDay.css';
+import { t, locale } from '../i18n';
+import { priorityName } from '../names';
+import { notificationExcerpt } from './NotificationBell';
 
 export const START_KEY = 'pm.startWithMyDay';
 const UNASSIGNED_KEY = 'pm.myDayUnassigned';
 
-const PRIORITY = { 1: 'Medium', 2: 'High', 3: 'Critical' };
 
 const readFlag = (key, fallback) => {
   try {
@@ -56,7 +58,7 @@ function MyDay() {
       setData({ tasks, projects, labels, notes: notes.items });
       setError(null);
     } catch (err) {
-      setError('Could not load your day: ' + err.message);
+      setError(t('Could not load your day: {error}', { error: err.message }));
     }
   }, []);
 
@@ -80,49 +82,49 @@ function MyDay() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'done' }),
     });
-    if (!res.ok) setError('Could not complete the task.');
+    if (!res.ok) setError(t('Could not complete the task.'));
     await load(); // repeating tasks, unblocked tasks
   };
 
   const open = (taskId, comments = false) => navigate(`/?task=${taskId}${comments ? '&comments=1' : ''}`);
 
-  const row = (t) => {
-    const blockers = depIndex.openBlockersOf(t);
-    const parent = t.parent_task_id != null ? taskById.get(t.parent_task_id) : null;
+  const row = (task) => {
+    const blockers = depIndex.openBlockersOf(task);
+    const parent = task.parent_task_id != null ? taskById.get(task.parent_task_id) : null;
     return (
-      <li key={t.id} className="myday-task" style={{ '--project-color': projectIndex.colorOf(t.project_id ?? parent?.project_id) }}>
+      <li key={task.id} className="myday-task" style={{ '--project-color': projectIndex.colorOf(task.project_id ?? parent?.project_id) }}>
         <input
           type="checkbox"
           className="task-done-checkbox"
           checked={false}
-          onChange={() => complete(t)}
-          aria-label={`Mark "${t.title}" done`}
-          title="Mark done"
+          onChange={() => complete(task)}
+          aria-label={t('Mark “{title}” done', { title: task.title })}
+          title={t('Mark done')}
         />
         <span className="myday-main">
-          <button className="myday-title" onClick={() => open(t.id)}>
-            {t.title}
+          <button className="myday-title" onClick={() => open(task.id)}>
+            {task.title}
           </button>
           <span className="myday-meta">
-            {(t.project_id ?? parent?.project_id) != null && (
-              <span className="myday-project">{projectIndex.labelOf(t.project_id ?? parent?.project_id)}</span>
+            {(task.project_id ?? parent?.project_id) != null && (
+              <span className="myday-project">{projectIndex.labelOf(task.project_id ?? parent?.project_id)}</span>
             )}
-            {parent && <span className="myday-parent">in “{parent.title}”</span>}
-            <LabelChips labels={labelIndex.of(t)} small />
+            {parent && <span className="myday-parent">{t('in “{title}”', { title: parent.title })}</span>}
+            <LabelChips labels={labelIndex.of(task)} small />
           </span>
         </span>
         <span className="myday-badges">
-          {t.priority > 0 && (
-            <span className="task-priority" data-priority={t.priority}>
-              {PRIORITY[t.priority] || `P${t.priority}`}
+          {task.priority > 0 && (
+            <span className="task-priority" data-priority={task.priority}>
+              {priorityName(task.priority)}
             </span>
           )}
           {blockers.length > 0 && (
-            <span className="task-waiting" title={`Waiting for: ${blockers.map((b) => b.title).join(', ')}`}>
+            <span className="task-waiting" title={t('Waiting for: {tasks}', { tasks: blockers.map((b) => b.title).join(', ') })}>
               ⏳
             </span>
           )}
-          {t.deadline && <span className={`task-deadline ${isOverdue(t) ? 'overdue' : ''}`}>{formatDay(t.deadline)}</span>}
+          {task.deadline && <span className={`task-deadline ${isOverdue(task) ? 'overdue' : ''}`}>{formatDay(task.deadline)}</span>}
         </span>
       </li>
     );
@@ -138,16 +140,16 @@ function MyDay() {
   );
 
   if (error) return <div className="container"><div className="error-message">{error}</div></div>;
-  if (!data) return <div className="container"><p>Loading your day…</p></div>;
+  if (!data) return <div className="container"><p>{t('Loading your day…')}</p></div>;
 
   const assigned = recentNotifications(data.notes, 'assigned').filter((n) => taskById.get(n.task_id)?.status !== 'done');
   const comments = recentNotifications(data.notes, 'comment').slice(0, 8);
   const now = new Date();
   const counts = [
-    ['overdue', day.overdue.length, 'overdue', 'danger'],
-    ['today', day.dueToday.length, 'due today', 'warn'],
-    ['week', day.thisWeek.length, 'this week', ''],
-    ['progress', day.inProgress.length, 'in progress', 'info'],
+    ['overdue', day.overdue.length, t('overdue'), 'danger'],
+    ['today', day.dueToday.length, t('due today'), 'warn'],
+    ['week', day.thisWeek.length, t('this week'), ''],
+    ['progress', day.inProgress.length, t('in progress'), 'info'],
   ];
 
   return (
@@ -158,11 +160,11 @@ function MyDay() {
             {greeting(now)}, {currentUser?.username}
           </h1>
           <span className="task-count">
-            {now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            {now.toLocaleDateString(locale(), { weekday: 'long', month: 'long', day: 'numeric' })}
           </span>
         </div>
         <Link to="/" className="btn btn-secondary">
-          All tasks →
+          {t('All tasks →')}
         </Link>
       </div>
 
@@ -185,7 +187,7 @@ function MyDay() {
               writeFlag(UNASSIGNED_KEY, e.target.checked);
             }}
           />
-          Include unassigned tasks
+          {t('Include unassigned tasks')}
         </label>
         <label>
           <input
@@ -196,23 +198,25 @@ function MyDay() {
               writeFlag(START_KEY, e.target.checked);
             }}
           />
-          Open My day when I start the app
+          {t('Open My day when I start the app')}
         </label>
       </div>
 
       <div className="myday-grid">
-        <div id="myday-overdue">{section('overdue', '⚠ Overdue', day.overdue, 'Nothing overdue. 🎉', 'danger')}</div>
-        <div id="myday-today">{section('today', 'Due today', day.dueToday, 'Nothing due today.', 'warn')}</div>
-        <div id="myday-week">{section('week', 'This week', day.thisWeek, 'Nothing due in the next 7 days.')}</div>
-        <div id="myday-progress">{section('progress', 'In progress', day.inProgress, 'Nothing in progress.', 'info')}</div>
-        {day.waiting.length > 0 && section('waiting', '⏳ Waiting for others', day.waiting, '')}
+        <div id="myday-overdue">{section('overdue', t('⚠ Overdue'), day.overdue, t('Nothing overdue. 🎉'), 'danger')}</div>
+        <div id="myday-today">{section('today', t('Due today'), day.dueToday, t('Nothing due today.'), 'warn')}</div>
+        <div id="myday-week">{section('week', t('This week'), day.thisWeek, t('Nothing due in the next 7 days.'))}</div>
+        <div id="myday-progress">
+          {section('progress', t('In progress'), day.inProgress, t('Nothing in progress.'), 'info')}
+        </div>
+        {day.waiting.length > 0 && section('waiting', t('⏳ Waiting for others'), day.waiting, '')}
 
         <section className="myday-section">
           <h2>
-            Recently assigned to you <span className="project-group-count">{assigned.length}</span>
+            {t('Recently assigned to you')} <span className="project-group-count">{assigned.length}</span>
           </h2>
           {assigned.length === 0 ? (
-            <p className="myday-empty">No new assignments in the last 7 days.</p>
+            <p className="myday-empty">{t('No new assignments in the last 7 days.')}</p>
           ) : (
             <ul>
               {assigned.map((n) => (
@@ -221,8 +225,8 @@ function MyDay() {
                     {n.task_title}
                   </button>
                   <span className="myday-meta">
-                    by {n.actor || 'someone'} · {timeAgo(n.created_at)}
-                    {n.excerpt ? ` · ${n.excerpt}` : ''}
+                    {t('by {name}', { name: n.actor || t('someone') })} · {timeAgo(n.created_at)}
+                    {n.excerpt ? ` · ${notificationExcerpt(n)}` : ''}
                   </span>
                 </li>
               ))}
@@ -232,10 +236,10 @@ function MyDay() {
 
         <section className="myday-section">
           <h2>
-            Recent comments <span className="project-group-count">{comments.length}</span>
+            {t('Recent comments')} <span className="project-group-count">{comments.length}</span>
           </h2>
           {comments.length === 0 ? (
-            <p className="myday-empty">No new comments in the last 7 days.</p>
+            <p className="myday-empty">{t('No new comments in the last 7 days.')}</p>
           ) : (
             <ul>
               {comments.map((n) => (
@@ -244,7 +248,7 @@ function MyDay() {
                     {n.task_title}
                   </button>
                   <span className="myday-meta">
-                    {n.actor || 'Someone'} · {timeAgo(n.created_at)}
+                    {n.actor || t('Someone')} · {timeAgo(n.created_at)}
                   </span>
                   {n.excerpt && <span className="myday-excerpt">“{n.excerpt}”</span>}
                 </li>

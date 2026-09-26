@@ -1,6 +1,7 @@
 import React from 'react';
 import { labelTextColor } from '../labels';
 import '../styles/Labels.css';
+import { t } from '../i18n';
 
 // A task's labels as colored chips. With onClick, each chip filters by it.
 function LabelChips({ labels, onClick, small = false }) {
@@ -19,7 +20,7 @@ function LabelChips({ labels, onClick, small = false }) {
               e.stopPropagation();
               onClick(l);
             }}
-            title={`Show tasks labeled “${l.name}”`}
+            title={t('Show tasks labeled “{name}”', { name: l.name })}
           >
             {l.name}
           </button>

@@ -31,12 +31,16 @@ class User(UserBase):
     is_active: bool
     is_admin: bool
     created_at: datetime
+    language: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 class UserAdminUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_admin: Optional[bool] = None
+
+class Preferences(BaseModel):
+    language: Optional[Literal["en", "de"]] = None  # None: follow the browser
 
 class Token(BaseModel):
     access_token: str

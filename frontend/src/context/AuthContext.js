@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { t } from '../i18n';
 
 const AuthContext = createContext(null);
 
@@ -19,7 +20,7 @@ export async function authFetch(url, options = {}) {
   if (response.status === 401) {
     setToken(null);
     window.location.href = '/login';
-    throw new Error('Session expired');
+    throw new Error(t('Session expired'));
   }
   return response;
 }
@@ -64,7 +65,7 @@ export function AuthProvider({ children }) {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.detail || 'Login failed');
+      throw new Error(data.detail || t('Login failed'));
     }
     const data = await res.json();
     setToken(data.access_token);
@@ -88,7 +89,7 @@ export function AuthProvider({ children }) {
       const detail = Array.isArray(data.detail)
         ? data.detail.map((d) => `${d.loc[d.loc.length - 1]}: ${d.msg}`).join('; ')
         : data.detail;
-      throw new Error(detail || 'Registration failed');
+      throw new Error(detail || t('Registration failed'));
     }
     await login(username, password);
   };
@@ -99,7 +100,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ currentUser, loading, login, register, logout, updateCurrentUser: setCurrentUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,6 +2,18 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.27.0 — 2026-09-26
+
+### Added
+- **German interface.** Everything can be shown in German: navigation, all pages, forms, menus, messages and confirmations, the task history (*anna hat die Priorität von Hoch auf Kritisch geändert*), notifications, repeat texts (*wöchentlich*, *alle 3 Tage*), the board, calendar and My day. Dates and weekdays follow the language (*29. Sept.*, *Mo … So*); the CSV export's headers, statuses and priorities too.
+- **Language per user**: Settings → *Your account* → **Language**: *Automatic (browser language)*, *English* or *Deutsch*; stored on the server, so it follows you to other devices. The login page uses the browser's language.
+
+### Under the hood
+- Migration `0011`: `users.language`; `PUT /api/auth/me/preferences`.
+- `frontend/src/i18n.js` (`t`, `tn`, language detection) and `src/locales/de.js` (≈475 texts, keyed by the English text); `src/names.js` for status/priority names.
+- `i18n.test.js` scans the code and fails on texts without a German translation or with mismatched placeholders.
+- Messages coming from the server (e.g. validation errors) stay in English.
+
 ## v1.26.0 — 2026-09-26
 
 ### Added

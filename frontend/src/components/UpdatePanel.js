@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { authFetch, useAuth } from '../context/AuthContext';
 import '../styles/UpdatePanel.css';
+import { t, tn } from '../i18n';
 
 const POLL_MS = 2000;
 
@@ -99,7 +100,7 @@ function UpdatePanel() {
       if (!res.ok) throw new Error(await parseApiError(res));
       setCheck(await res.json());
     } catch (err) {
-      setError('Check failed: ' + err.message);
+      setError(t('Check failed: {error}', { error: err.message }));
     } finally {
       setChecking(false);
     }
@@ -108,8 +109,14 @@ function UpdatePanel() {
   const runUpdate = async () => {
     const switching = info && branch !== info.branch;
     const msg = switching
-      ? `Switch from '${info.branch}' to '${branch}' and update? The app restarts and will be unavailable for a minute or two.`
-      : `Update '${branch}' to ${check.target_commit}? The app restarts and will be unavailable for a minute or two.`;
+      ? t("Switch from '{from}' to '{to}' and update? The app restarts and will be unavailable for a minute or two.", {
+          from: info.branch,
+          to: branch,
+        })
+      : t("Update '{branch}' to {commit}? The app restarts and will be unavailable for a minute or two.", {
+          branch,
+          commit: check.target_commit,
+        });
     if (!window.confirm(msg)) return;
 
     setError(null);
@@ -124,7 +131,7 @@ function UpdatePanel() {
       setLog('');
       startPolling();
     } catch (err) {
-      setError('Update failed to start: ' + err.message);
+      setError(t('Update failed to start: {error}', { error: err.message }));
     }
   };
 
@@ -133,13 +140,13 @@ function UpdatePanel() {
 
   return (
     <div className="settings-section">
-      <h2>Updates</h2>
+      <h2>{t('Updates')}</h2>
       {error && <div className="error-message">{error}</div>}
 
       {info && (
         <div className="settings-info">
           <div className="info-row">
-            <span className="info-label">Running</span>
+            <span className="info-label">{t('Running')}</span>
             <span className="info-value">
               v{info.version || '?'}
               {info.branch && (
@@ -152,19 +159,19 @@ function UpdatePanel() {
           </div>
           {info.message && (
             <div className="info-row">
-              <span className="info-label">Last commit</span>
+              <span className="info-label">{t('Last commit')}</span>
               <span className="info-value update-commit-msg">{info.message}</span>
             </div>
           )}
         </div>
       )}
 
-      {info && !info.is_git && <p className="update-note">Not a git checkout — updates are unavailable.</p>}
+      {info && !info.is_git && <p className="update-note">{t('Not a git checkout — updates are unavailable.')}</p>}
 
       {info?.is_git && (
         <div className="update-controls">
           <label className="update-branch">
-            <span>Branch</span>
+            <span>{t('Branch')}</span>
             <select
               value={branch}
               onChange={(e) => {
@@ -176,22 +183,22 @@ function UpdatePanel() {
               {branches.map((b) => (
                 <option key={b} value={b}>
                   {b}
-                  {b === info.branch ? ' (current)' : ''}
+                  {b === info.branch ? ` ${t('(current)')}` : ''}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn btn-secondary" onClick={runCheck} disabled={checking || updating || !branch}>
-            {checking ? 'Checking…' : 'Check for updates'}
+            {checking ? t('Checking…') : t('Check for updates')}
           </button>
           {isAdmin && (
             <button
               className="btn btn-primary"
               onClick={runUpdate}
               disabled={!canUpdate}
-              title={!check ? 'Check for updates first' : ''}
+              title={!check ? t('Check for updates first') : ''}
             >
-              {branch !== info.branch ? `Switch to ${branch}` : 'Update now'}
+              {branch !== info.branch ? t('Switch to {branch}', { branch }) : t('Update now')}
             </button>
           )}
         </div>
@@ -199,29 +206,33 @@ function UpdatePanel() {
 
       {branch && info?.branch && branch !== 'main' && (
         <p className="update-note update-warning">
-          Production normally runs <code>main</code>. Other branches may contain unreleased work.
+          {t('Production normally runs “main”. Other branches may contain unreleased work.')}
         </p>
       )}
 
       {check && check.branch === branch && (
         <div className={`update-result ${check.update_available ? 'update-available' : 'update-current'}`}>
           {!check.update_available ? (
-            <strong>Up to date — running the latest commit on {check.branch}.</strong>
+            <strong>{t('Up to date — running the latest commit on {branch}.', { branch: check.branch })}</strong>
           ) : (
             <>
               <strong>
                 {check.current_branch !== check.branch
-                  ? `Switch to ${check.branch}` +
-                    (check.behind === 0 && check.ahead === 0 ? ' (same code, only the branch changes)' : '')
-                  : `${check.behind} new commit${check.behind === 1 ? '' : 's'} on ${check.branch}`}
+                  ? t('Switch to {branch}', { branch: check.branch }) +
+                    (check.behind === 0 && check.ahead === 0 ? ` ${t('(same code, only the branch changes)')}` : '')
+                  : tn(check.behind, 'one new commit on {branch}', '{n} new commits on {branch}', { branch: check.branch })}
                 {check.target_version &&
                   check.target_version !== check.current_version &&
                   ` · v${check.current_version} → v${check.target_version}`}
               </strong>
               {check.ahead > 0 && (
                 <p className="update-note">
-                  The running code has {check.ahead} commit{check.ahead === 1 ? '' : 's'} not on {check.branch}
-                  {' '}— {check.ahead === 1 ? 'it' : 'they'} will no longer be running after the update.
+                  {tn(
+                    check.ahead,
+                    'The running code has one commit not on {branch} — it will no longer be running after the update.',
+                    'The running code has {n} commits not on {branch} — they will no longer be running after the update.',
+                    { branch: check.branch }
+                  )}
                 </p>
               )}
               {check.commits.length > 0 && (
@@ -233,7 +244,7 @@ function UpdatePanel() {
                   ))}
                 </ul>
               )}
-              {!isAdmin && <p className="update-note">An admin can install this update.</p>}
+              {!isAdmin && <p className="update-note">{t('An admin can install this update.')}</p>}
             </>
           )}
         </div>
@@ -242,13 +253,13 @@ function UpdatePanel() {
       {isAdmin && updateState && updateState !== 'idle' && (
         <div className="update-progress">
           <div className={`update-state update-state-${updateState}`}>
-            {updateState === 'running' && 'Updating…'}
-            {updateState === 'restarting' && 'Restarting services…'}
-            {updateState === 'success' && 'Last update finished successfully.'}
-            {updateState === 'failed' && 'Last update failed — see the log below.'}
+            {updateState === 'running' && t('Updating…')}
+            {updateState === 'restarting' && t('Restarting services…')}
+            {updateState === 'success' && t('Last update finished successfully.')}
+            {updateState === 'failed' && t('Last update failed — see the log below.')}
             {updateState === 'success' && (
               <button className="btn btn-secondary btn-small" onClick={() => window.location.reload()}>
-                Reload
+                {t('Reload')}
               </button>
             )}
           </div>

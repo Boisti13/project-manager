@@ -4,16 +4,27 @@ import { authFetch, useAuth } from '../context/AuthContext';
 import { timeAgo } from './TaskComments';
 import { parseServerDate } from '../taskFilters';
 import '../styles/NotificationBell.css';
+import { t, tn, locale } from '../i18n';
 
 const UPCOMING_WINDOW_DAYS = 3;
 const POLL_INTERVAL_MS = 60000;
 
-const describe = (n) => {
-  const who = n.actor || 'Someone';
-  if (n.kind === 'assigned') return `${who} assigned you`;
-  if (n.kind === 'comment') return `${who} commented`;
-  if (n.kind === 'unblocked') return `Ready to start — ${who} finished what it waited for`;
+export const describeNotification = (n) => {
+  const who = n.actor || t('Someone');
+  if (n.kind === 'assigned') return t('{who} assigned you', { who });
+  if (n.kind === 'comment') return t('{who} commented', { who });
+  if (n.kind === 'unblocked') return t('Ready to start — {who} finished what it waited for', { who });
   return who;
+};
+
+/** The server writes a few excerpts in English; show them in the UI language. */
+export const notificationExcerpt = (n) => {
+  const text = n.excerpt || '';
+  let m = /^and (\d+) more tasks?$/.exec(text);
+  if (m) return tn(parseInt(m[1], 10), 'and one more task', 'and {n} more tasks');
+  m = /^Done: ([\s\S]*)$/.exec(text);
+  if (m && n.kind === 'unblocked') return t('Done: {title}', { title: m[1] });
+  return text;
 };
 
 function NotificationBell() {
@@ -82,7 +93,7 @@ function NotificationBell() {
   const badge = notes.unread + overdue.length + upcoming.length;
   const badgeClass = overdue.length > 0 ? 'badge-urgent' : notes.unread > 0 ? 'badge-new' : 'badge-info';
 
-  const formatDeadline = (t) => deadlineOf(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const formatDeadline = (task) => deadlineOf(task).toLocaleDateString(locale(), { month: 'short', day: 'numeric' });
 
   const goTo = (taskId, withComments = false) => {
     setOpen(false);
@@ -95,7 +106,7 @@ function NotificationBell() {
       <button
         className="bell-btn"
         onClick={toggle}
-        title={notes.unread ? `${notes.unread} new notification${notes.unread === 1 ? '' : 's'}` : 'Notifications'}
+        title={notes.unread ? tn(notes.unread, 'one new notification', '{n} new notifications') : t('Notifications')}
         aria-expanded={open}
       >
         🔔
@@ -104,9 +115,9 @@ function NotificationBell() {
 
       {open && (
         <div className="bell-dropdown">
-          <div className="bell-dropdown-header">Notifications</div>
+          <div className="bell-dropdown-header">{t('Notifications')}</div>
           {notes.items.length === 0 ? (
-            <p className="bell-empty">Nothing yet — you'll see new assignments and comments here.</p>
+            <p className="bell-empty">{t("Nothing yet — you'll see new assignments and comments here.")}</p>
           ) : (
             <div className="bell-list">
               {notes.items.map((n) => (
@@ -117,30 +128,32 @@ function NotificationBell() {
                   disabled={!n.task_id}
                 >
                   <span className="bell-item-meta">
-                    {describe(n)} · <span title={parseServerDate(n.created_at)?.toLocaleString()}>{timeAgo(n.created_at)}</span>
+                    {describeNotification(n)} · <span title={parseServerDate(n.created_at)?.toLocaleString()}>{timeAgo(n.created_at)}</span>
                   </span>
-                  <span className="bell-item-title">{n.task_title || 'Deleted task'}</span>
-                  {n.excerpt && <span className="bell-item-excerpt">{n.excerpt}</span>}
+                  <span className="bell-item-title">{n.task_title || t('Deleted task')}</span>
+                  {n.excerpt && <span className="bell-item-excerpt">{notificationExcerpt(n)}</span>}
                 </button>
               ))}
             </div>
           )}
 
-          <div className="bell-dropdown-header bell-subheader">Deadlines</div>
+          <div className="bell-dropdown-header bell-subheader">{t('Deadlines')}</div>
           {overdue.length + upcoming.length === 0 ? (
-            <p className="bell-empty">No upcoming deadlines</p>
+            <p className="bell-empty">{t('No upcoming deadlines')}</p>
           ) : (
             <div className="bell-list">
-              {overdue.map((t) => (
-                <button className="bell-item" key={t.id} onClick={() => goTo(t.id)}>
-                  <span className="bell-item-title">{t.title}</span>
-                  <span className="bell-item-badge bell-overdue">Overdue · {formatDeadline(t)}</span>
+              {overdue.map((task) => (
+                <button className="bell-item" key={task.id} onClick={() => goTo(task.id)}>
+                  <span className="bell-item-title">{task.title}</span>
+                  <span className="bell-item-badge bell-overdue">
+                    {t('Overdue · {date}', { date: formatDeadline(task) })}
+                  </span>
                 </button>
               ))}
-              {upcoming.map((t) => (
-                <button className="bell-item" key={t.id} onClick={() => goTo(t.id)}>
-                  <span className="bell-item-title">{t.title}</span>
-                  <span className="bell-item-badge bell-upcoming">Due {formatDeadline(t)}</span>
+              {upcoming.map((task) => (
+                <button className="bell-item" key={task.id} onClick={() => goTo(task.id)}>
+                  <span className="bell-item-title">{task.title}</span>
+                  <span className="bell-item-badge bell-upcoming">{t('Due {date}', { date: formatDeadline(task) })}</span>
                 </button>
               ))}
             </div>

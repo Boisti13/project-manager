@@ -3,6 +3,7 @@ import { authFetch, useAuth } from '../context/AuthContext';
 import { parseServerDate } from '../taskFilters';
 import { describeActivity } from '../activity';
 import '../styles/TaskComments.css';
+import { t, locale } from '../i18n';
 
 const errorText = async (res) => {
   const data = await res.json().catch(() => ({}));
@@ -13,11 +14,11 @@ export function timeAgo(value, now = Date.now()) {
   const d = parseServerDate(value);
   if (!d) return '';
   const s = Math.round((now - d.getTime()) / 1000);
-  if (s < 60) return 'just now';
-  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
-  if (s < 7 * 86400) return `${Math.floor(s / 86400)} d ago`;
-  return d.toLocaleDateString();
+  if (s < 60) return t('just now');
+  if (s < 3600) return t('{n} min ago', { n: Math.floor(s / 60) });
+  if (s < 86400) return t('{n} h ago', { n: Math.floor(s / 3600) });
+  if (s < 7 * 86400) return t('{n} d ago', { n: Math.floor(s / 86400) });
+  return d.toLocaleDateString(locale());
 }
 
 const SHOW_ACTIVITY_KEY = 'pm.showActivity';
@@ -51,7 +52,7 @@ function TaskComments({ taskId, onCountChange, changeKey }) {
       setComments(list);
       onCountChange?.(list.length);
     } catch (err) {
-      setError('Could not load comments: ' + err.message);
+      setError(t('Could not load comments: {error}', { error: err.message }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId]);
@@ -129,7 +130,7 @@ function TaskComments({ taskId, onCountChange, changeKey }) {
     });
 
   const remove = (c) => {
-    if (!window.confirm('Delete this comment?')) return;
+    if (!window.confirm(t('Delete this comment?'))) return;
     act(async () => {
       const res = await authFetch(`/api/comments/${c.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(await errorText(res));
@@ -155,12 +156,12 @@ function TaskComments({ taskId, onCountChange, changeKey }) {
       {activity.length > 0 && (
         <div className="activity-toggle">
           <button className="link-btn" onClick={toggleActivity} aria-pressed={showActivity}>
-            {showActivity ? 'Hide history' : `Show history (${activity.length})`}
+            {showActivity ? t('Hide history') : t('Show history ({n})', { n: activity.length })}
           </button>
         </div>
       )}
-      {comments === null && !error && <p className="comments-empty">Loading…</p>}
-      {comments && comments.length === 0 && <p className="comments-empty">No comments yet.</p>}
+      {comments === null && !error && <p className="comments-empty">{t('Loading…')}</p>}
+      {comments && comments.length === 0 && <p className="comments-empty">{t('No comments yet.')}</p>}
 
       {comments &&
         timeline.map(({ type, key, item: c }) => {
@@ -168,7 +169,7 @@ function TaskComments({ taskId, onCountChange, changeKey }) {
             return (
               <div className="activity-entry" key={key}>
                 <span className="activity-text">
-                  <span className="comment-author">{c.actor || 'Someone'}</span> {describeActivity(c)}
+                  <span className="comment-author">{c.actor || t('Someone')}</span> {describeActivity(c)}
                 </span>
                 <span className="activity-time" title={parseServerDate(c.created_at)?.toLocaleString()}>
                   {timeAgo(c.created_at)}
@@ -181,18 +182,18 @@ function TaskComments({ taskId, onCountChange, changeKey }) {
           return (
             <div className="comment" key={key}>
               <div className="comment-meta">
-                <span className="comment-author">{c.author || 'Unknown'}</span>
+                <span className="comment-author">{c.author || t('Unknown')}</span>
                 <span title={parseServerDate(c.created_at)?.toLocaleString()}>{timeAgo(c.created_at)}</span>
-                {c.edited_at && <span title={parseServerDate(c.edited_at)?.toLocaleString()}>(edited)</span>}
+                {c.edited_at && <span title={parseServerDate(c.edited_at)?.toLocaleString()}>{t('(edited)')}</span>}
                 <span className="comment-actions">
                   {mine && editing?.id !== c.id && (
                     <button className="link-btn" onClick={() => setEditing({ id: c.id, body: c.body })} disabled={busy}>
-                      Edit
+                      {t('Edit')}
                     </button>
                   )}
                   {canDelete && (
                     <button className="link-btn comment-delete" onClick={() => remove(c)} disabled={busy}>
-                      Delete
+                      {t('Delete')}
                     </button>
                   )}
                 </span>
@@ -208,10 +209,10 @@ function TaskComments({ taskId, onCountChange, changeKey }) {
                   />
                   <div className="comment-buttons">
                     <button className="btn btn-primary btn-small" onClick={saveEdit} disabled={busy || !editing.body.trim()}>
-                      Save
+                      {t('Save')}
                     </button>
                     <button className="btn btn-secondary btn-small" onClick={() => setEditing(null)} disabled={busy}>
-                      Cancel
+                      {t('Cancel')}
                     </button>
                   </div>
                 </div>
@@ -227,12 +228,12 @@ function TaskComments({ taskId, onCountChange, changeKey }) {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={keys(add)}
-          placeholder="Write a comment…  (Ctrl+Enter to send)"
+          placeholder={t('Write a comment…  (Ctrl+Enter to send)')}
           rows="2"
-          aria-label="New comment"
+          aria-label={t('New comment')}
         />
         <button className="btn btn-primary btn-small" onClick={add} disabled={busy || !draft.trim()}>
-          Comment
+          {t('Comment')}
         </button>
       </div>
     </div>

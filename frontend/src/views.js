@@ -1,11 +1,7 @@
 // Pure helpers for the Board and Calendar views of the Tasks page.
 
-export const BOARD_COLUMNS = [
-  { status: 'todo', label: 'To Do' },
-  { status: 'in_progress', label: 'In Progress' },
-  { status: 'blocked', label: 'Blocked' },
-  { status: 'done', label: 'Done' },
-];
+// Column titles: statusName() in names.js.
+export const BOARD_COLUMNS = [{ status: 'todo' }, { status: 'in_progress' }, { status: 'blocked' }, { status: 'done' }];
 
 /** Top-level tasks by status column, in the list's sort order; Done shows
  *  the most recently completed first. */

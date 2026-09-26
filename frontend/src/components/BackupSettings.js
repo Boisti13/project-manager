@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { authFetch, useAuth } from '../context/AuthContext';
 import { buildProjectIndex } from '../projects';
 import { tasksToCsv } from '../exportCsv';
+import { t, tn, locale } from '../i18n';
 
 const formatSize = (bytes) =>
   bytes < 1024 ? `${bytes} B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
@@ -55,7 +56,7 @@ function BackupSettings() {
         setDaily(d.backup_daily);
       })
       .catch(() => {});
-    loadBackups().catch((err) => setStatus({ ok: false, text: 'Could not list backups: ' + err.message }));
+    loadBackups().catch((err) => setStatus({ ok: false, text: t('Could not list backups: {error}', { error: err.message }) }));
   }, [isAdmin, loadBackups]);
 
   const run = async (fn) => {
@@ -78,11 +79,11 @@ function BackupSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ backup_keep: parseInt(keep, 10) }),
       });
-      if (!res.ok) throw new Error('Could not save: ' + (await errorText(res)));
+      if (!res.ok) throw new Error(t('Could not save: {error}', { error: await errorText(res) }));
       const d = await res.json();
       setSavedKeep(d.backup_keep);
       setKeep(String(d.backup_keep));
-      setStatus({ ok: true, text: 'Saved. Applies from the next backup.' });
+      setStatus({ ok: true, text: t('Saved. Applies from the next backup.') });
     });
   };
 
@@ -93,10 +94,10 @@ function BackupSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ backup_daily: on }),
       });
-      if (!res.ok) throw new Error('Could not save: ' + (await errorText(res)));
+      if (!res.ok) throw new Error(t('Could not save: {error}', { error: await errorText(res) }));
       const d = await res.json();
       setDaily(d.backup_daily);
-      setStatus({ ok: true, text: d.backup_daily ? 'Nightly backups are on.' : 'Nightly backups are off.' });
+      setStatus({ ok: true, text: d.backup_daily ? t('Nightly backups are on.') : t('Nightly backups are off.') });
     });
 
   const backupNow = () =>
@@ -104,13 +105,13 @@ function BackupSettings() {
       const res = await authFetch('/api/system/backups', { method: 'POST' });
       if (!res.ok) throw new Error(await errorText(res));
       await loadBackups();
-      setStatus({ ok: true, text: 'Backup created.' });
+      setStatus({ ok: true, text: t('Backup created.') });
     });
 
   const download = (name) =>
     run(async () => {
       const res = await authFetch(`/api/system/backups/${encodeURIComponent(name)}`);
-      if (!res.ok) throw new Error('Download failed: ' + (await errorText(res)));
+      if (!res.ok) throw new Error(t('Download failed: {error}', { error: await errorText(res) }));
       saveBlob(await res.blob(), name);
     });
 
@@ -119,38 +120,38 @@ function BackupSettings() {
       const form = new FormData();
       form.append('file', file);
       const res = await authFetch('/api/system/backups/upload', { method: 'POST', body: form });
-      if (!res.ok) throw new Error('Upload failed: ' + (await errorText(res)));
+      if (!res.ok) throw new Error(t('Upload failed: {error}', { error: await errorText(res) }));
       const d = await res.json();
       await loadBackups();
-      setStatus({ ok: true, text: `Uploaded as ${d.name}. Use "Restore" on it to load it.` });
+      setStatus({ ok: true, text: t('Uploaded as {name}. Use “Restore” on it to load it.', { name: d.name }) });
     });
 
   const restore = (b) => {
-    const when = new Date(b.created * 1000).toLocaleString();
+    const when = new Date(b.created * 1000).toLocaleString(locale());
     const ok = window.confirm(
-      `Restore "${b.name}" (${when})?\n\n` +
-        'This REPLACES ALL DATA — users, projects, tasks and settings — with the contents of that backup. ' +
-        'A safety backup of the current data is made first.\n\n' +
-        'Afterwards you may have to log in again with an account from the backup.'
+      t(
+        'Restore “{name}” ({when})?\n\nThis REPLACES ALL DATA — users, projects, tasks and settings — with the contents of that backup. A safety backup of the current data is made first.\n\nAfterwards you may have to log in again with an account from the backup.',
+        { name: b.name, when }
+      )
     );
     if (!ok) return;
     run(async () => {
-      setStatus({ ok: true, text: 'Restoring… this can take a moment.' });
+      setStatus({ ok: true, text: t('Restoring… this can take a moment.') });
       const res = await authFetch(`/api/system/backups/${encodeURIComponent(b.name)}/restore`, { method: 'POST' });
       if (!res.ok) throw new Error(await errorText(res));
-      setStatus({ ok: true, text: 'Restore complete. Reloading…' });
+      setStatus({ ok: true, text: t('Restore complete. Reloading…') });
       setTimeout(() => window.location.assign('/'), 1500);
     });
   };
 
   const remove = (b) => {
-    const when = new Date(b.created * 1000).toLocaleString();
-    if (!window.confirm(`Delete backup "${b.name}" (${when})? This can't be undone.`)) return;
+    const when = new Date(b.created * 1000).toLocaleString(locale());
+    if (!window.confirm(t("Delete backup “{name}” ({when})? This can't be undone.", { name: b.name, when }))) return;
     run(async () => {
       const res = await authFetch(`/api/system/backups/${encodeURIComponent(b.name)}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Delete failed: ' + (await errorText(res)));
+      if (!res.ok) throw new Error(t('Delete failed: {error}', { error: await errorText(res) }));
       await loadBackups();
-      setStatus({ ok: true, text: `Deleted ${b.name}.` });
+      setStatus({ ok: true, text: t('Deleted {name}.', { name: b.name }) });
     });
   };
 
@@ -158,7 +159,7 @@ function BackupSettings() {
     run(async () => {
       const get = async (url) => {
         const r = await authFetch(url);
-        if (!r.ok) throw new Error('Export failed: ' + (await errorText(r)));
+        if (!r.ok) throw new Error(t('Export failed: {error}', { error: await errorText(r) }));
         return r.json();
       };
       const [tasks, projects, users, labels] = await Promise.all([
@@ -170,22 +171,25 @@ function BackupSettings() {
       const csv = tasksToCsv(tasks, buildProjectIndex(projects), users, labels);
       const day = new Date().toISOString().slice(0, 10);
       saveBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `project-manager-tasks-${day}.csv`);
-      setStatus({ ok: true, text: `Exported ${tasks.length} tasks.` });
+      setStatus({ ok: true, text: tn(tasks.length, 'Exported one task.', 'Exported {n} tasks.') });
     });
+
+  // The number box sits inside the sentence; languages put it in different places.
+  const [keepBefore, keepAfter] = t('Keep the newest {n} backups of each kind (nightly / other)').split('{n}');
 
   return (
     <div className="settings-section">
-      <h2>Backup &amp; export</h2>
+      <h2>{t('Backup & export')}</h2>
 
       <div className="backup-row">
         <div>
-          <strong>Export tasks</strong>
+          <strong>{t('Export tasks')}</strong>
           <p className="settings-help">
-            All tasks, including subtasks, done and archived ones, as a CSV file for Excel (semicolon-separated).
+            {t('All tasks, including subtasks, done and archived ones, as a CSV file for Excel (semicolon-separated).')}
           </p>
         </div>
         <button className="btn btn-secondary btn-small" onClick={exportCsv} disabled={busy}>
-          Export CSV
+          {t('Export CSV')}
         </button>
       </div>
 
@@ -193,19 +197,20 @@ function BackupSettings() {
         <>
           <div className="backup-row">
             <div>
-              <strong>Database backups</strong>
+              <strong>{t('Database backups')}</strong>
               <p className="settings-help">
-                Full database dumps in <code>{backupDir || '…'}</code>. One is made automatically every night (if turned on below)
-                and before every update, re-install and restore. <em>Restore</em> replaces all data with a backup; to move to a new server,
-                download a backup here and upload it there.
+                {t('Full database dumps in {dir}.', { dir: backupDir || '…' })}{' '}
+                {t(
+                  'One is made automatically every night (if turned on below) and before every update, re-install and restore. “Restore” replaces all data with a backup; to move to a new server, download a backup here and upload it there.'
+                )}
               </p>
             </div>
             <div className="backup-actions">
               <button className="btn btn-primary btn-small" onClick={backupNow} disabled={busy}>
-                {busy ? 'Working…' : 'Back up now'}
+                {busy ? t('Working…') : t('Back up now')}
               </button>
               <button className="btn btn-secondary btn-small" onClick={() => uploadRef.current?.click()} disabled={busy}>
-                Upload backup…
+                {t('Upload backup…')}
               </button>
               <input
                 ref={uploadRef}
@@ -228,11 +233,11 @@ function BackupSettings() {
               disabled={daily === null || busy}
               onChange={(e) => saveDaily(e.target.checked)}
             />
-            Back up automatically every night (03:15)
+            {t('Back up automatically every night (03:15)')}
           </label>
 
           <form className="archive-form" onSubmit={saveKeep}>
-            <label htmlFor="backup-keep">Keep the newest</label>
+            <label htmlFor="backup-keep">{keepBefore}</label>
             <input
               id="backup-keep"
               type="number"
@@ -244,35 +249,35 @@ function BackupSettings() {
               disabled={savedKeep === null}
               required
             />
-            <span>backups of each kind (nightly / other)</span>
+            <span>{keepAfter}</span>
             <button type="submit" className="btn btn-primary btn-small" disabled={busy || String(savedKeep) === keep}>
-              Save
+              {t('Save')}
             </button>
           </form>
 
-          {backups && backups.length === 0 && <p className="settings-help backup-empty">No backups yet.</p>}
+          {backups && backups.length === 0 && <p className="settings-help backup-empty">{t('No backups yet.')}</p>}
           {backups && backups.length > 0 && (
             <ul className="backup-list">
               {backups.map((b) => (
                 <li key={b.name}>
                   <span className="backup-name">{b.name}</span>
                   <span className="backup-meta">
-                    {new Date(b.created * 1000).toLocaleString()} · {formatSize(b.size)}
+                    {new Date(b.created * 1000).toLocaleString(locale())} · {formatSize(b.size)}
                   </span>
                   <span className="backup-buttons">
                     <button className="btn btn-secondary btn-small" onClick={() => download(b.name)} disabled={busy}>
-                      Download
+                      {t('Download')}
                     </button>
                     <button className="btn btn-secondary btn-small btn-danger" onClick={() => restore(b)} disabled={busy}>
-                      Restore
+                      {t('Restore')}
                     </button>
                     <button
                       className="btn btn-secondary btn-small btn-danger"
                       onClick={() => remove(b)}
                       disabled={busy}
-                      title="Delete this backup"
+                      title={t('Delete this backup')}
                     >
-                      Delete
+                      {t('Delete')}
                     </button>
                   </span>
                 </li>

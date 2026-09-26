@@ -2,8 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { dayKey, deadlineKey, monthGrid, tasksByDay } from '../views';
 import { formatDay, isOverdue } from './TaskBoard';
 import '../styles/TaskViews.css';
+import { t, tn, locale } from '../i18n';
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+// Short weekday names, Monday first (1 Jan 2024 was a Monday).
+const weekdays = () =>
+  [0, 1, 2, 3, 4, 5, 6].map((i) => new Date(2024, 0, 1 + i).toLocaleDateString(locale(), { weekday: 'short' }));
 const SHOWN_PER_DAY = 3;
 
 // Month view of deadlines (subtasks included). Click a day to list its
@@ -32,61 +35,61 @@ function TaskCalendar({ tasks, projectIndex, onOpen, onReschedule }) {
     setSelected(today);
   };
 
-  const title = new Date(month.y, month.m, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const title = new Date(month.y, month.m, 1).toLocaleDateString(locale(), { month: 'long', year: 'numeric' });
   const selectedTasks = byDay.get(selected) || [];
-  const selectedLabel = new Date(`${selected}T00:00:00`).toLocaleDateString('en-US', {
+  const selectedLabel = new Date(`${selected}T00:00:00`).toLocaleDateString(locale(), {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
   });
 
   // A span, not a button: Firefox can't drag buttons.
-  const chip = (t) => (
+  const chip = (task) => (
     <span
-      key={t.id}
+      key={task.id}
       role="button"
       tabIndex={0}
-      className={`cal-chip ${t.status === 'done' ? 'done' : ''} ${isOverdue(t) ? 'overdue' : ''}`}
-      style={{ '--project-color': projectIndex.colorOf(t.project_id) }}
+      className={`cal-chip ${task.status === 'done' ? 'done' : ''} ${isOverdue(task) ? 'overdue' : ''}`}
+      style={{ '--project-color': projectIndex.colorOf(task.project_id) }}
       draggable
       onDragStart={(e) => {
         e.stopPropagation();
         e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', String(t.id));
+        e.dataTransfer.setData('text/plain', String(task.id));
       }}
       onClick={(e) => {
         e.stopPropagation();
-        onOpen(t);
+        onOpen(task);
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
           e.stopPropagation();
-          onOpen(t);
+          onOpen(task);
         }
       }}
-      title={`${t.title}${t.project_id != null ? ` — ${projectIndex.labelOf(t.project_id)}` : ''}`}
+      title={`${task.title}${task.project_id != null ? ` — ${projectIndex.labelOf(task.project_id)}` : ''}`}
     >
-      {t.title}
+      {task.title}
     </span>
   );
 
   return (
     <div className="calendar">
       <div className="cal-toolbar">
-        <button className="btn btn-secondary btn-small" onClick={() => shift(-1)} aria-label="Previous month">
+        <button className="btn btn-secondary btn-small" onClick={() => shift(-1)} aria-label={t('Previous month')}>
           ◀
         </button>
         <h2 className="cal-title">{title}</h2>
-        <button className="btn btn-secondary btn-small" onClick={() => shift(1)} aria-label="Next month">
+        <button className="btn btn-secondary btn-small" onClick={() => shift(1)} aria-label={t('Next month')}>
           ▶
         </button>
         <button className="btn btn-secondary btn-small" onClick={goToday}>
-          Today
+          {t('Today')}
         </button>
       </div>
 
       <div className="cal-grid" role="grid" aria-label={title}>
-        {WEEKDAYS.map((d) => (
+        {weekdays().map((d) => (
           <div key={d} className="cal-weekday" role="columnheader">
             {d}
           </div>
@@ -102,7 +105,7 @@ function TaskCalendar({ tasks, projectIndex, onOpen, onReschedule }) {
               role="gridcell"
               tabIndex={0}
               aria-selected={key === selected}
-              aria-label={`${date.toDateString()}: ${list.length} task${list.length === 1 ? '' : 's'}`}
+              aria-label={`${date.toLocaleDateString(locale())}: ${tn(list.length, 'one task', '{n} tasks')}`}
               className={[
                 'cal-day',
                 date.getMonth() !== month.m ? 'other-month' : '',
@@ -129,7 +132,9 @@ function TaskCalendar({ tasks, projectIndex, onOpen, onReschedule }) {
               <span className="cal-date">{date.getDate()}</span>
               <div className="cal-chips">
                 {list.slice(0, SHOWN_PER_DAY).map(chip)}
-                {list.length > SHOWN_PER_DAY && <span className="cal-more">+{list.length - SHOWN_PER_DAY} more</span>}
+                {list.length > SHOWN_PER_DAY && (
+                  <span className="cal-more">{t('+{n} more', { n: list.length - SHOWN_PER_DAY })}</span>
+                )}
               </div>
               {/* Phones: dots instead of titles. */}
               {list.length > 0 && (
@@ -151,31 +156,36 @@ function TaskCalendar({ tasks, projectIndex, onOpen, onReschedule }) {
       <section className="cal-agenda" aria-live="polite">
         <h3>
           {selectedLabel}
-          {selected === today && <span className="cal-today-tag">Today</span>}
+          {selected === today && <span className="cal-today-tag">{t('Today')}</span>}
         </h3>
         {selectedTasks.length === 0 ? (
-          <p className="comments-empty">Nothing due.</p>
+          <p className="comments-empty">{t('Nothing due.')}</p>
         ) : (
           <ul>
-            {selectedTasks.map((t) => (
-              <li key={t.id} style={{ '--project-color': projectIndex.colorOf(t.project_id) }}>
+            {selectedTasks.map((task) => (
+              <li key={task.id} style={{ '--project-color': projectIndex.colorOf(task.project_id) }}>
                 <span className="project-swatch" />
                 <button
-                  className={`link-btn cal-agenda-title ${t.status === 'done' ? 'done' : ''}`}
-                  onClick={() => onOpen(t)}
+                  className={`link-btn cal-agenda-title ${task.status === 'done' ? 'done' : ''}`}
+                  onClick={() => onOpen(task)}
                 >
-                  {t.title}
+                  {task.title}
                 </button>
-                {t.project_id != null && <span className="cal-agenda-project">{projectIndex.labelOf(t.project_id)}</span>}
-                {isOverdue(t) && <span className="task-deadline overdue">overdue since {formatDay(t.deadline)}</span>}
+                {task.project_id != null && <span className="cal-agenda-project">{projectIndex.labelOf(task.project_id)}</span>}
+                {isOverdue(task) && (
+                  <span className="task-deadline overdue">{t('overdue since {date}', { date: formatDay(task.deadline) })}</span>
+                )}
               </li>
             ))}
           </ul>
         )}
         {undated > 0 && (
           <p className="settings-help cal-undated">
-            {undated} open task{undated === 1 ? ' has' : 's have'} no deadline and {undated === 1 ? "isn't" : "aren't"}{' '}
-            shown in the calendar.
+            {tn(
+              undated,
+              "One open task has no deadline and isn't shown in the calendar.",
+              "{n} open tasks have no deadline and aren't shown in the calendar."
+            )}
           </p>
         )}
       </section>

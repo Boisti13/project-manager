@@ -6,8 +6,8 @@ import { buildProjectIndex } from '../projects';
 import { progressByProject, combineProgress, percentDone } from '../progress';
 import '../styles/TaskList.css';
 import '../styles/ProjectList.css';
+import { t, tn, shortDate } from '../i18n';
 
-const shortDate = (value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
 function ProgressBar({ stats, small = false }) {
   const pct = percentDone(stats);
@@ -18,8 +18,8 @@ function ProgressBar({ stats, small = false }) {
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={pct}
-      aria-label={`${pct}% done`}
-      title={`${stats.done} of ${stats.total} done`}
+      aria-label={t('{pct}% done', { pct })}
+      title={t('{done} of {total} done', { done: stats.done, total: stats.total })}
     >
       <span style={{ width: `${pct}%` }} />
     </span>
@@ -29,7 +29,7 @@ function ProgressBar({ stats, small = false }) {
 // Progress of a project (with its categories): bar, counts that open the
 // matching filter on the Tasks page, and the next deadline.
 function ProjectProgress({ stats, projectId }) {
-  if (!stats.total) return <p className="progress-text progress-empty">No tasks yet</p>;
+  if (!stats.total) return <p className="progress-text progress-empty">{t('No tasks yet')}</p>;
   const open = stats.total - stats.done;
   const tasksUrl = (extra) => `/?project=${projectId}&${extra}`;
   return (
@@ -37,19 +37,17 @@ function ProjectProgress({ stats, projectId }) {
       <ProgressBar stats={stats} />
       <p className="progress-text">
         <strong>{percentDone(stats)}%</strong>
-        <span>
-          {stats.done} of {stats.total} done
-        </span>
-        {open > 0 && <Link to={tasksUrl('status=open')}>{open} open</Link>}
+        <span>{t('{done} of {total} done', { done: stats.done, total: stats.total })}</span>
+        {open > 0 && <Link to={tasksUrl('status=open')}>{t('{n} open', { n: open })}</Link>}
         {stats.overdue > 0 && (
           <Link className="progress-overdue" to={tasksUrl('due=overdue')}>
-            {stats.overdue} overdue
+            {t('{n} overdue', { n: stats.overdue })}
           </Link>
         )}
-        {stats.dueSoon > 0 && <Link to={tasksUrl('due=week')}>{stats.dueSoon} due this week</Link>}
+        {stats.dueSoon > 0 && <Link to={tasksUrl('due=week')}>{t('{n} due this week', { n: stats.dueSoon })}</Link>}
         {stats.next && (
           <span className="progress-next">
-            Next: <Link to={`/?task=${stats.next.id}`}>{stats.next.title}</Link> · {shortDate(stats.next.deadline)}
+            {t('Next:')} <Link to={`/?task=${stats.next.id}`}>{stats.next.title}</Link> · {shortDate(stats.next.deadline)}
           </span>
         )}
       </p>
@@ -101,7 +99,7 @@ function ProjectList() {
       setProgress(progressByProject(tasksRes));
       setError(null);
     } catch (err) {
-      setError('Failed to load projects: ' + err.message);
+      setError(t('Failed to load projects: {error}', { error: err.message }));
     } finally {
       setLoading(false);
     }
@@ -130,22 +128,27 @@ function ProjectList() {
       setForm(null);
       await loadData();
     } catch (err) {
-      setError('Failed to save: ' + err.message);
+      setError(t('Failed to save: {error}', { error: err.message }));
     }
   };
 
   const handleDelete = async (project) => {
     const categories = projectIndex.categoriesOf(project.id);
     const msg = categories.length
-      ? `Delete "${project.name}" and its ${categories.length} ${categories.length === 1 ? 'category' : 'categories'}? Their tasks are kept but will no longer belong to a project.`
-      : `Delete "${project.name}"? Its tasks are kept but will no longer belong to a project.`;
+      ? tn(
+          categories.length,
+          'Delete “{name}” and its category? Their tasks are kept but will no longer belong to a project.',
+          'Delete “{name}” and its {n} categories? Their tasks are kept but will no longer belong to a project.',
+          { name: project.name }
+        )
+      : t('Delete “{name}”? Its tasks are kept but will no longer belong to a project.', { name: project.name });
     if (!window.confirm(msg)) return;
     try {
       const response = await authFetch(`/api/projects/${project.id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error(await parseApiError(response));
       await loadData();
     } catch (err) {
-      setError('Failed to delete: ' + err.message);
+      setError(t('Failed to delete: {error}', { error: err.message }));
     }
   };
 
@@ -165,7 +168,7 @@ function ProjectList() {
       a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     } catch (err) {
-      setError('Export failed: ' + err.message);
+      setError(t('Export failed: {error}', { error: err.message }));
     }
   };
 
@@ -176,7 +179,7 @@ function ProjectList() {
       try {
         data = JSON.parse(await file.text());
       } catch {
-        throw new Error('this is not a JSON file');
+        throw new Error(t('this is not a JSON file'));
       }
       const res = await fetchJson('/api/transfer/import', {
         method: 'POST',
@@ -185,14 +188,16 @@ function ProjectList() {
       });
       const renamed = res.renamed.map((r) => `"${r.from}" → "${r.to}"`).join(', ');
       setNotice(
-        `Imported ${res.projects} project${res.projects === 1 ? '' : 's'}, ${res.categories} ` +
-          `categor${res.categories === 1 ? 'y' : 'ies'} and ${res.tasks} task${res.tasks === 1 ? '' : 's'}.` +
-          (renamed ? ` Renamed because the name was taken: ${renamed}.` : '')
+        t('Imported {projects}, {categories} and {tasks}.', {
+          projects: tn(res.projects, 'one project', '{n} projects'),
+          categories: tn(res.categories, 'one category', '{n} categories'),
+          tasks: tn(res.tasks, 'one task', '{n} tasks'),
+        }) + (renamed ? ' ' + t('Renamed because the name was taken: {names}.', { names: renamed }) : '')
       );
       setError(null);
       await loadData();
     } catch (err) {
-      setError('Import failed: ' + err.message);
+      setError(t('Import failed: {error}', { error: err.message }));
     }
   };
 
@@ -201,7 +206,7 @@ function ProjectList() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  if (loading) return <div className="container"><p>Loading projects...</p></div>;
+  if (loading) return <div className="container"><p>{t('Loading projects…')}</p></div>;
 
   const EMPTY = combineProgress([]);
   const memberNames = (p) =>
@@ -215,23 +220,23 @@ function ProjectList() {
     <div className="container">
       <div className="task-list-header">
         <div className="header-left">
-          <h1>Projects</h1>
+          <h1>{t('Projects')}</h1>
           <span className="task-count">({projectIndex.topLevel.length})</span>
         </div>
         <div className="header-actions">
-          <button className="btn btn-secondary" onClick={() => importRef.current?.click()} title="Import projects from a JSON export">
-            Import
+          <button className="btn btn-secondary" onClick={() => importRef.current?.click()} title={t('Import projects from a JSON export')}>
+            {t('Import')}
           </button>
           <button
             className="btn btn-secondary"
             onClick={() => exportProjects()}
-            title="Export all projects and tasks as JSON"
+            title={t('Export all projects and tasks as JSON')}
             disabled={projectIndex.topLevel.length === 0}
           >
-            Export all
+            {t('Export all')}
           </button>
           <button className="btn btn-primary" onClick={() => openForm({ parentId: null })}>
-            + New Project
+            {t('+ New Project')}
           </button>
           <input
             ref={importRef}
@@ -267,7 +272,7 @@ function ProjectList() {
 
       <div className="project-list">
         {projectIndex.topLevel.length === 0 ? (
-          <p className="no-tasks">No projects yet</p>
+          <p className="no-tasks">{t('No projects yet')}</p>
         ) : (
           projectIndex.topLevel.map((project) => {
             const categories = projectIndex.categoriesOf(project.id);
@@ -282,14 +287,16 @@ function ProjectList() {
                       {project.is_private && (
                         <span
                           className="private-badge"
-                          title={`Private: visible to ${memberNames(project) || 'nobody but admins'} and admins`}
+                          title={t('Private: visible to {names} and admins', { names: memberNames(project) || t('nobody but admins') })}
                         >
-                          🔒 Private
+                          {t('🔒 Private')}
                         </span>
                       )}
                     </h3>
                     {project.is_private && (
-                      <p className="project-members">Members: {memberNames(project) || 'none (admins only)'}</p>
+                      <p className="project-members">
+                        {t('Members: {names}', { names: memberNames(project) || t('none (admins only)') })}
+                      </p>
                     )}
                     {project.description && <p>{project.description}</p>}
                     <ProjectProgress stats={stats} projectId={project.id} />
@@ -298,21 +305,21 @@ function ProjectList() {
                     <button
                       className="btn btn-secondary btn-small"
                       onClick={() => openForm({ parentId: project.id })}
-                      title="Add a category (sub-project)"
+                      title={t('Add a category (sub-project)')}
                     >
-                      + Category
+                      {t('+ Category')}
                     </button>
                     <button
                       className="task-action-btn"
                       onClick={() => exportProjects(project)}
-                      title={`Export ${project.name} (with categories and tasks) as JSON`}
+                      title={t('Export {name} (with categories and tasks) as JSON', { name: project.name })}
                     >
                       ⤓
                     </button>
-                    <button className="task-action-btn edit-btn" onClick={() => openForm({ project })} title="Edit">
+                    <button className="task-action-btn edit-btn" onClick={() => openForm({ project })} title={t('Edit')}>
                       ✎
                     </button>
-                    <button className="task-action-btn delete-btn" onClick={() => handleDelete(project)} title="Delete">
+                    <button className="task-action-btn delete-btn" onClick={() => handleDelete(project)} title={t('Delete')}>
                       ✕
                     </button>
                   </div>
@@ -329,15 +336,15 @@ function ProjectList() {
                         </span>
                         {statsOf(c.id).overdue > 0 && (
                           <Link className="progress-overdue category-overdue" to={`/?project=${c.id}&due=overdue`}>
-                            {statsOf(c.id).overdue} overdue
+                            {t('{n} overdue', { n: statsOf(c.id).overdue })}
                           </Link>
                         )}
                         {c.description && <span className="category-desc">{c.description}</span>}
                         <span className="project-actions">
-                          <button className="task-action-btn edit-btn" onClick={() => openForm({ project: c })} title="Edit">
+                          <button className="task-action-btn edit-btn" onClick={() => openForm({ project: c })} title={t('Edit')}>
                             ✎
                           </button>
-                          <button className="task-action-btn delete-btn" onClick={() => handleDelete(c)} title="Delete">
+                          <button className="task-action-btn delete-btn" onClick={() => handleDelete(c)} title={t('Delete')}>
                             ✕
                           </button>
                         </span>

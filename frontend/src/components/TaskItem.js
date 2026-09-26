@@ -6,6 +6,8 @@ import LabelChips from './LabelChips';
 import { describeRecurrence, shortRecurrence } from '../recurrence';
 import '../styles/TaskItem.css';
 import '../styles/Dependencies.css';
+import { t, tn, shortDate } from '../i18n';
+import { statusName, priorityName } from '../names';
 
 function Highlight({ text, needle }) {
   return highlightParts(text, needle).map((part, i) =>
@@ -64,18 +66,7 @@ function TaskItem({
     done: '#4CAF50',
   };
 
-  const priorityLabels = {
-    0: 'Low',
-    1: 'Medium',
-    2: 'High',
-    3: 'Critical',
-  };
-
-  const formatDeadline = (deadline) => {
-    if (!deadline) return '';
-    const date = new Date(deadline);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  const formatDeadline = (deadline) => (deadline ? shortDate(deadline) : '');
 
   const isOverdue = (deadline) => {
     if (!deadline) return false;
@@ -133,7 +124,7 @@ function TaskItem({
       <div className="task-header">
         <div className="task-left">
           {canDrag && (
-            <span className="drag-handle" title="Drag to reorder">
+            <span className="drag-handle" title={t('Drag to reorder')}>
               ⠿
             </span>
           )}
@@ -141,7 +132,7 @@ function TaskItem({
             <button
               className="expand-btn"
               onClick={() => onToggleExpand(task.id)}
-              title={showSubtasks ? 'Collapse' : 'Expand'}
+              title={showSubtasks ? t('Collapse') : t('Expand')}
             >
               {showSubtasks ? '▼' : '▶'}
             </button>
@@ -151,8 +142,8 @@ function TaskItem({
             className="task-done-checkbox"
             checked={task.status === 'done'}
             onChange={() => onToggleDone(task)}
-            title={task.status === 'done' ? 'Mark as not done' : 'Mark as done'}
-            aria-label={`Done: ${task.title}`}
+            title={task.status === 'done' ? t('Mark as not done') : t('Mark as done')}
+            aria-label={t('Done: {title}', { title: task.title })}
           />
           <div className="task-status-dot" style={{ backgroundColor: statusColors[task.status] }} />
           <span className={`task-title ${task.status === 'done' ? 'task-title-done' : ''}`}>
@@ -167,8 +158,8 @@ function TaskItem({
               className={`task-progress ${progress.done === progress.total ? 'complete' : ''}`}
               title={
                 isReady
-                  ? "All subtasks done — tick the task when it's finished"
-                  : `${progress.done} of ${progress.total} subtasks done`
+                  ? t("All subtasks done — tick the task when it's finished")
+                  : t('{done} of {total} subtasks done', { done: progress.done, total: progress.total })
               }
             >
               {isReady && '✓ '}
@@ -177,12 +168,12 @@ function TaskItem({
           )}
           {task.priority > 0 && (
             <span className="task-priority" data-priority={task.priority}>
-              {priorityLabels[task.priority] || 'P' + task.priority}
+              {priorityName(task.priority)}
             </span>
           )}
           {openBlockers.length > 0 && (
-            <span className="task-waiting" title={`Waiting for: ${openBlockers.map((b) => b.title).join(', ')}`}>
-              ⏳ {openBlockers.length === 1 ? 'waiting' : `waiting · ${openBlockers.length}`}
+            <span className="task-waiting" title={t('Waiting for: {tasks}', { tasks: openBlockers.map((b) => b.title).join(', ') })}>
+              ⏳ {openBlockers.length === 1 ? t('waiting') : t('waiting · {n}', { n: openBlockers.length })}
             </span>
           )}
           {task.recurrence_unit && (
@@ -195,22 +186,26 @@ function TaskItem({
               {formatDeadline(task.deadline)}
             </span>
           )}
-          <span className={`task-status-badge status-${task.status}`}>{task.status.replace('_', ' ')}</span>
+          <span className={`task-status-badge status-${task.status}`}>{statusName(task.status)}</span>
           <button
             className={`task-action-btn comment-btn ${showComments ? 'active' : ''}`}
             onClick={() => setShowComments((v) => !v)}
-            title={task.comment_count ? `${task.comment_count} comment${task.comment_count === 1 ? '' : 's'} · history` : 'Comments & history'}
+            title={
+              task.comment_count
+                ? tn(task.comment_count, 'one comment · history', '{n} comments · history')
+                : t('Comments & history')
+            }
             aria-expanded={showComments}
           >
             💬{task.comment_count > 0 && <span className="comment-count">{task.comment_count}</span>}
           </button>
-          <button className="task-action-btn subtask-btn" onClick={() => onAddSubtask(task)} title="Add Subtask">
+          <button className="task-action-btn subtask-btn" onClick={() => onAddSubtask(task)} title={t('Add subtask')}>
             +
           </button>
-          <button className="task-action-btn edit-btn" onClick={() => onEdit(task)} title="Edit">
+          <button className="task-action-btn edit-btn" onClick={() => onEdit(task)} title={t('Edit')}>
             ✎
           </button>
-          <button className="task-action-btn delete-btn" onClick={() => onDelete(task.id)} title="Delete">
+          <button className="task-action-btn delete-btn" onClick={() => onDelete(task.id)} title={t('Delete')}>
             ✕
           </button>
           {projectIndex && (

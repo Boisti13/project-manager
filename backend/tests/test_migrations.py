@@ -61,12 +61,13 @@ def test_migrate_stamps_pre_alembic_database(scratch_db):
     with eng.begin() as c:
         # v1.0.0 tables didn't have the later columns.
         c.execute(text("ALTER TABLE projects DROP COLUMN color, DROP COLUMN parent_id, DROP COLUMN is_private"))
+        c.execute(text("ALTER TABLE users DROP COLUMN language"))
         c.execute(text("ALTER TABLE tasks DROP COLUMN completed_at, DROP COLUMN recurrence_unit, "
                        "DROP COLUMN recurrence_interval, DROP COLUMN recurrence_next_id"))
     eng.dispose()
     r = run_backend("migrate.py", db_name=scratch_db)
     assert "stamping baseline 0001" in r.stdout
-    assert q(scratch_db, "SELECT version_num FROM alembic_version")[0][0] == "0010"
+    assert q(scratch_db, "SELECT version_num FROM alembic_version")[0][0] == "0011"
 
 
 def test_migrate_refuses_mismatched_pre_alembic_database(scratch_db):

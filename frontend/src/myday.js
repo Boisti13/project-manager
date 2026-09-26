@@ -1,6 +1,7 @@
 // Sections of the "My day" page. No React in here.
 import { isWaiting } from './dependencies';
 import { parseServerDate } from './taskFilters';
+import { t } from './i18n';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -47,8 +48,8 @@ export function recentNotifications(items, kind, { now = Date.now(), days = 7 } 
 /** "Good morning" etc. by local hour. */
 export function greeting(date = new Date()) {
   const h = date.getHours();
-  if (h < 5) return 'Good night';
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 5) return t('Good night');
+  if (h < 12) return t('Good morning');
+  if (h < 18) return t('Good afternoon');
+  return t('Good evening');
 }

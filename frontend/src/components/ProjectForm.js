@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PROJECT_COLORS } from '../projects';
 import '../styles/TaskForm.css';
+import { t } from '../i18n';
 
 // project: the project being edited (null for new)
 // defaultParentId: pre-selected parent for a new category
@@ -48,36 +49,36 @@ function ProjectForm({ project, defaultParentId = null, projectIndex, users = []
   return (
     <form className="task-form" onSubmit={handleSubmit}>
       <div className="form-group">
-        <label>Name *</label>
+        <label>{t('Name *')}</label>
         <input
           type="text"
           value={formData.name}
           onChange={(e) => set('name', e.target.value)}
           required
           autoFocus
-          placeholder={isCategory ? 'e.g. General, Ordering, Documentation' : 'Enter project name'}
+          placeholder={isCategory ? t('e.g. General, Ordering, Documentation') : t('Enter project name')}
         />
       </div>
 
       <div className="form-group">
-        <label>Description</label>
+        <label>{t('Description')}</label>
         <textarea
           value={formData.description}
           onChange={(e) => set('description', e.target.value)}
-          placeholder="Optional"
+          placeholder={t('Optional')}
           rows="2"
         />
       </div>
 
       <div className="form-group">
-        <label>Category of</label>
+        <label>{t('Category of')}</label>
         <select
           value={formData.parent_id ?? ''}
           onChange={(e) => set('parent_id', e.target.value === '' ? null : parseInt(e.target.value, 10))}
           disabled={hasCategories}
-          title={hasCategories ? 'This project has categories, so it has to stay a top-level project' : ''}
+          title={hasCategories ? t('This project has categories, so it has to stay a top-level project') : ''}
         >
-          <option value="">— none (top-level project) —</option>
+          <option value="">{t('— none (top-level project) —')}</option>
           {parentChoices.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -88,7 +89,7 @@ function ProjectForm({ project, defaultParentId = null, projectIndex, users = []
 
       {!isCategory && (
         <div className="form-group">
-          <label>Color</label>
+          <label>{t('Color')}</label>
           <div className="color-picker">
             {PROJECT_COLORS.map((c) => (
               <button
@@ -97,43 +98,45 @@ function ProjectForm({ project, defaultParentId = null, projectIndex, users = []
                 className={`color-swatch ${formData.color.toLowerCase() === c ? 'selected' : ''}`}
                 style={{ backgroundColor: c }}
                 onClick={() => set('color', c)}
-                aria-label={`Color ${c}`}
+                aria-label={t('Color {color}', { color: c })}
                 title={c}
               />
             ))}
-            <label className="color-custom" title="Custom color">
+            <label className="color-custom" title={t('Custom color')}>
               <input
                 type="color"
                 value={formData.color || '#9e9e9e'}
                 onChange={(e) => set('color', e.target.value)}
               />
-              <span>Custom</span>
+              <span>{t('Custom')}</span>
             </label>
           </div>
-          {!formData.color && <small className="color-hint">None picked — one will be assigned automatically.</small>}
+          {!formData.color && (
+            <small className="color-hint">{t('None picked — one will be assigned automatically.')}</small>
+          )}
         </div>
       )}
 
       {isCategory ? (
         projectIndex.isPrivate(formData.parent_id) && (
-          <p className="color-hint">🔒 Private like its project: only the project's members can see it.</p>
+          <p className="color-hint">{t("🔒 Private like its project: only the project's members can see it.")}</p>
         )
       ) : (
         <div className="form-group">
-          <label>Visibility</label>
+          <label>{t('Visibility')}</label>
           <div className="visibility-options">
             <label>
               <input type="radio" checked={!formData.is_private} onChange={() => set('is_private', false)} />
-              Everyone
+              {t('Everyone')}
             </label>
             <label>
               <input type="radio" checked={formData.is_private} onChange={() => set('is_private', true)} />
-              🔒 Private — only members and admins
+              {t('🔒 Private — only members and admins')}
             </label>
           </div>
           {formData.is_private && (
             <fieldset className="member-picker">
-              <legend>Members</legend>
+              <legend>{t('Members')}</legend>
               {users
                 .filter((u) => u.is_active !== false)
                 .map((u) => (
@@ -145,13 +148,14 @@ function ProjectForm({ project, defaultParentId = null, projectIndex, users = []
                       onChange={() => toggleMember(u.id)}
                     />
                     {u.username}
-                    {u.id === currentUser?.id && ' (you)'}
-                    {u.is_admin && <span className="member-admin">admin, sees it anyway</span>}
+                    {u.id === currentUser?.id && ` ${t('(you)')}`}
+                    {u.is_admin && <span className="member-admin">{t('admin, sees it anyway')}</span>}
                   </label>
                 ))}
               <small className="color-hint">
-                The project, its categories, tasks, comments and history are hidden from everyone else. Tasks can only
-                be assigned to members.
+                {t(
+                  'The project, its categories, tasks, comments and history are hidden from everyone else. Tasks can only be assigned to members.'
+                )}
               </small>
             </fieldset>
           )}
@@ -160,10 +164,10 @@ function ProjectForm({ project, defaultParentId = null, projectIndex, users = []
 
       <div className="form-actions">
         <button type="submit" className="btn btn-primary">
-          {project ? 'Save' : isCategory ? 'Create Category' : 'Create Project'}
+          {project ? t('Save') : isCategory ? t('Create Category') : t('Create Project')}
         </button>
         <button type="button" className="btn btn-secondary" onClick={onCancel}>
-          Cancel
+          {t('Cancel')}
         </button>
       </div>
     </form>

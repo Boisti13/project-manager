@@ -51,3 +51,14 @@ def test_deactivated_user_is_locked_out(client, admin, alice):
     # Reactivating restores access.
     client.put(f"/api/users/{alice.id}", json={"is_active": True}, headers=admin.headers)
     assert client.post("/api/auth/login", data={"username": "alice", "password": alice.password}).status_code == 200
+
+
+def test_language_preference(client, alice, bob):
+    assert client.get("/api/auth/me", headers=alice.headers).json()["language"] is None
+    r = client.put("/api/auth/me/preferences", json={"language": "de"}, headers=alice.headers)
+    assert r.status_code == 200 and r.json()["language"] == "de"
+    assert client.get("/api/auth/me", headers=alice.headers).json()["language"] == "de"
+    assert client.get("/api/auth/me", headers=bob.headers).json()["language"] is None
+    assert client.put("/api/auth/me/preferences", json={"language": "fr"}, headers=alice.headers).status_code == 422
+    r = client.put("/api/auth/me/preferences", json={"language": None}, headers=alice.headers)
+    assert r.json()["language"] is None
