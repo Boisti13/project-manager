@@ -67,6 +67,33 @@ def test_update_check_rejects_bad_branch_names(client, alice):
         assert client.get("/api/system/check", params={"branch": bad}, headers=alice.headers).status_code in (400, 422)
 
 
+@pytest.mark.skipif(os.name != "posix", reason="flock is Linux-only")
+def test_second_update_is_refused_while_one_runs(client, admin):
+    """scripts/update.sh holds .update/update.lock; both the endpoint and a
+    second run of the script back off while it's held."""
+    import fcntl
+    import shutil
+    import subprocess
+
+    from app.routers import system
+
+    system.STATE_DIR.mkdir(exist_ok=True)
+    status_before = system.STATUS_FILE.read_text() if system.STATUS_FILE.exists() else None
+    with open(system.LOCK_FILE, "a") as held:
+        fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        # A bogus branch: if the lock check were missing this fails validation
+        # (404) instead of starting a real update.
+        r = client.post("/api/system/update", json={"branch": "no-such-branch-xyz"}, headers=admin.headers)
+        assert r.status_code == 409
+        if shutil.which("flock"):
+            p = subprocess.run(["bash", str(system.UPDATE_SCRIPT), "no-such-branch-xyz"],
+                               capture_output=True, text=True)
+            assert p.returncode == 75 and "already running" in p.stderr
+            now = system.STATUS_FILE.read_text() if system.STATUS_FILE.exists() else None
+            assert now == status_before  # the running update's status is untouched
+    assert system._update_locked() is False
+
+
 def test_update_is_admin_only(client, admin, alice):
     assert client.post("/api/system/update", json={"branch": "main"}, headers=alice.headers).status_code == 403
     assert client.get("/api/system/update/status", headers=alice.headers).status_code == 403

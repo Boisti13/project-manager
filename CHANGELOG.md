@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.23.1 — 2026-09-26
+
+### Fixed
+- **Only one update at a time.** `scripts/update.sh` now holds a lock (`.update/update.lock`, `flock`) for the whole run, so an update started by hand and one started from Settings can no longer run at the same time. A second attempt is refused — *Update now* reports *An update is already in progress*, the script exits with code 75 — and the running update's status and log are left alone. The lock is released automatically when a run ends or is killed.
+
 ## v1.23.0 — 2026-09-26
 
 ### Added

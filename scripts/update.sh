@@ -4,18 +4,37 @@
 #
 # Progress goes to .update/update.log, state to .update/status
 # (running -> restarting -> success | failed).
+#
+# Only one update runs at a time: .update/update.lock is held (flock) for the
+# whole run, whether it was started from Settings or by hand. The kernel
+# releases it when the run ends, even if it's killed.
 set -uo pipefail
 
 BRANCH="${1:?usage: update.sh <branch>}"
 APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 STATE_DIR="$APP_DIR/.update"
 mkdir -p "$STATE_DIR"
-exec >>"$STATE_DIR/update.log" 2>&1
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 
 set_state() { echo "$1" >"$STATE_DIR/status"; }
 step() { echo; echo "==> $*"; }
 fail() { echo; echo "!! $*"; set_state failed; exit 1; }
+
+# Taken once; the re-exec below inherits fd 9 and with it the lock.
+if [ -z "${UPDATE_CHECKED_OUT:-}" ]; then
+  if command -v flock >/dev/null; then
+    exec 9>"$STATE_DIR/update.lock"
+    if ! flock -n 9; then
+      # Tell whoever started it (a terminal), note it in the running
+      # update's log, and leave that update's status alone.
+      echo "Another update is already running (see $STATE_DIR/update.log); not starting a second one." >&2
+      echo "!! $(date -Is): a second update was refused while this one runs." >>"$STATE_DIR/update.log"
+      exit 75
+    fi
+  fi
+fi
+exec >>"$STATE_DIR/update.log" 2>&1
+command -v flock >/dev/null || echo "flock not found (util-linux); running without the update lock"
 
 set_state running
 cd "$APP_DIR" || fail "cannot cd to $APP_DIR"

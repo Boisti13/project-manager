@@ -27,6 +27,7 @@ UPDATE_SCRIPT = APP_DIR / "scripts" / "update.sh"
 STATE_DIR = APP_DIR / ".update"
 STATUS_FILE = STATE_DIR / "status"
 LOG_FILE = STATE_DIR / "update.log"
+LOCK_FILE = STATE_DIR / "update.lock"  # held by scripts/update.sh while it runs
 STALE_AFTER = 30 * 60  # seconds
 BACKUP_SCRIPT = APP_DIR / "scripts" / "backup-db.sh"
 BACKUP_DIR = Path(os.environ.get("PM_BACKUP_DIR", "/var/backups/project-manager"))
@@ -84,6 +85,25 @@ def _validate_branch(branch):
         raise HTTPException(status_code=400, detail="Invalid branch name")
     if branch not in _remote_branches():
         raise HTTPException(status_code=404, detail=f"Branch '{branch}' does not exist on the remote")
+
+
+def _update_locked() -> bool:
+    """True while scripts/update.sh holds its lock -- also when it was started
+    by hand, which the status file alone doesn't tell reliably."""
+    try:
+        import fcntl
+    except ImportError:  # not Linux
+        return False
+    try:
+        with open(LOCK_FILE, "a") as f:
+            try:
+                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return True
+            fcntl.flock(f, fcntl.LOCK_UN)
+    except OSError:
+        return False
+    return False
 
 
 def _update_state():
@@ -164,7 +184,7 @@ def start_update(req: UpdateRequest, current_user: User = Depends(get_current_ad
     if os.name != "posix":
         raise HTTPException(status_code=400, detail="In-app updates only work on the Linux deployment.")
     state, _ = _update_state()
-    if state in ("running", "restarting"):
+    if state in ("running", "restarting") or _update_locked():
         raise HTTPException(status_code=409, detail="An update is already in progress.")
     _validate_branch(req.branch)
 

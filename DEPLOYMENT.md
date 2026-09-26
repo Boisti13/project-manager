@@ -26,6 +26,8 @@ After the checkout the script re-runs itself from the new code, so changes to th
 
 The log streams into the Settings page and is kept in `/opt/project-manager/.update/update.log`. If the database backup fails, the update stops before any migration runs. If pip, migrations, npm or the build fail, nothing is restarted or swapped: the old backend and the old frontend build keep being served. Any local edits to tracked files in the deployed checkout are discarded.
 
+**Only one update runs at a time.** The updater holds `.update/update.lock` (`flock`) for the whole run — whether started from Settings or by hand with `scripts/update.sh <branch>`. A second attempt is refused: *Update now* answers *An update is already in progress*, and the script exits with code 75 and a message, leaving the running update alone. The lock is released automatically when the run ends, even if it's killed.
+
 Requirements: the backend runs as a user that can run `git` in the checkout and `supervisorctl` (root under the default Supervisor setup), and the LXC can reach GitHub.
 
 Switching to an older branch does not roll back database migrations. That's usually harmless because older code ignores newer columns, but check first if a migration dropped or renamed something.
