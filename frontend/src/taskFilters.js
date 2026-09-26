@@ -8,6 +8,7 @@ export const DEFAULT_FILTERS = {
   assignee: '', // '' | 'me' | 'none' | user id (string)
   due: '', // '' | 'overdue' | 'week' | 'none'
   sort: 'manual', // manual | deadline | priority | created | title
+  view: 'list', // list | board | calendar (not a filter; kept in the URL too)
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;

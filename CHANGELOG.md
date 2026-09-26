@@ -2,6 +2,16 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.22.0 — 2026-09-26
+
+### Added
+- **Board view** (Tasks → *Board*): To Do / In Progress / Blocked / Done columns of the top-level tasks. Drag cards between columns, or use ◀ ▶ on a card (touch). Cards show project/category, priority, deadline (red when overdue), repeat, subtask progress, comments and assignee; ✎ edits, the title opens the task in the list. Done shows the 15 most recently completed (*Show n more*). On phones the columns scroll sideways.
+- **Calendar view** (Tasks → *Calendar*): month grid (Monday first) of all deadlines, subtasks included, colored by project; overdue in red, done struck through. Click a day to list its tasks below the grid; **drag a task onto another day to move its deadline**. ◀ ▶ and *Today* to navigate; a note counts open tasks without a deadline. On phones days show colored dots.
+- The view is part of the URL (`?view=board`) and search, filters and *Assigned to me* apply to all views.
+
+### Changed
+- Next-deadline dates on the Projects page use the same format as the task list (*Sep 29*).
+
 ## v1.21.0 — 2026-09-26
 
 ### Added

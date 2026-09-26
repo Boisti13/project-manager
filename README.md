@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Boisti13/project-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/Boisti13/project-manager/actions/workflows/ci.yml)
 
-A self-hosted task management application with hierarchical tasks (main tasks + subtasks), color-coded projects with categories, task comments and history, recurring tasks, multi-user support, deadlines, search and filtering, a phone-friendly layout and in-app updates.
+A self-hosted task management application with hierarchical tasks (main tasks + subtasks), list/board/calendar views, color-coded projects with categories, task comments and history, recurring tasks, multi-user support, deadlines, search and filtering, a phone-friendly layout and in-app updates.
 
 ![Tasks grouped by project and category](docs/screenshots/tasks-desktop.png)
 
@@ -18,6 +18,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Comments**: Discussion thread on every task and subtask (💬 with count on the row); authors can edit (marked *edited*) and delete their comments, admins can delete any; search also finds tasks by comment text; comments travel with project export/import
 - **Task History**: The 💬 panel also shows who created the task and who changed what — status, assignee, project, title, description, deadline, priority, repeat — interleaved with the comments (*Hide history* to see comments only)
 - **Search & Filters**: Full-text search over titles, descriptions and comments (subtasks included), filters for status, project, assignee and deadline, sorting by deadline/priority/date/title; filters are kept in the URL
+- **List, Board & Calendar Views**: Switch the Tasks page between the list, a **board** with To Do / In Progress / Blocked / Done columns (drag cards between columns, or ◀ ▶ on touch) and a **month calendar** of deadlines (subtasks included; drag a task to another day to move its deadline; on phones days show colored dots and the tapped day's tasks are listed below). Search and filters apply to all three; clicking a task opens it in the list
 - **Projects & Categories**: Projects with one level of categories (e.g. *6GHub → General, Ordering, Documentation*), each project color-coded; the Tasks page lists tasks in collapsible sections per project and per category (remembered per browser), with every task carrying its project's color
 - **Progress Overview**: The Projects page shows each project's progress bar and % done (categories included), open / overdue / due-this-week counts that open the matching filter on the Tasks page, and the next deadline; each category has its own mini bar and overdue count
 - **Phone-friendly**: Bottom tab bar, two-line task rows with large touch targets and a ⋯ menu that opens as a bottom sheet (add subtask, edit, move, delete), folding filters, no input zoom on iOS; installable via *Add to Home Screen* (web app manifest) to run full-screen like an app
@@ -35,6 +36,8 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 | Desktop | Phone |
 |---|---|
 | ![Tasks, dark mode](docs/screenshots/tasks-desktop-dark.png) | ![Tasks on a phone](docs/screenshots/tasks-phone.png) |
+| ![Board view](docs/screenshots/board-desktop.png) | ![Calendar on a phone](docs/screenshots/calendar-phone.png) |
+| ![Calendar view](docs/screenshots/calendar-desktop.png) | |
 | ![Search with highlighted matches](docs/screenshots/tasks-filtered.png) | ![Completed row on a phone, dark mode](docs/screenshots/tasks-phone-dark.png) |
 | ![Projects with categories and progress](docs/screenshots/projects-desktop.png) | ![Project progress on a phone](docs/screenshots/projects-phone.png) |
 | ![Comments and history of a task](docs/screenshots/comments-desktop.png) | ![Comments and history on a phone](docs/screenshots/comments-phone.png) |
@@ -130,7 +133,7 @@ With no configuration it starts a throwaway PostgreSQL via the `pgserver` packag
 
 ```bash
 cd frontend
-npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, exportCsv, bulkParse, recurrence, activity
+npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, views (board/calendar), exportCsv, bulkParse, recurrence, activity
 ```
 
 **CI** — [GitHub Actions](.github/workflows/ci.yml) runs the backend tests (PostgreSQL 16, Python 3.10 and 3.12), the frontend tests and production build, and shellcheck on every push to `main`/`dev` and on pull requests.
@@ -156,6 +159,7 @@ project-manager/
 │       ├── recurrence.js    # Repeat settings as text
 │       ├── activity.js      # Task history entries as sentences
 │       ├── progress.js      # Per-project progress for the Projects page
+│       ├── views.js         # Board columns, calendar grid and deadlines by day
 │       └── projects.js      # Project tree, colors, grouping tasks by project/category
 ├── install.sh               # Installer for a Debian/Ubuntu LXC or VM (idempotent)
 ├── proxmox/

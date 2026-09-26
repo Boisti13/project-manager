@@ -7,7 +7,7 @@ import { progressByProject, combineProgress, percentDone } from '../progress';
 import '../styles/TaskList.css';
 import '../styles/ProjectList.css';
 
-const shortDate = (value) => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+const shortDate = (value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
 function ProgressBar({ stats, small = false }) {
   const pct = percentDone(stats);

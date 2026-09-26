@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
+import TaskBoard from './TaskBoard';
+import TaskCalendar from './TaskCalendar';
+import { flattenVisible } from '../views';
 import { authFetch, useAuth } from '../context/AuthContext';
 import {
   DEFAULT_FILTERS,
@@ -12,6 +15,13 @@ import {
 } from '../taskFilters';
 import { buildProjectIndex, groupTasksByProject, groupTaskCount } from '../projects';
 import '../styles/TaskList.css';
+import '../styles/TaskViews.css';
+
+const VIEWS = [
+  { id: 'list', label: '☰ List' },
+  { id: 'board', label: '▦ Board' },
+  { id: 'calendar', label: '📅 Calendar' },
+];
 
 const COLLAPSED_KEY = 'pm.collapsedGroups';
 
@@ -60,7 +70,7 @@ function TaskList() {
   };
 
   const clearFilters = () => {
-    setSearchParams(filtersToParams({ ...DEFAULT_FILTERS, sort: filters.sort }), { replace: true });
+    setSearchParams(filtersToParams({ ...DEFAULT_FILTERS, sort: filters.sort, view: filters.view }), { replace: true });
     setCollapsedIds(new Set());
   };
 
@@ -241,6 +251,47 @@ function TaskList() {
       setError('Failed to update task: ' + err.message);
     }
   };
+
+  // Board: move a card to another column.
+  const handleSetStatus = async (task, status) => {
+    const previous = tasks;
+    setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status } : t)));
+    try {
+      await fetchJson(`/api/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      // Reload for completed_at (Done column order) and repeating tasks.
+      if (status === 'done' || task.status === 'done') await loadData();
+    } catch (err) {
+      setTasks(previous);
+      setError('Failed to update task: ' + err.message);
+    }
+  };
+
+  // Calendar: drop a task on another day.
+  const handleReschedule = async (task, day) => {
+    const previous = tasks;
+    const deadline = `${day}T00:00:00`;
+    setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, deadline } : t)));
+    try {
+      await fetchJson(`/api/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deadline }),
+      });
+    } catch (err) {
+      setTasks(previous);
+      setError('Failed to move the deadline: ' + err.message);
+    }
+  };
+
+  // Board/Calendar: show a task in the list (same filters).
+  const openInList = (task) =>
+    setSearchParams({ ...filtersToParams({ ...filters, view: 'list' }), task: String(task.id) }, { replace: true });
+
+  const setView = (view) => setSearchParams(filtersToParams({ ...filters, view }), { replace: true });
 
   // Siblings a task can swap places with: same parent; for top-level tasks
   // also the same project and the same open/completed section.
@@ -515,12 +566,26 @@ function TaskList() {
             ({filtering ? `${visibleRoots.length} of ${tree.totalRoots}` : tree.totalRoots})
           </span>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => openNewTask(filters.project ? parseInt(filters.project, 10) : null)}
-        >
-          + New Task
-        </button>
+        <div className="header-actions tasks-header-actions">
+          <div className="view-switch" role="group" aria-label="View">
+            {VIEWS.map((v) => (
+              <button
+                key={v.id}
+                className={filters.view === v.id ? 'active' : ''}
+                aria-pressed={filters.view === v.id}
+                onClick={() => setView(v.id)}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={() => openNewTask(filters.project ? parseInt(filters.project, 10) : null)}
+          >
+            + New Task
+          </button>
+        </div>
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -665,6 +730,31 @@ function TaskList() {
         </p>
       )}
 
+      {filters.view === 'board' && (
+        <TaskBoard
+          roots={visibleRoots}
+          projectIndex={projectIndex}
+          users={users}
+          progressOf={tree.progressOf}
+          onSetStatus={handleSetStatus}
+          onOpen={openInList}
+          onEdit={(task) => {
+            handleEditTask(task);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      )}
+
+      {filters.view === 'calendar' && (
+        <TaskCalendar
+          tasks={flattenVisible(tree)}
+          projectIndex={projectIndex}
+          onOpen={openInList}
+          onReschedule={handleReschedule}
+        />
+      )}
+
+      {filters.view !== 'board' && filters.view !== 'calendar' && (
       <div className="task-list">
         {visibleRoots.length === 0 && filtering ? (
           <p className="no-tasks">
@@ -756,6 +846,7 @@ function TaskList() {
           })
         )}
       </div>
+      )}
     </div>
   );
 }
