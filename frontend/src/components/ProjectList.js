@@ -1,13 +1,65 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import ProjectForm from './ProjectForm';
 import { authFetch } from '../context/AuthContext';
 import { buildProjectIndex } from '../projects';
+import { progressByProject, combineProgress, percentDone } from '../progress';
 import '../styles/TaskList.css';
 import '../styles/ProjectList.css';
 
+const shortDate = (value) => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+function ProgressBar({ stats, small = false }) {
+  const pct = percentDone(stats);
+  return (
+    <span
+      className={`progress-bar ${small ? 'small' : ''}`}
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={pct}
+      aria-label={`${pct}% done`}
+      title={`${stats.done} of ${stats.total} done`}
+    >
+      <span style={{ width: `${pct}%` }} />
+    </span>
+  );
+}
+
+// Progress of a project (with its categories): bar, counts that open the
+// matching filter on the Tasks page, and the next deadline.
+function ProjectProgress({ stats, projectId }) {
+  if (!stats.total) return <p className="progress-text progress-empty">No tasks yet</p>;
+  const open = stats.total - stats.done;
+  const tasksUrl = (extra) => `/?project=${projectId}&${extra}`;
+  return (
+    <div className="project-progress">
+      <ProgressBar stats={stats} />
+      <p className="progress-text">
+        <strong>{percentDone(stats)}%</strong>
+        <span>
+          {stats.done} of {stats.total} done
+        </span>
+        {open > 0 && <Link to={tasksUrl('status=open')}>{open} open</Link>}
+        {stats.overdue > 0 && (
+          <Link className="progress-overdue" to={tasksUrl('due=overdue')}>
+            {stats.overdue} overdue
+          </Link>
+        )}
+        {stats.dueSoon > 0 && <Link to={tasksUrl('due=week')}>{stats.dueSoon} due this week</Link>}
+        {stats.next && (
+          <span className="progress-next">
+            Next: <Link to={`/?task=${stats.next.id}`}>{stats.next.title}</Link> · {shortDate(stats.next.deadline)}
+          </span>
+        )}
+      </p>
+    </div>
+  );
+}
+
 function ProjectList() {
   const [projects, setProjects] = useState([]);
-  const [taskCounts, setTaskCounts] = useState(new Map());
+  const [progress, setProgress] = useState(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   // null: closed; { project } to edit; { parentId } to create
@@ -39,11 +91,7 @@ function ProjectList() {
     try {
       const [projectsRes, tasksRes] = await Promise.all([fetchJson('/api/projects/'), fetchJson('/api/tasks/')]);
       setProjects(projectsRes);
-      const counts = new Map();
-      for (const t of tasksRes) {
-        if (t.project_id != null && t.parent_task_id == null) counts.set(t.project_id, (counts.get(t.project_id) || 0) + 1);
-      }
-      setTaskCounts(counts);
+      setProgress(progressByProject(tasksRes));
       setError(null);
     } catch (err) {
       setError('Failed to load projects: ' + err.message);
@@ -148,7 +196,8 @@ function ProjectList() {
 
   if (loading) return <div className="container"><p>Loading projects...</p></div>;
 
-  const count = (id) => taskCounts.get(id) || 0;
+  const EMPTY = combineProgress([]);
+  const statsOf = (id) => progress.get(id) || EMPTY;
 
   return (
     <div className="container">
@@ -208,16 +257,15 @@ function ProjectList() {
         ) : (
           projectIndex.topLevel.map((project) => {
             const categories = projectIndex.categoriesOf(project.id);
-            const total = count(project.id) + categories.reduce((n, c) => n + count(c.id), 0);
+            const stats = combineProgress([statsOf(project.id), ...categories.map((c) => statsOf(c.id))]);
             return (
               <div className="project-item" key={project.id} style={{ '--project-color': projectIndex.colorOf(project.id) }}>
                 <div className="project-row">
                   <span className="project-swatch" />
                   <div className="project-info">
-                    <h3>
-                      {project.name} <span className="project-group-count">{total}</span>
-                    </h3>
+                    <h3>{project.name}</h3>
                     {project.description && <p>{project.description}</p>}
+                    <ProjectProgress stats={stats} projectId={project.id} />
                   </div>
                   <div className="project-actions">
                     <button
@@ -248,7 +296,15 @@ function ProjectList() {
                     {categories.map((c) => (
                       <li key={c.id} className="category-row">
                         <span className="category-name">{c.name}</span>
-                        <span className="project-group-count">{count(c.id)}</span>
+                        <ProgressBar stats={statsOf(c.id)} small />
+                        <span className="category-progress">
+                          {statsOf(c.id).done}/{statsOf(c.id).total}
+                        </span>
+                        {statsOf(c.id).overdue > 0 && (
+                          <Link className="progress-overdue category-overdue" to={`/?project=${c.id}&due=overdue`}>
+                            {statsOf(c.id).overdue} overdue
+                          </Link>
+                        )}
                         {c.description && <span className="category-desc">{c.description}</span>}
                         <span className="project-actions">
                           <button className="task-action-btn edit-btn" onClick={() => openForm({ project: c })} title="Edit">

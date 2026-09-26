@@ -2,6 +2,13 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.21.0 — 2026-09-26
+
+### Added
+- **Progress overview on the Projects page.** Every project shows a progress bar in its color, **% done** and *x of y done* (its categories included), plus **open**, **overdue** and **due this week** counts — each a link to the Tasks page with that filter set — and the **next deadline** (a link to the task).
+- Categories get their own mini progress bar, *done/total* and an overdue count.
+- Counts are top-level tasks (subtasks are a task's checklist); archived done tasks count as done.
+
 ## v1.20.0 — 2026-09-26
 
 ### Added

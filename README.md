@@ -19,6 +19,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Task History**: The 💬 panel also shows who created the task and who changed what — status, assignee, project, title, description, deadline, priority, repeat — interleaved with the comments (*Hide history* to see comments only)
 - **Search & Filters**: Full-text search over titles, descriptions and comments (subtasks included), filters for status, project, assignee and deadline, sorting by deadline/priority/date/title; filters are kept in the URL
 - **Projects & Categories**: Projects with one level of categories (e.g. *6GHub → General, Ordering, Documentation*), each project color-coded; the Tasks page lists tasks in collapsible sections per project and per category (remembered per browser), with every task carrying its project's color
+- **Progress Overview**: The Projects page shows each project's progress bar and % done (categories included), open / overdue / due-this-week counts that open the matching filter on the Tasks page, and the next deadline; each category has its own mini bar and overdue count
 - **Phone-friendly**: Bottom tab bar, two-line task rows with large touch targets and a ⋯ menu that opens as a bottom sheet (add subtask, edit, move, delete), folding filters, no input zoom on iOS; installable via *Add to Home Screen* (web app manifest) to run full-screen like an app
 - **Extended Status**: todo / in_progress / blocked / done
 - **Notifications**: The bell tells you when someone **assigns you a task** (a bulk add counts as one) or **comments on a task** you're assigned to or have commented on, plus overdue and due-within-3-days deadlines of your (and unassigned) tasks. Unread items are highlighted; clicking one jumps to the task — opening its project, category and parents, and its comments
@@ -35,7 +36,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 |---|---|
 | ![Tasks, dark mode](docs/screenshots/tasks-desktop-dark.png) | ![Tasks on a phone](docs/screenshots/tasks-phone.png) |
 | ![Search with highlighted matches](docs/screenshots/tasks-filtered.png) | ![Completed row on a phone, dark mode](docs/screenshots/tasks-phone-dark.png) |
-| ![Projects with categories](docs/screenshots/projects-desktop.png) | ![Projects on a phone](docs/screenshots/projects-phone.png) |
+| ![Projects with categories and progress](docs/screenshots/projects-desktop.png) | ![Project progress on a phone](docs/screenshots/projects-phone.png) |
 | ![Comments and history of a task](docs/screenshots/comments-desktop.png) | ![Comments and history on a phone](docs/screenshots/comments-phone.png) |
 | ![Bulk entry: one task per line, indented lines become subtasks](docs/screenshots/bulk-desktop.png) | ![Login with registration closed](docs/screenshots/login-phone.png) |
 | ![Notifications: assignments, comments, deadlines](docs/screenshots/bell-desktop.png) | ![Task menu on a phone](docs/screenshots/menu-phone.png) |
@@ -129,7 +130,7 @@ With no configuration it starts a throwaway PostgreSQL via the `pgserver` packag
 
 ```bash
 cd frontend
-npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), exportCsv, bulkParse
+npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, exportCsv, bulkParse, recurrence, activity
 ```
 
 **CI** — [GitHub Actions](.github/workflows/ci.yml) runs the backend tests (PostgreSQL 16, Python 3.10 and 3.12), the frontend tests and production build, and shellcheck on every push to `main`/`dev` and on pull requests.
@@ -154,6 +155,7 @@ project-manager/
 │       ├── bulkParse.js     # "One task per line" text → task tree
 │       ├── recurrence.js    # Repeat settings as text
 │       ├── activity.js      # Task history entries as sentences
+│       ├── progress.js      # Per-project progress for the Projects page
 │       └── projects.js      # Project tree, colors, grouping tasks by project/category
 ├── install.sh               # Installer for a Debian/Ubuntu LXC or VM (idempotent)
 ├── proxmox/
