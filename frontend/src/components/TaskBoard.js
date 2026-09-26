@@ -3,6 +3,7 @@ import { BOARD_COLUMNS, boardColumns } from '../views';
 import { shortRecurrence } from '../recurrence';
 import LabelChips from './LabelChips';
 import '../styles/TaskViews.css';
+import '../styles/Dependencies.css';
 
 const PRIORITY = { 1: 'Medium', 2: 'High', 3: 'Critical' };
 const DONE_SHOWN = 15;
@@ -14,7 +15,18 @@ export const isOverdue = (task) => !!task.deadline && task.status !== 'done' && 
 
 // Kanban board of the top-level tasks the list would show. Cards move
 // between columns by drag and drop, or with the ◀ ▶ buttons (touch).
-function TaskBoard({ roots, projectIndex, users, progressOf, onSetStatus, onOpen, onEdit, labelIndex, onLabelClick }) {
+function TaskBoard({
+  roots,
+  projectIndex,
+  users,
+  progressOf,
+  onSetStatus,
+  onOpen,
+  onEdit,
+  labelIndex,
+  onLabelClick,
+  dependencyIndex,
+}) {
   const [dragId, setDragId] = useState(null);
   const [overCol, setOverCol] = useState(null);
   const [showAllDone, setShowAllDone] = useState(false);
@@ -33,6 +45,7 @@ function TaskBoard({ roots, projectIndex, users, progressOf, onSetStatus, onOpen
   const card = (task, colIndex) => {
     const project = task.project_id != null ? projectIndex.byId.get(task.project_id) : null;
     const progress = progressOf(task);
+    const openBlockers = dependencyIndex ? dependencyIndex.openBlockersOf(task) : [];
     const prev = BOARD_COLUMNS[colIndex - 1];
     const next = BOARD_COLUMNS[colIndex + 1];
     return (
@@ -68,6 +81,11 @@ function TaskBoard({ roots, projectIndex, users, progressOf, onSetStatus, onOpen
           )}
           {task.deadline && (
             <span className={`task-deadline ${isOverdue(task) ? 'overdue' : ''}`}>{formatDay(task.deadline)}</span>
+          )}
+          {openBlockers.length > 0 && (
+            <span className="task-waiting" title={`Waiting for: ${openBlockers.map((b) => b.title).join(', ')}`}>
+              ⏳ {openBlockers.length === 1 ? 'waiting' : `waiting · ${openBlockers.length}`}
+            </span>
           )}
           {task.recurrence_unit && (
             <span className="task-repeat">↻ {shortRecurrence(task.recurrence_unit, task.recurrence_interval)}</span>

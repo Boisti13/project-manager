@@ -42,6 +42,15 @@ task_labels = Table(
 )
 
 
+# Dependencies: task_id waits for blocked_by_id to be done.
+task_dependencies = Table(
+    "task_dependencies",
+    Base.metadata,
+    Column("task_id", Integer, ForeignKey("tasks.id", ondelete="CASCADE"), primary_key=True),
+    Column("blocked_by_id", Integer, ForeignKey("tasks.id", ondelete="CASCADE"), primary_key=True, index=True),
+)
+
+
 class Label(Base):
     """A colored tag, shared by everyone (routers/labels.py)."""
     __tablename__ = "labels"
@@ -121,6 +130,19 @@ class Task(Base):
     )
 
     labels = relationship("Label", secondary=task_labels, order_by="Label.name", passive_deletes=True)
+    # Tasks this one waits for (app/dependencies.py).
+    blocked_by = relationship(
+        "Task",
+        secondary=task_dependencies,
+        primaryjoin=lambda: Task.id == task_dependencies.c.task_id,
+        secondaryjoin=lambda: Task.id == task_dependencies.c.blocked_by_id,
+        order_by=lambda: Task.id,
+        passive_deletes=True,
+    )
+
+    @property
+    def blocked_by_ids(self):
+        return [t.id for t in self.blocked_by]
 
     @property
     def label_ids(self):

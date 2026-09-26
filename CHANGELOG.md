@@ -2,6 +2,21 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.25.0 — 2026-09-26
+
+### Added
+- **Task dependencies.** *Waits for* in the task form: search other tasks by title and add them (project shown next to each; ✓ for done ones).
+  - A task with open dependencies shows **⏳ waiting** (with the count, and their titles in the tooltip) in the list and on board cards, until they're all done.
+  - When the last one is done, the waiting task's assignee gets a **Ready to start** notification (*Done: …*), unless they finished it themselves.
+  - Status filter **⏳ Waiting for other tasks**.
+  - Circles are refused (*That would make the tasks wait for each other*), as are tasks you can't see; deleting a task removes it from what others wait for.
+  - The history records changes (*made it wait for “Get quote”*).
+
+### Under the hood
+- Migration `0010`: `task_dependencies`; tasks take and return `blocked_by_ids`; logic in `backend/app/dependencies.py`.
+- 4 new backend tests (123 in total), frontend tests for the dependency helpers and the *waiting* filter.
+- Dependencies aren't part of project export/import.
+
 ## v1.24.0 — 2026-09-26
 
 ### Added

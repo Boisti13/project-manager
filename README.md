@@ -19,13 +19,14 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Comments**: Discussion thread on every task and subtask (💬 with count on the row); authors can edit (marked *edited*) and delete their comments, admins can delete any; search also finds tasks by comment text; comments travel with project export/import
 - **Task History**: The 💬 panel also shows who created the task and who changed what — status, assignee, project, title, description, deadline, priority, repeat — interleaved with the comments (*Hide history* to see comments only)
 - **Labels**: Colored tags such as *urgent* or *waiting for supplier*, shared across all projects. Pick or create them in the task form, manage them under Settings → Labels (rename, recolor, delete); they show on list rows and board cards, clicking one filters by it, the *Label* filter and the search find them, and they're kept by repeating tasks, bulk entry, the history, CSV and export/import
+- **Dependencies**: *Waits for* in the task form links a task to others it depends on (search by title). It shows **⏳ waiting** with the open ones in the tooltip until they're done — then its assignee gets a *Ready to start* notification. The Status filter has *Waiting for other tasks*; tasks can't wait for each other in a circle, and the history records changes
 - **Search & Filters**: Full-text search over titles, descriptions and comments (subtasks included), filters for status, project, assignee, label and deadline, sorting by deadline/priority/date/title; filters are kept in the URL
 - **List, Board & Calendar Views**: Switch the Tasks page between the list, a **board** with To Do / In Progress / Blocked / Done columns (drag cards between columns, or ◀ ▶ on touch) and a **month calendar** of deadlines (subtasks included; drag a task to another day to move its deadline; on phones days show colored dots and the tapped day's tasks are listed below). Search and filters apply to all three; clicking a task opens it in the list
 - **Projects & Categories**: Projects with one level of categories (e.g. *6GHub → General, Ordering, Documentation*), each project color-coded; the Tasks page lists tasks in collapsible sections per project and per category (remembered per browser), with every task carrying its project's color
 - **Progress Overview**: The Projects page shows each project's progress bar and % done (categories included), open / overdue / due-this-week counts that open the matching filter on the Tasks page, and the next deadline; each category has its own mini bar and overdue count
 - **Phone-friendly**: Bottom tab bar, two-line task rows with large touch targets and a ⋯ menu that opens as a bottom sheet (add subtask, edit, move, delete), folding filters, no input zoom on iOS; installable via *Add to Home Screen* (web app manifest) to run full-screen like an app
 - **Extended Status**: todo / in_progress / blocked / done
-- **Notifications**: The bell tells you when someone **assigns you a task** (a bulk add counts as one) or **comments on a task** you're assigned to or have commented on, plus overdue and due-within-3-days deadlines of your (and unassigned) tasks. Unread items are highlighted; clicking one jumps to the task — opening its project, category and parents, and its comments
+- **Notifications**: The bell tells you when someone **assigns you a task** (a bulk add counts as one), **comments on a task** you're assigned to or have commented on, or **finishes the last task one of yours waited for**, plus overdue and due-within-3-days deadlines of your (and unassigned) tasks. Unread items are highlighted; clicking one jumps to the task — opening its project, category and parents, and its comments
 - **Assigned to me**: One click next to the search shows only your tasks, with a count of your open ones
 - **Dark Mode**: Toggle in the nav, persisted per browser, defaults to OS preference
 - **In-app Updates**: Settings shows the running version/branch/commit; anyone can check a branch for updates, admins can update or switch branches (backup, pull, migrate, rebuild the frontend, sync the Nginx config, restart) with a live log; only one update runs at a time, also when one was started by hand
@@ -136,7 +137,7 @@ With no configuration it starts a throwaway PostgreSQL via the `pgserver` packag
 
 ```bash
 cd frontend
-npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, views (board/calendar), labels, exportCsv, bulkParse, recurrence, activity
+npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, views (board/calendar), labels, dependencies, exportCsv, bulkParse, recurrence, activity
 ```
 
 **CI** — [GitHub Actions](.github/workflows/ci.yml) runs the backend tests (PostgreSQL 16, Python 3.10 and 3.12), the frontend tests and production build, and shellcheck on every push to `main`/`dev` and on pull requests.
@@ -161,6 +162,7 @@ project-manager/
 │       ├── bulkParse.js     # "One task per line" text → task tree
 │       ├── recurrence.js    # Repeat settings as text
 │       ├── activity.js      # Task history entries as sentences
+│       ├── dependencies.js  # Blockers, waiting tasks, picker suggestions
 │       ├── labels.js        # Label index, readable text color on a label
 │       ├── progress.js      # Per-project progress for the Projects page
 │       ├── views.js         # Board columns, calendar grid and deadlines by day

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import LabelPicker from './LabelPicker';
+import DependencyPicker from './DependencyPicker';
 import { parseBulk, countNested } from '../bulkParse';
 import '../styles/TaskForm.css';
 
@@ -54,6 +55,7 @@ function TaskForm({
   users,
   labels = [],
   onLabelCreated,
+  allTasks = [],
   onSubmit,
   onBulkSubmit,
   onCancel,
@@ -74,6 +76,7 @@ function TaskForm({
     recurrence_unit: null,
     recurrence_interval: 1,
     label_ids: [],
+    blocked_by_ids: [],
   });
 
   useEffect(() => {
@@ -90,6 +93,7 @@ function TaskForm({
         recurrence_interval: task.recurrence_interval || 1,
         parent_task_id: task.parent_task_id || null,
         label_ids: task.label_ids || [],
+        blocked_by_ids: task.blocked_by_ids || [],
       });
     }
   }, [task]);
@@ -343,6 +347,22 @@ function TaskForm({
           onCreated={onLabelCreated}
         />
       </div>
+
+      {mode === 'single' && (
+        <div className="form-group">
+          <label>Waits for</label>
+          <DependencyPicker
+            tasks={allTasks}
+            task={task}
+            value={formData.blocked_by_ids}
+            onChange={(ids) => setFormData((prev) => ({ ...prev, blocked_by_ids: ids }))}
+            projectIndex={projectIndex}
+          />
+          <small className="repeat-hint">
+            Shown as ⏳ waiting until these are done; then the assignee is notified that it can start.
+          </small>
+        </div>
+      )}
 
       <div className="form-group">
         <label>Assign To</label>

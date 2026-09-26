@@ -22,6 +22,8 @@ test('describes activity entries', () => {
   assert.strictEqual(d('labels', null, 'urgent'), 'labeled it urgent');
   assert.strictEqual(d('labels', 'urgent', 'urgent, waiting'), 'changed labels from urgent to urgent, waiting');
   assert.strictEqual(d('labels', 'urgent', null), 'removed the labels (urgent)');
+  assert.strictEqual(d('blocked_by', null, '“Get quote”'), 'made it wait for “Get quote”');
+  assert.strictEqual(d('blocked_by', '“A”', null), 'removed what it waited for (“A”)');
   assert.strictEqual(d('recurrence', null, 'week:1'), 'made it repeat weekly');
   assert.strictEqual(d('recurrence', null, 'day:3'), 'made it repeat every 3 days');
   assert.strictEqual(d('recurrence', 'day:3', null), 'stopped repeating it');

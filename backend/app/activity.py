@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 from app.models import Project, Task, TaskActivity, User
 
 # Changes worth showing; order, parent and completed_at are bookkeeping.
-TRACKED = ("title", "description", "status", "priority", "deadline", "assignee_id", "project_id", "recurrence", "labels")
+TRACKED = ("title", "description", "status", "priority", "deadline", "assignee_id", "project_id", "recurrence", "labels",
+           "blocked_by")
 
 
 def _status(task: Task):
@@ -28,6 +29,7 @@ def snapshot(task: Task) -> dict:
         "project_id": task.project_id,
         "recurrence": _recurrence(task),
         "labels": ", ".join(sorted(l.name for l in task.labels)) or None,
+        "blocked_by": ", ".join(f"“{t.title}”" for t in sorted(task.blocked_by, key=lambda t: t.id)) or None,
     }
 
 

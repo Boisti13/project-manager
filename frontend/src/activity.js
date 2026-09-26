@@ -48,6 +48,10 @@ export function describeActivity({ kind, actor, old_value: o, new_value: n }, fm
       if (!o) return `labeled it ${n}`;
       if (!n) return `removed the labels (${o})`;
       return `changed labels from ${o} to ${n}`;
+    case 'blocked_by':
+      if (!o) return `made it wait for ${n}`;
+      if (!n) return `removed what it waited for (${o})`;
+      return `changed what it waits for from ${o} to ${n}`;
     case 'recurrence':
       return n ? `made it repeat ${repeatText(n)}` : 'stopped repeating it';
     case 'next_created':

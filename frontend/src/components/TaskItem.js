@@ -5,6 +5,7 @@ import TaskMenu from './TaskMenu';
 import LabelChips from './LabelChips';
 import { describeRecurrence, shortRecurrence } from '../recurrence';
 import '../styles/TaskItem.css';
+import '../styles/Dependencies.css';
 
 function Highlight({ text, needle }) {
   return highlightParts(text, needle).map((part, i) =>
@@ -34,6 +35,7 @@ function TaskItem({
   onMoveTo = null,
   labelIndex = null,
   onLabelClick = null,
+  dependencyIndex = null,
   indent = 0,
 }) {
   const subtasks = childrenOf(task);
@@ -44,6 +46,7 @@ function TaskItem({
   // All subtasks ticked but the task itself isn't: highlight it, but leave it
   // open -- new subtasks may still be added. Ticking it is a deliberate step.
   const isReady = progress.total > 0 && progress.done === progress.total && task.status !== 'done';
+  const openBlockers = dependencyIndex ? dependencyIndex.openBlockersOf(task) : [];
   const [dragOver, setDragOver] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -177,6 +180,11 @@ function TaskItem({
               {priorityLabels[task.priority] || 'P' + task.priority}
             </span>
           )}
+          {openBlockers.length > 0 && (
+            <span className="task-waiting" title={`Waiting for: ${openBlockers.map((b) => b.title).join(', ')}`}>
+              ⏳ {openBlockers.length === 1 ? 'waiting' : `waiting · ${openBlockers.length}`}
+            </span>
+          )}
           {task.recurrence_unit && (
             <span className="task-repeat" title={describeRecurrence(task.recurrence_unit, task.recurrence_interval)}>
               ↻ {shortRecurrence(task.recurrence_unit, task.recurrence_interval)}
@@ -234,6 +242,7 @@ function TaskItem({
             task.updated_at, task.status, task.title, task.description, task.priority, task.deadline,
             task.assignee_id, task.project_id, task.recurrence_unit, task.recurrence_interval,
             (task.label_ids || []).join(','),
+            (task.blocked_by_ids || []).join(','),
           ].join('|')}
         />
       )}
@@ -264,6 +273,7 @@ function TaskItem({
               onMoveTo={onMoveTo}
               labelIndex={labelIndex}
               onLabelClick={onLabelClick}
+              dependencyIndex={dependencyIndex}
               indent={indent + 1}
             />
           ))}

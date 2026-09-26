@@ -6,6 +6,7 @@ import TaskBoard from './TaskBoard';
 import TaskCalendar from './TaskCalendar';
 import { flattenVisible } from '../views';
 import { buildLabelIndex } from '../labels';
+import { buildDependencyIndex } from '../dependencies';
 import LabelChips from './LabelChips';
 import { authFetch, useAuth } from '../context/AuthContext';
 import {
@@ -425,6 +426,7 @@ function TaskList() {
 
   const projectIndex = useMemo(() => buildProjectIndex(projects), [projects]);
   const labelIndex = useMemo(() => buildLabelIndex(labels), [labels]);
+  const dependencyIndex = useMemo(() => buildDependencyIndex(tasks), [tasks]);
   const filterByLabel = (label) => setFilter('label', String(label.id));
 
   const myOpenCount = useMemo(
@@ -542,6 +544,7 @@ function TaskList() {
       onMoveTo={handleMoveTo}
       labelIndex={labelIndex}
       onLabelClick={filterByLabel}
+      dependencyIndex={dependencyIndex}
     />
   );
 
@@ -611,6 +614,7 @@ function TaskList() {
             users={users}
             labels={labels}
             onLabelCreated={(l) => setLabels((ls) => [...ls, l])}
+            allTasks={tasks}
             onSubmit={selectedTask ? handleUpdateTask : handleCreateTask}
             onBulkSubmit={handleBulkCreate}
             onCancel={handleFormCancel}
@@ -670,6 +674,7 @@ function TaskList() {
               <option value="in_progress">In Progress</option>
               <option value="blocked">Blocked</option>
               <option value="done">Done</option>
+              <option value="waiting">⏳ Waiting for other tasks</option>
             </select>
           </div>
 
@@ -779,6 +784,7 @@ function TaskList() {
           onSetStatus={handleSetStatus}
           labelIndex={labelIndex}
           onLabelClick={filterByLabel}
+          dependencyIndex={dependencyIndex}
           onOpen={openInList}
           onEdit={(task) => {
             handleEditTask(task);

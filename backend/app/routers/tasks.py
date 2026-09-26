@@ -3,7 +3,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 from app.database import get_db
 from app.models import Task, TaskActivity, TaskComment, TaskStatus, User
-from app import access, activity, notify, recurrence, schemas
+from app import access, activity, dependencies, notify, recurrence, schemas
 from app.timeutil import utcnow
 from app.auth import get_current_user
 from app.routers.labels import resolve as resolve_labels
@@ -42,8 +42,9 @@ def create_task(task: schemas.TaskCreate, current_user: User = Depends(get_curre
     if task.project_id is not None:
         access.require_project(db, current_user, task.project_id, status=400)
     access.check_assignee(db, task.assignee_id, task.project_id)
-    db_task = Task(**task.model_dump(exclude={"label_ids"}))
+    db_task = Task(**task.model_dump(exclude={"label_ids", "blocked_by_ids"}))
     db_task.labels = resolve_labels(db, task.label_ids)
+    dependencies.set_blockers(db, current_user, db_task, task.blocked_by_ids)
     normalize_recurrence(db_task)
     sync_completed_at(db_task)
     db.add(db_task)
@@ -121,7 +122,7 @@ def list_tasks(project_id: int = None, parent_id: int = None, current_user: User
     if parent_id:
         query = query.filter(Task.parent_task_id == parent_id)
 
-    tasks = access.filter_tasks(db, current_user, query.options(selectinload(Task.labels)).order_by(Task.order, Task.id).all())
+    tasks = access.filter_tasks(db, current_user, query.options(selectinload(Task.labels), selectinload(Task.blocked_by)).order_by(Task.order, Task.id).all())
     counts = dict(db.query(TaskComment.task_id, func.count(TaskComment.id)).group_by(TaskComment.task_id))
     for t in tasks:
         t.comment_count = counts.get(t.id, 0)
@@ -140,6 +141,10 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
     label_ids = update_data.pop("label_ids", None)
     if label_ids is not None:
         db_task.labels = resolve_labels(db, label_ids)
+    blocked_by_ids = update_data.pop("blocked_by_ids", None)
+    if blocked_by_ids is not None:
+        dependencies.set_blockers(db, current_user, db_task, blocked_by_ids)
+    was_done = db_task.status == TaskStatus.DONE
     previous_assignee = db_task.assignee_id
     previous_project = db_task.project_id
     if update_data.get("project_id") is not None:
@@ -162,6 +167,8 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
     if db_task.assignee_id != previous_assignee:
         notify.assigned(db, db_task, current_user)
     activity.changed(db, db_task, before, current_user)
+    if db_task.status == TaskStatus.DONE and not was_done:
+        dependencies.notify_unblocked(db, db_task, current_user)
     record_spawn(db, db_task, current_user)
 
     db.commit()

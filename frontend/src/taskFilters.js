@@ -1,9 +1,10 @@
 // Pure search/filter/sort logic for the task tree. No React in here so it
 // can be reasoned about (and tested) on its own.
+import { isWaiting } from './dependencies';
 
 export const DEFAULT_FILTERS = {
   q: '',
-  status: 'all', // all | open | todo | in_progress | blocked | done
+  status: 'all', // all | open | todo | in_progress | blocked | done | waiting (on other tasks)
   project: '', // '' | project id (string)
   assignee: '', // '' | 'me' | 'none' | user id (string)
   label: '', // '' | label id (string)
@@ -173,7 +174,7 @@ export function buildTaskTree(
         (needle !== '' && commentMatchIds?.has(task.id)) ||
         (needle !== '' && (task.label_ids || []).some((id) => labelNameOf(id).toLowerCase().includes(needle)))) &&
       (filters.label === '' || (task.label_ids || []).some((id) => String(id) === filters.label)) &&
-      matchesStatus(task, filters.status) &&
+      (filters.status === 'waiting' ? isWaiting(task, byId) : matchesStatus(task, filters.status)) &&
       // Filtering by a project includes its categories.
       (filters.project === '' ||
         String(project) === filters.project ||

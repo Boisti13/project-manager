@@ -103,6 +103,7 @@ class TaskBase(BaseModel):
     recurrence_unit: Optional[RecurrenceUnit] = None
     recurrence_interval: Optional[int] = Field(default=None, ge=1, le=365)
     label_ids: List[int] = []
+    blocked_by_ids: List[int] = []
 
 class TaskCreate(TaskBase):
     pass
@@ -156,6 +157,7 @@ class TaskUpdate(BaseModel):
     recurrence_unit: Optional[RecurrenceUnit] = None
     recurrence_interval: Optional[int] = Field(default=None, ge=1, le=365)
     label_ids: Optional[List[int]] = None
+    blocked_by_ids: Optional[List[int]] = None
 
 class Task(TaskBase):
     id: int

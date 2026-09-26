@@ -12,6 +12,7 @@ const describe = (n) => {
   const who = n.actor || 'Someone';
   if (n.kind === 'assigned') return `${who} assigned you`;
   if (n.kind === 'comment') return `${who} commented`;
+  if (n.kind === 'unblocked') return `Ready to start — ${who} finished what it waited for`;
   return who;
 };
 
