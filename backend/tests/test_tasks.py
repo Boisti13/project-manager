@@ -53,3 +53,24 @@ def test_assignee_unset_when_user_is_removed_is_not_possible_via_api(client, adm
     t = task(client, admin, title="x", assignee_id=alice.id)
     client.put(f"/api/users/{alice.id}", json={"is_active": False}, headers=admin.headers)
     assert client.get(f"/api/tasks/{t['id']}", headers=admin.headers).json()["assignee_id"] == alice.id
+
+
+def test_move_to_another_project_takes_subtasks_along(client, alice):
+    h = alice.headers
+    a = client.post("/api/projects/", json={"name": "A"}, headers=h).json()["id"]
+    b = client.post("/api/projects/", json={"name": "B"}, headers=h).json()["id"]
+    other = client.post("/api/projects/", json={"name": "Other"}, headers=h).json()["id"]
+    root = task(client, alice, title="root", project_id=a)
+    child = task(client, alice, title="child", parent_task_id=root["id"], project_id=a)
+    grandchild = task(client, alice, title="grandchild", parent_task_id=child["id"])  # no own project
+    elsewhere = task(client, alice, title="elsewhere", parent_task_id=root["id"], project_id=other)
+
+    r = client.put(f"/api/tasks/{root['id']}", json={"project_id": b}, headers=h)
+    assert r.status_code == 200
+    got = {t["title"]: t["project_id"] for t in client.get("/api/tasks/", headers=h).json()}
+    assert got == {"root": b, "child": b, "grandchild": b, "elsewhere": other}
+
+    # to "No project" and back
+    client.put(f"/api/tasks/{root['id']}", json={"project_id": None}, headers=h)
+    assert client.get(f"/api/tasks/{child['id']}", headers=h).json()["project_id"] is None
+    assert client.put(f"/api/tasks/{root['id']}", json={"project_id": 9999}, headers=h).status_code == 400

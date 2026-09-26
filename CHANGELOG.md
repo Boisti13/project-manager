@@ -2,6 +2,17 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.17.0 — 2026-09-26
+
+### Added
+- **"⋯" menu on every task**: Add subtask, Edit, Move to…, Move up, Move down, Delete. On phones it opens as a bottom sheet with large touch targets.
+- **Move up / Move down** — reordering that works on touchscreens (manual sort order; disabled with a hint otherwise). Moves stay within the task's list: same parent, and for top-level tasks the same project and open/completed section.
+- **Move to…** another project or category, straight from the menu. Subtasks that followed the old project (or had none) move along; ones deliberately put elsewhere keep theirs. The task is scrolled to and highlighted in its new place.
+
+### Changed
+- On phones a task row shows only 💬 and ⋯ (add subtask / edit / delete are in the menu), so rows no longer wrap on narrow screens.
+- Changing a task's project to one that doesn't exist is rejected (400).
+
 ## v1.16.0 — 2026-09-26
 
 ### Added

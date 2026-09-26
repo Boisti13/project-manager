@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
 import { authFetch, useAuth } from '../context/AuthContext';
@@ -48,6 +48,7 @@ function TaskList() {
   // Rows the user collapsed even though a filter match auto-expanded them.
   const [collapsedIds, setCollapsedIds] = useState(new Set());
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const searchRef = useRef(null);
 
   const filters = useMemo(() => filtersFromParams(searchParams), [searchParams]);
@@ -236,6 +237,47 @@ function TaskList() {
     } catch (err) {
       setTasks(previous);
       setError('Failed to update task: ' + err.message);
+    }
+  };
+
+  // Siblings a task can swap places with: same parent; for top-level tasks
+  // also the same project and the same open/completed section.
+  const siblingsOf = (task) =>
+    tasks
+      .filter(
+        (t) =>
+          t.parent_task_id === task.parent_task_id &&
+          (task.parent_task_id != null ||
+            (t.project_id === task.project_id && (t.status === 'done') === (task.status === 'done')))
+      )
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.id - b.id);
+
+  const getMoveState = (task) => {
+    const reorderable = filters.sort === 'manual';
+    if (!reorderable) return { up: false, down: false, reorderable };
+    const sibs = siblingsOf(task);
+    const i = sibs.findIndex((t) => t.id === task.id);
+    return { up: i > 0, down: i >= 0 && i < sibs.length - 1, reorderable };
+  };
+
+  const handleMove = (task, dir) => {
+    const sibs = siblingsOf(task);
+    const target = sibs[sibs.findIndex((t) => t.id === task.id) + dir];
+    if (target) handleReorder(task.id, target.id);
+  };
+
+  const handleMoveTo = async (task, projectId) => {
+    if ((task.project_id ?? null) === projectId) return;
+    try {
+      await fetchJson(`/api/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: projectId }),
+      });
+      await loadData();
+      navigate(`/?task=${task.id}`, { replace: true });
+    } catch (err) {
+      setError('Failed to move task: ' + err.message);
     }
   };
 
@@ -433,6 +475,10 @@ function TaskList() {
       canDrag={canDrag}
       progressOf={tree.progressOf}
       focusCommentsId={focusCommentsId}
+      projectIndex={projectIndex}
+      getMoveState={getMoveState}
+      onMove={handleMove}
+      onMoveTo={handleMoveTo}
     />
   );
 

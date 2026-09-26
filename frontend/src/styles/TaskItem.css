@@ -272,7 +272,14 @@
     font-size: 16px;
   }
 
+  /* Add subtask / edit / delete live in the "⋯" menu on phones. */
+  .task-action-btn.subtask-btn,
+  .task-action-btn.edit-btn,
   .task-action-btn.delete-btn {
+    display: none;
+  }
+
+  .task-right .task-menu {
     margin-left: auto;
   }
 

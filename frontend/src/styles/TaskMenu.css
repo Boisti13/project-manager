@@ -1,0 +1,132 @@
+.task-menu {
+  position: relative;
+}
+
+.menu-btn {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.task-menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 60;
+  min-width: 200px;
+  padding: 4px 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background-color: var(--color-surface);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+.task-menu-list button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 14px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.task-menu-list button:hover:not(:disabled) {
+  background-color: var(--color-surface-hover);
+}
+
+.task-menu-list button:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.tm-icon {
+  width: 18px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.tm-danger {
+  color: var(--color-error-text) !important;
+  border-top: 1px solid var(--color-border-light) !important;
+}
+
+.task-menu-move {
+  min-width: 240px;
+}
+
+.tm-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 8px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border-light);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.task-menu-list .tm-back {
+  width: auto;
+  padding: 2px 8px;
+  font-size: 16px;
+}
+
+.tm-scroll {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.task-menu-list .tm-project {
+  font-weight: 600;
+}
+
+.task-menu-list .tm-category {
+  padding-left: 38px;
+  font-size: 13px;
+}
+
+.tm-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--project-color);
+  flex-shrink: 0;
+}
+
+.task-menu-list .tm-current {
+  background-color: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+
+@media (max-width: 600px) {
+  /* A bottom sheet is easier to hit with a thumb than a small popover. */
+  .task-menu-list {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    top: auto;
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    min-width: 0;
+    border-radius: 10px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+  }
+
+  .task-menu-list button {
+    padding: 13px 16px;
+    font-size: 16px;
+  }
+
+  .tm-scroll {
+    max-height: 50vh;
+  }
+}

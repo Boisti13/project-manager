@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { highlightParts } from '../taskFilters';
 import TaskComments from './TaskComments';
+import TaskMenu from './TaskMenu';
 import '../styles/TaskItem.css';
 
 function Highlight({ text, needle }) {
@@ -25,6 +26,10 @@ function TaskItem({
   canDrag = true,
   progressOf = null,
   focusCommentsId = null,
+  projectIndex = null,
+  getMoveState = null,
+  onMove = null,
+  onMoveTo = null,
   indent = 0,
 }) {
   const subtasks = childrenOf(task);
@@ -190,6 +195,18 @@ function TaskItem({
           <button className="task-action-btn delete-btn" onClick={() => onDelete(task.id)} title="Delete">
             ✕
           </button>
+          {projectIndex && (
+            <TaskMenu
+              task={task}
+              projectIndex={projectIndex}
+              moveState={getMoveState ? getMoveState(task) : { up: false, down: false, reorderable: false }}
+              onAddSubtask={onAddSubtask}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onMove={onMove}
+              onMoveTo={onMoveTo}
+            />
+          )}
         </div>
       </div>
 
@@ -221,6 +238,10 @@ function TaskItem({
               canDrag={canDrag}
               progressOf={progressOf}
               focusCommentsId={focusCommentsId}
+              projectIndex={projectIndex}
+              getMoveState={getMoveState}
+              onMove={onMove}
+              onMoveTo={onMoveTo}
               indent={indent + 1}
             />
           ))}

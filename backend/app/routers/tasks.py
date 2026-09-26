@@ -113,8 +113,20 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
 
     update_data = task_update.model_dump(exclude_unset=True)
     previous_assignee = db_task.assignee_id
+    previous_project = db_task.project_id
+    if "project_id" in update_data and update_data["project_id"] is not None             and not db.get(Project, update_data["project_id"]):
+        raise HTTPException(status_code=400, detail="Project not found")
     for key, value in update_data.items():
         setattr(db_task, key, value)
+    if db_task.project_id != previous_project:
+        # "Move to": subtasks that followed the old project (or had none)
+        # come along; ones deliberately put elsewhere keep theirs.
+        stack = list(db_task.subtasks)
+        while stack:
+            sub = stack.pop()
+            if sub.project_id in (previous_project, None):
+                sub.project_id = db_task.project_id
+            stack.extend(sub.subtasks)
     sync_completed_at(db_task)
     if db_task.assignee_id != previous_assignee:
         notify.assigned(db, db_task, current_user)
