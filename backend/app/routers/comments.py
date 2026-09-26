@@ -1,11 +1,10 @@
 """Comments on tasks. Anyone logged in can read and write them; authors can
 edit their own, authors and admins can delete."""
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import schemas
+from app.timeutil import utcnow
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import Task, TaskComment, User
@@ -63,7 +62,7 @@ def edit_comment(comment_id: int, data: schemas.CommentCreate, current_user: Use
         raise HTTPException(status_code=400, detail="Comment is empty")
     if body != comment.body:
         comment.body = body
-        comment.edited_at = datetime.utcnow()
+        comment.edited_at = utcnow()
         db.commit()
         db.refresh(comment)
     return to_schema(comment)

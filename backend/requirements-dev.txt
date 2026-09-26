@@ -1,6 +1,6 @@
 -r requirements.txt
-pytest==8.3.3
-# TestClient; starlette 0.27 (fastapi 0.104) needs httpx < 0.28
-httpx==0.27.2
+pytest==9.1.1
+# TestClient (starlette >= 1.x uses httpx2)
+httpx2==2.13.1
 # Throwaway PostgreSQL for the test suite when PM_TEST_DATABASE_URL isn't set
 pgserver==0.1.4

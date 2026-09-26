@@ -52,7 +52,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 20
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
       - run: npm test -- --watchAll=false
       # CI=true: build warnings fail the build
       - run: npm run build

@@ -157,6 +157,10 @@ backend/venv/bin/pip install -q --upgrade pip
 backend/venv/bin/pip install -q -r backend/requirements.txt
 
 if [[ $UPDATE_MODE -eq 1 ]]; then
+  # Older hand-made installs used SQL_ASCII; convert them (no-op on UTF-8).
+  say "Checking the database encoding"
+  bash scripts/fix-db-encoding.sh || die "Converting the database to UTF-8 failed (the previous database was kept)."
+
   say "Backing up the database"
   bash scripts/backup-db.sh before-reinstall || die "Database backup failed; nothing was migrated."
 fi

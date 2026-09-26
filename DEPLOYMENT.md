@@ -122,6 +122,18 @@ For moving *some* projects rather than a whole instance — e.g. to another pers
 
 Any logged-in user can export and import. The file format is `project-manager/projects`, version 1 ([`backend/app/routers/transfer.py`](backend/app/routers/transfer.py)).
 
+### Converting an older database to UTF-8
+
+Databases created by hand before `install.sh` existed may use the `SQL_ASCII` encoding (check with `runuser -u postgres -- psql -l`). They work, but PostgreSQL doesn't validate the text and case-insensitive search can't fold umlauts (*größe* won't find *GRÖSSE*). [`scripts/fix-db-encoding.sh`](scripts/fix-db-encoding.sh) converts them:
+
+```bash
+cd /opt/project-manager && scripts/fix-db-encoding.sh
+```
+
+It first checks that all stored text is valid UTF-8 (and stops, naming the column, if not), then stops the backend, takes a backup, renames the old database to `projectmanager_sql_ascii_<timestamp>` as a fallback, creates a new UTF-8 database owned by the app user, restores into it, compares the row counts of every table and starts the backend again — about a minute of downtime. Any failure drops the new database and renames the old one back. On a UTF-8 database it does nothing. Re-running `install.sh` runs it automatically.
+
+Once you've checked everything, remove the fallback with the `DROP DATABASE` command the script prints.
+
 ### CSV export
 
 **Settings → Backup & export → Export CSV** (any user) downloads all tasks — including subtasks, done and archived ones — as a semicolon-separated UTF-8 CSV that Excel opens directly: ID, project, category, task, parent task, status, priority, assignee, deadline, created, completed, description. It's for spreadsheets and reporting; use the database backups to restore.
@@ -200,5 +212,7 @@ pct exec 113 -- supervisorctl status
 **Blank page or 500 at `/`**: `frontend/build/index.html` is missing — run the build (step 5). Check the last update log at `.update/update.log`.
 
 **Old UI after an update**: hard-reload (Ctrl+F5). `index.html` is served with `Cache-Control: no-cache`, so this should only happen if a proxy in front caches it.
+
+**`git pull` refuses because `frontend/package-lock.json` would be overwritten**: older installs have an untracked lockfile from `npm install`; since v1.15.0 it's part of the repo. Remove it once (`rm frontend/package-lock.json`) and pull again. The in-app updater and `install.sh` handle this themselves.
 
 **Backend 500s after a model change**: check `cd backend && venv/bin/alembic current` shows `(head)`; if not, run `venv/bin/python migrate.py`.

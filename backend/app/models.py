@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import relationship, backref
 from app.database import Base
-from datetime import datetime
+from app.timeutil import utcnow
 import enum
 
 class TaskStatus(str, enum.Enum):
@@ -19,7 +19,7 @@ class User(Base):
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     tasks = relationship("Task", back_populates="assignee")
 
@@ -34,8 +34,8 @@ class Project(Base):
     color = Column(String(7), nullable=True)
     # Set for categories (sub-projects); only one level of nesting.
     parent_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     tasks = relationship("Task", back_populates="project")
     children = relationship("Project", passive_deletes=True)
@@ -53,8 +53,8 @@ class Task(Base):
     # Set when the task becomes done, cleared when it's reopened; drives the
     # "Completed" rows and archiving on the Tasks page.
     completed_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     # Foreign keys
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True)
@@ -92,7 +92,7 @@ class TaskComment(Base):
     # installation keep their original author's name here.
     author_name = Column(String, nullable=True)
     body = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
     edited_at = Column(DateTime, nullable=True)
 
     task = relationship("Task", back_populates="comments")

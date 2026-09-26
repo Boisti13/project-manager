@@ -1,9 +1,16 @@
+from urllib.parse import quote_plus
+
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 from app.config import settings
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://{settings.db_user}:{settings.db_password}@{settings.db_host}:{settings.db_port}/{settings.db_name}"
+# Driver named explicitly (SQLAlchemy's default changed between versions).
+# client_encoding=utf8: databases created as SQL_ASCII (older installs) would
+# otherwise hand text back as raw bytes.
+SQLALCHEMY_DATABASE_URL = (
+    f"postgresql+psycopg://{quote_plus(settings.db_user)}:{quote_plus(settings.db_password)}"
+    f"@{settings.db_host}:{settings.db_port}/{settings.db_name}?client_encoding=utf8"
+)
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

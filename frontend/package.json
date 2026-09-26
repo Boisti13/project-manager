@@ -1,6 +1,6 @@
 {
   "name": "project-manager-frontend",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "private": true,
   "proxy": "http://localhost:8000",
   "dependencies": {
@@ -33,5 +33,8 @@
   },
   "devDependencies": {
     "react-scripts": "5.0.1"
+  },
+  "overrides": {
+    "typescript": "4.9.5"
   }
 }

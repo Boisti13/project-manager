@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
 from app.models import TaskStatus
@@ -32,8 +32,7 @@ class User(UserBase):
     is_admin: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserAdminUpdate(BaseModel):
     is_active: Optional[bool] = None
@@ -66,8 +65,7 @@ class Project(ProjectBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Task schemas
 class TaskBase(BaseModel):
@@ -129,8 +127,7 @@ class Task(TaskBase):
     updated_at: datetime
     subtasks: List["Task"] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 Task.model_rebuild()
 

@@ -55,8 +55,8 @@ See [CHANGELOG.md](CHANGELOG.md) and the [GitHub releases](https://github.com/Bo
 
 ## Tech Stack
 
-- **Backend**: FastAPI (Python) + SQLAlchemy + PostgreSQL
-- **Frontend**: React 18 + React Router
+- **Backend**: FastAPI (Python 3.10+) + SQLAlchemy 2.1 + psycopg 3 + PostgreSQL; bcrypt password hashes, JWT sessions (PyJWT)
+- **Frontend**: React 18 + React Router, dependency versions locked in `package-lock.json`
 - **Deployment**: Bare metal on LXC — Supervisor runs the API, Nginx serves the static React build. A Docker Compose setup also exists for local development but is not the production path.
 
 ## Installation
@@ -99,7 +99,7 @@ Schema changes go through Alembic migrations — see [DEPLOYMENT.md](DEPLOYMENT.
 
 ```bash
 cd frontend
-npm install
+npm ci                    # exact versions from package-lock.json
 npm start                 # dev server on :3000, proxies /api to :8000
 ```
 
@@ -155,7 +155,8 @@ project-manager/
 ├── scripts/
 │   ├── update.sh            # In-app updater (fetch, backup, install, migrate, build, sync nginx, restart)
 │   ├── backup-db.sh         # pg_dump to /var/backups/project-manager, keeps the newest N
-│   └── restore-db.sh        # Safety backup, restore, migrate; rolls back on failure
+│   ├── restore-db.sh        # Safety backup, restore, migrate; rolls back on failure
+│   └── fix-db-encoding.sh   # Converts a SQL_ASCII database to UTF-8 (older installs)
 ├── deploy/nginx.conf        # Production Nginx config (static build + /api proxy)
 ├── docs/screenshots/        # README screenshots (sample data)
 ├── CHANGELOG.md             # What changed in each release

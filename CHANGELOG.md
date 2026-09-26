@@ -2,6 +2,20 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.15.0 — 2026-09-26
+
+### Changed
+- **Dependencies updated** to current versions: FastAPI 0.141, SQLAlchemy 2.1, Pydantic 2.13, Alembic 1.20, Uvicorn 0.54 and friends. The PostgreSQL driver is now **psycopg 3** (SQLAlchemy 2.1's default); connections always use UTF-8.
+- **passlib → bcrypt** and **python-jose → PyJWT**: both old libraries are unmaintained, and passlib printed a bcrypt error on every start. Existing password hashes and login sessions keep working (covered by tests using credentials created with the old libraries), including passwords longer than bcrypt's 72-byte limit.
+- **Frontend dependencies are locked** in `package-lock.json` (React 18.3, React Router 6.30); CI installs them with `npm ci`.
+- Code uses current APIs (no more deprecated `class Config`, `datetime.utcnow()` or `declarative_base` import); the test suite now fails on any warning.
+
+### Added
+- **`scripts/fix-db-encoding.sh`**: converts databases created as `SQL_ASCII` (older hand-made installs) to UTF-8 — validates the text first, keeps the old database as a fallback, rolls back on any failure. `install.sh` runs it on re-installs; a no-op on UTF-8 databases.
+
+### Removed
+- `psycopg2-binary`, `passlib`, `python-jose` dependencies.
+
 ## v1.14.0 — 2026-09-26
 
 ### Added

@@ -145,3 +145,96 @@ def test_restore_endpoint(client, admin, alice, backup_dir):
     r = client.post(f"/api/system/backups/{name}/restore", headers=admin.headers)
     assert r.status_code == 200, r.text
     assert state()[1] == ["snapshot task"]
+
+
+# ---- scripts/fix-db-encoding.sh ----------------------------------------------
+
+def _encoding_env(tmp_path, db_name):
+    from conftest import DB_ENV
+
+    env_file = tmp_path / "enc.env"
+    env_file.write_text("".join(f"{k}={v}\n" for k, v in {**DB_ENV, "DB_NAME": db_name}.items() if k.startswith("DB_")))
+    admin = f"psql -h {DB_ENV['DB_HOST']} -p {DB_ENV['DB_PORT']} -U {DB_ENV['DB_USER']}"
+    return {
+        "PM_ENV_FILE": str(env_file).replace("\\", "/"),
+        "PM_ADMIN_PSQL": admin,
+        "PGPASSWORD": DB_ENV["DB_PASSWORD"],
+        "PM_STOP_CMD": "true",
+        "PM_START_CMD": "true",
+        # Windows' PostgreSQL doesn't know C.UTF-8; the conversion itself is the same.
+        "PM_DB_LOCALE": "C.UTF-8" if os.name == "posix" else "C",
+    }
+
+
+@pytest.fixture
+def sql_ascii_db(tmp_path):
+    """A database like the ones created by hand before install.sh: SQL_ASCII."""
+    import uuid
+    from conftest import _admin, drop_database, run_backend
+
+    name = f"pm_enc_{uuid.uuid4().hex[:8]}"
+    _admin(f'CREATE DATABASE "{name}" ENCODING \'SQL_ASCII\' TEMPLATE template0 LC_COLLATE \'C\' LC_CTYPE \'C\'')
+    run_backend("migrate.py", db_name=name)
+    yield name
+    from sqlalchemy import create_engine
+    from conftest import SERVER_URL
+
+    eng = create_engine(SERVER_URL.replace("postgresql://", "postgresql+psycopg://", 1))
+    with eng.connect() as c:
+        others = [r[0] for r in c.execute(text("SELECT datname FROM pg_database WHERE datname LIKE :p"),
+                                          {"p": name + "%"})]
+    eng.dispose()
+    for db in others:
+        drop_database(db)
+
+
+def _q(db_name, sql, **params):
+    from sqlalchemy import create_engine
+    from conftest import db_url
+
+    eng = create_engine(db_url(db_name))
+    try:
+        with eng.begin() as c:
+            r = c.execute(text(sql), params)
+            return r.all() if r.returns_rows else None
+    finally:
+        eng.dispose()
+
+
+def test_fix_encoding_converts_sql_ascii(sql_ascii_db, tmp_path, backup_dir):
+    _q(sql_ascii_db, "INSERT INTO tasks(title, status, created_at, updated_at) VALUES (:t, 'TODO', now(), now())",
+       t="Werkstatt aufräumen")
+    rc, out = script("fix-db-encoding.sh", **_encoding_env(tmp_path, sql_ascii_db))
+    assert rc == 0, out
+    assert _q(sql_ascii_db, "SELECT pg_encoding_to_char(encoding) FROM pg_database WHERE datname = current_database()")[0][0] == "UTF8"
+    assert _q(sql_ascii_db, "SELECT title FROM tasks")[0][0] == "Werkstatt aufräumen"
+    assert _q(sql_ascii_db, "SELECT version_num FROM alembic_version")[0][0] == "0004"
+    if os.name == "posix":  # needs a UTF-8 locale for case-folding umlauts
+        assert _q(sql_ascii_db, "SELECT count(*) FROM tasks WHERE title ILIKE '%AUFRÄUMEN%'")[0][0] == 1
+    assert "kept as" in out
+    # running again is a no-op
+    rc, out = script("fix-db-encoding.sh", **_encoding_env(tmp_path, sql_ascii_db))
+    assert rc == 0 and "nothing to do" in out
+
+
+def test_fix_encoding_rolls_back_on_invalid_utf8(sql_ascii_db, tmp_path, backup_dir):
+    env = _encoding_env(tmp_path, sql_ascii_db)
+    # A byte that isn't valid UTF-8, as a SQL_ASCII database happily stores.
+    bad = subprocess.run(
+        [*env["PM_ADMIN_PSQL"].split(), "-d", sql_ascii_db, "-c",
+         "SET client_encoding = 'SQL_ASCII'; "
+         "INSERT INTO tasks(title, status, created_at, updated_at) VALUES (E'bad \\xff byte', 'TODO', now(), now())"],
+        capture_output=True, text=True, env=dict(os.environ, PGPASSWORD=env["PGPASSWORD"]))
+    assert bad.returncode == 0, bad.stderr
+    rc, out = script("fix-db-encoding.sh", **env)
+    assert rc == 1
+    assert "tasks.title" in out and "Nothing was changed" in out
+    assert _q(sql_ascii_db, "SELECT pg_encoding_to_char(encoding) FROM pg_database WHERE datname = current_database()")[0][0] == "SQL_ASCII"
+    assert _q(sql_ascii_db, "SELECT count(*) FROM tasks")[0][0] == 1
+
+
+def test_fix_encoding_noop_on_utf8(tmp_path):
+    from conftest import DB_NAME
+
+    rc, out = script("fix-db-encoding.sh", **_encoding_env(tmp_path, DB_NAME))
+    assert rc == 0 and "already UTF-8" in out

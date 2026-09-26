@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.timeutil import utcnow
 from app.auth import get_current_user
 from app.database import get_db
 from app.version import APP_VERSION
@@ -135,7 +136,7 @@ def export_projects(
     return {
         "format": FORMAT,
         "version": FORMAT_VERSION,
-        "exported_at": datetime.utcnow().isoformat(),
+        "exported_at": utcnow().isoformat(),
         "app_version": APP_VERSION,
         "projects": projects,
         "unassigned_tasks": [] if project_id else tree(None),
@@ -173,7 +174,7 @@ def import_projects(data: ExportFile, current_user: User = Depends(get_current_u
             for c in item.comments:
                 # Users differ between installations: keep the name as text.
                 db.add(TaskComment(task_id=task.id, author_id=None, author_name=c.author,
-                                   body=c.body, created_at=c.created_at or datetime.utcnow()))
+                                   body=c.body, created_at=c.created_at or utcnow()))
                 counts["comments"] += 1
             add_tasks(item.subtasks, project_id, task.id)
 

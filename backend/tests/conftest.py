@@ -45,7 +45,7 @@ DB_ENV = {
     "DB_USER": _u.username or "postgres",
     "DB_PASSWORD": _u.password or "",
     "DB_NAME": DB_NAME,
-    "SECRET_KEY": "test-secret",
+    "SECRET_KEY": "test-secret-key-of-at-least-32-bytes-for-hs256",
     "PM_BACKUP_DIR": BACKUP_DIR,
 }
 # Must be set before anything imports app.* (settings are read at import).
@@ -68,26 +68,33 @@ if _PGSERVER is not None:
 def admin_engine():
     from sqlalchemy import create_engine
 
-    return create_engine(SERVER_URL, isolation_level="AUTOCOMMIT")
+    url = SERVER_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+    return create_engine(url, isolation_level="AUTOCOMMIT")
 
 
 def db_url(name=DB_NAME):
-    return f"postgresql://{DB_ENV['DB_USER']}:{DB_ENV['DB_PASSWORD']}@{DB_ENV['DB_HOST']}:{DB_ENV['DB_PORT']}/{name}"
+    return (f"postgresql+psycopg://{DB_ENV['DB_USER']}:{DB_ENV['DB_PASSWORD']}@{DB_ENV['DB_HOST']}:{DB_ENV['DB_PORT']}/{name}"
+            "?client_encoding=utf8")
+
+
+def _admin(*statements):
+    from sqlalchemy import text
+
+    eng = admin_engine()
+    try:
+        with eng.connect() as c:
+            for sql in statements:
+                c.execute(text(sql))
+    finally:
+        eng.dispose()
 
 
 def create_database(name):
-    from sqlalchemy import text
-
-    with admin_engine().connect() as c:
-        c.execute(text(f'DROP DATABASE IF EXISTS "{name}"'))
-        c.execute(text(f'CREATE DATABASE "{name}"'))
+    _admin(f'DROP DATABASE IF EXISTS "{name}"', f'CREATE DATABASE "{name}"')
 
 
 def drop_database(name):
-    from sqlalchemy import text
-
-    with admin_engine().connect() as c:
-        c.execute(text(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)'))
+    _admin(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)')
 
 
 def run_backend(*args, db_name=DB_NAME, check=True):
@@ -133,12 +140,12 @@ def clean_tables(database):
 @pytest.fixture
 def client(database):
     from fastapi.testclient import TestClient
-    from app.auth import pwd_context
+    from app import auth as app_auth
     from app.main import app
 
     # Full-strength bcrypt makes every register/login take ~0.3 s; tests
     # don't need that. Production settings are untouched.
-    pwd_context.update(bcrypt__rounds=4)
+    app_auth.BCRYPT_ROUNDS = 4
     return TestClient(app)
 
 

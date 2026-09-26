@@ -1,11 +1,10 @@
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Project, Task, TaskComment, TaskStatus, User
 from app import schemas
+from app.timeutil import utcnow
 from app.auth import get_current_user
 
 router = APIRouter()
@@ -14,7 +13,7 @@ router = APIRouter()
 def sync_completed_at(task: Task):
     if task.status == TaskStatus.DONE:
         if task.completed_at is None:
-            task.completed_at = datetime.utcnow()
+            task.completed_at = utcnow()
     else:
         task.completed_at = None
 
