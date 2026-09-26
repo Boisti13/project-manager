@@ -16,6 +16,9 @@ All notable changes, newest first. Versions follow [semantic versioning](README.
 - Migration `0008`: `projects.is_private`, `project_members` table; all checks in `backend/app/access.py`.
 - 8 new backend tests (115 in total), frontend test for the project-index helpers.
 
+### Fixed
+- Two database backups started within the same second (e.g. *Back up now* while the nightly one runs) no longer overwrite each other; the second gets a `_2` suffix.
+
 ## v1.22.0 — 2026-09-26
 
 ### Added

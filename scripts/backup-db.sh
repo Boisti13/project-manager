@@ -57,7 +57,12 @@ KEEP="${PM_BACKUP_KEEP:-3}"
 
 mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
-FILE="$BACKUP_DIR/${DB_NAME:-projectmanager}-$(date +%Y%m%d-%H%M%S)-${LABEL//[^A-Za-z0-9._-]/_}.dump"
+STAMP="$(date +%Y%m%d-%H%M%S)"
+name() { echo "$BACKUP_DIR/${DB_NAME:-projectmanager}-$1-${LABEL//[^A-Za-z0-9._-]/_}.dump"; }
+FILE="$(name "$STAMP")"
+# Two backups within the same second must not overwrite each other.
+n=2
+while [[ -e "$FILE" ]]; do FILE="$(name "${STAMP}_$n")"; n=$((n + 1)); done
 
 trap 'rm -f -- "$FILE.partial"' EXIT
 
