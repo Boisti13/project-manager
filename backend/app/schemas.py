@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
 from app.models import TaskStatus
@@ -83,6 +83,33 @@ class TaskBase(BaseModel):
 
 class TaskCreate(TaskBase):
     pass
+
+BULK_MAX_TASKS = 500
+
+class BulkTaskItem(BaseModel):
+    title: str = Field(min_length=1, max_length=500)
+    status: Optional[TaskStatus] = None  # overrides the shared status (e.g. "[x]" lines)
+    children: List["BulkTaskItem"] = []
+
+    @field_validator("title")
+    @classmethod
+    def not_blank(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("title is empty")
+        return v
+
+class BulkTaskCreate(BaseModel):
+    """Several tasks at once, as a tree; the other fields apply to all of them."""
+    items: List[BulkTaskItem] = Field(min_length=1)
+    project_id: Optional[int] = None
+    parent_task_id: Optional[int] = None
+    status: TaskStatus = TaskStatus.TODO
+    priority: int = 0
+    deadline: Optional[datetime] = None
+    assignee_id: Optional[int] = None
+
+BulkTaskItem.model_rebuild()
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None

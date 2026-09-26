@@ -2,6 +2,16 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.14.0 — 2026-09-26
+
+### Added
+- **Bulk entry — one task per line.** The task form has a new *Several (one per line)* mode: type or paste a list; indented lines (Tab or two spaces) become subtasks of the line above, at any depth. Bullets (`-`, `*`, `•`, `1.`) are stripped and Markdown checkboxes create done tasks (`- [x] …`). A live preview shows the tree and count; project/category, status, priority, deadline and assignee apply to every task. Available from *+ New Task*, a section's **+** (preset to that project/category) and a task's **+** (all lines become its subtasks). Tab / Shift+Tab indent and outdent the current line.
+- New tasks appear expanded after a bulk add.
+
+### Under the hood
+- `POST /api/tasks/bulk`: creates the whole tree in one transaction (all or nothing), up to 500 tasks, appended after existing siblings; validates parent, project and assignee.
+- `frontend/src/bulkParse.js` with Jest tests; 6 new backend tests (72 in total).
+
 ## v1.13.0 — 2026-09-26
 
 ### Changed

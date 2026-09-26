@@ -159,6 +159,40 @@ function TaskList() {
     }
   };
 
+  // "Several (one per line)": one request, all tasks or none.
+  const handleBulkCreate = async (payload) => {
+    try {
+      const res = await fetchJson('/api/tasks/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      // Show the new tree: expand the parent and every new task with subtasks.
+      const created = new Set(res.ids);
+      const hasKids = new Set();
+      const walk = (items, ids) => {
+        items.forEach((item) => {
+          const id = ids.shift();
+          if (item.children.length) hasKids.add(id);
+          walk(item.children, ids);
+        });
+      };
+      walk(payload.items, [...res.ids]);
+      setExpandedIds((prev) => {
+        const next = new Set(prev);
+        if (payload.parent_task_id) next.add(payload.parent_task_id);
+        hasKids.forEach((id) => created.has(id) && next.add(id));
+        return next;
+      });
+      setShowForm(false);
+      setParentTaskForNew(null);
+      setProjectForNew(null);
+      await loadData();
+    } catch (err) {
+      setError('Failed to create tasks: ' + err.message);
+    }
+  };
+
   const handleUpdateTask = async (formData) => {
     try {
       await fetchJson(`/api/tasks/${selectedTask.id}`, {
@@ -397,6 +431,7 @@ function TaskList() {
             projectIndex={projectIndex}
             users={users}
             onSubmit={selectedTask ? handleUpdateTask : handleCreateTask}
+            onBulkSubmit={handleBulkCreate}
             onCancel={handleFormCancel}
           />
         </div>

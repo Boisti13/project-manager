@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import Task, TaskComment, TaskStatus, User
+from app.models import Project, Task, TaskComment, TaskStatus, User
 from app import schemas
 from app.auth import get_current_user
 
@@ -27,6 +27,57 @@ def create_task(task: schemas.TaskCreate, current_user: User = Depends(get_curre
     db.commit()
     db.refresh(db_task)
     return db_task
+
+@router.post("/bulk")
+def create_tasks_bulk(data: schemas.BulkTaskCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Creates a tree of tasks in one transaction: all of them, or none."""
+    def count(items):
+        return sum(1 + count(i.children) for i in items)
+
+    total = count(data.items)
+    if total > schemas.BULK_MAX_TASKS:
+        raise HTTPException(status_code=400, detail=f"At most {schemas.BULK_MAX_TASKS} tasks at once (got {total})")
+
+    project_id = data.project_id
+    if data.parent_task_id is not None:
+        parent = db.get(Task, data.parent_task_id)
+        if not parent:
+            raise HTTPException(status_code=404, detail="Parent task not found")
+        if project_id is None:
+            project_id = parent.project_id
+    if project_id is not None and not db.get(Project, project_id):
+        raise HTTPException(status_code=400, detail="Project not found")
+    if data.assignee_id is not None and not db.get(User, data.assignee_id):
+        raise HTTPException(status_code=400, detail="Assignee not found")
+
+    def next_order(parent_id):
+        current = db.query(func.max(Task.order)).filter(
+            Task.parent_task_id.is_(None) if parent_id is None else Task.parent_task_id == parent_id
+        ).scalar()
+        return (current + 1) if current is not None else 0
+
+    created = []
+
+    def add(items, parent_id):
+        order = next_order(parent_id)
+        for item in items:
+            task = Task(
+                title=item.title.strip(), status=item.status or data.status, priority=data.priority,
+                deadline=data.deadline, project_id=project_id, parent_task_id=parent_id,
+                assignee_id=data.assignee_id, order=order,
+            )
+            sync_completed_at(task)
+            db.add(task)
+            db.flush()
+            created.append(task.id)
+            order += 1
+            if item.children:
+                add(item.children, task.id)
+
+    add(data.items, data.parent_task_id)
+    db.commit()
+    return {"created": len(created), "ids": created}
+
 
 @router.get("/", response_model=list[schemas.Task])
 def list_tasks(project_id: int = None, parent_id: int = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
