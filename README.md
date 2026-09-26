@@ -12,6 +12,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **User Management**: Admins add accounts, set passwords, promote/demote and activate/deactivate users (deactivated users are locked out immediately)
 - **Hierarchical Tasks**: Main tasks with subtasks in a tree structure, drag-to-reorder at any level (in manual sort order) or **Move up / Move down** in each task's **⋯ menu** (works on touchscreens), **Move to…** another project or category (subtasks come along), subtask progress (e.g. *1/2*) on the parent; when all subtasks are ticked the parent is highlighted as ready (*✓ 2/2*) but stays open — it only moves to *Completed* when you tick it yourself, so more subtasks can still be added
 - **Bulk Entry**: *Several (one per line)* in the task form — type or paste a list, indent lines (Tab or two spaces) to make subtasks at any depth; bullets and Markdown checkboxes (`- [x] done`) are understood, a live preview shows the resulting tree, and project, status, priority, deadline and assignee apply to all of them. Works from *+ New Task*, a project/category section's **+**, or a task's **+** (all lines become its subtasks)
+- **Recurring Tasks**: *Repeat* every N days, weeks, months or years. Ticking a repeating task creates the next one with the deadline moved forward on its schedule (month ends handled, never already overdue) and its subtasks as a fresh checklist; shown with a ↻ badge
 - **Done Checkbox & Archive**: Tick tasks off with a checkbox; they move into a collapsed *✓ Completed* row at the end of their project/category (most recent first). After a configurable number of days (Settings → *Completed tasks*, default 30) they're archived — hidden from the list but still found by search or the *Done* filter. Nothing is deleted
 - **Multi-User**: Task assignment, per-user notifications
 - **Comments**: Discussion thread on every task and subtask (💬 with count on the row); authors can edit (marked *edited*) and delete their comments, admins can delete any; search also finds tasks by comment text; comments travel with project export/import
@@ -150,6 +151,7 @@ project-manager/
 │       ├── taskFilters.js   # Pure search/filter/sort/archive logic for the task tree
 │       ├── exportCsv.js     # CSV export of all tasks
 │       ├── bulkParse.js     # "One task per line" text → task tree
+│       ├── recurrence.js    # Repeat settings as text
 │       └── projects.js      # Project tree, colors, grouping tasks by project/category
 ├── install.sh               # Installer for a Debian/Ubuntu LXC or VM (idempotent)
 ├── proxmox/

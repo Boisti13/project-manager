@@ -3,11 +3,20 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Project, Task, TaskComment, TaskStatus, User
-from app import notify, schemas
+from app import notify, recurrence, schemas
 from app.timeutil import utcnow
 from app.auth import get_current_user
 
 router = APIRouter()
+
+
+def normalize_recurrence(task: Task):
+    """A unit without an interval means "every 1"; no unit means no repeat."""
+    if task.recurrence_unit:
+        task.recurrence_interval = task.recurrence_interval or 1
+    else:
+        task.recurrence_unit = None
+        task.recurrence_interval = None
 
 
 def sync_completed_at(task: Task):
@@ -21,10 +30,12 @@ def sync_completed_at(task: Task):
 @router.post("/", response_model=schemas.Task)
 def create_task(task: schemas.TaskCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     db_task = Task(**task.model_dump())
+    normalize_recurrence(db_task)
     sync_completed_at(db_task)
     db.add(db_task)
     db.flush()
     notify.assigned(db, db_task, current_user)
+    recurrence.spawn_next(db, db_task)
     db.commit()
     db.refresh(db_task)
     return db_task
@@ -127,9 +138,11 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
             if sub.project_id in (previous_project, None):
                 sub.project_id = db_task.project_id
             stack.extend(sub.subtasks)
+    normalize_recurrence(db_task)
     sync_completed_at(db_task)
     if db_task.assignee_id != previous_assignee:
         notify.assigned(db, db_task, current_user)
+    recurrence.spawn_next(db, db_task)
 
     db.commit()
     db.refresh(db_task)

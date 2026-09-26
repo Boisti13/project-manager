@@ -234,6 +234,8 @@ function TaskList() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
+      // A repeating task just created its next occurrence on the server.
+      if (status === 'done' && task.recurrence_unit) await loadData();
     } catch (err) {
       setTasks(previous);
       setError('Failed to update task: ' + err.message);

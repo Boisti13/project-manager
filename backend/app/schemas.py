@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
-from typing import Optional, List
+from typing import Literal, Optional, List
 from datetime import datetime
 from app.models import TaskStatus
 
@@ -68,6 +68,8 @@ class Project(ProjectBase):
     model_config = ConfigDict(from_attributes=True)
 
 # Task schemas
+RecurrenceUnit = Literal["day", "week", "month", "year"]
+
 class TaskBase(BaseModel):
     title: str
     description: Optional[str] = None
@@ -78,6 +80,8 @@ class TaskBase(BaseModel):
     project_id: Optional[int] = None
     parent_task_id: Optional[int] = None
     assignee_id: Optional[int] = None
+    recurrence_unit: Optional[RecurrenceUnit] = None
+    recurrence_interval: Optional[int] = Field(default=None, ge=1, le=365)
 
 class TaskCreate(TaskBase):
     pass
@@ -118,6 +122,8 @@ class TaskUpdate(BaseModel):
     deadline: Optional[datetime] = None
     project_id: Optional[int] = None
     assignee_id: Optional[int] = None
+    recurrence_unit: Optional[RecurrenceUnit] = None
+    recurrence_interval: Optional[int] = Field(default=None, ge=1, le=365)
 
 class Task(TaskBase):
     id: int

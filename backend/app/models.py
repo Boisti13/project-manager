@@ -53,6 +53,11 @@ class Task(Base):
     # Set when the task becomes done, cleared when it's reopened; drives the
     # "Completed" rows and archiving on the Tasks page.
     completed_at = Column(DateTime, nullable=True)
+    # Repeating tasks (app/recurrence.py): unit day|week|month|year, every N.
+    recurrence_unit = Column(String(10), nullable=True)
+    recurrence_interval = Column(Integer, nullable=True)
+    # The occurrence created when this one was completed (prevents duplicates).
+    recurrence_next_id = Column(Integer, ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -66,6 +71,7 @@ class Task(Base):
     assignee = relationship("User", back_populates="tasks")
     subtasks = relationship(
         "Task",
+        foreign_keys=[parent_task_id],
         backref=backref("parent_task", remote_side=[id]),
         cascade="all, delete-orphan",
         order_by="Task.order"

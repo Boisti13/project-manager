@@ -39,6 +39,8 @@ class TaskData(BaseModel):
     order: int = 0
     deadline: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+    recurrence_unit: Optional[Literal["day", "week", "month", "year"]] = None
+    recurrence_interval: Optional[int] = Field(default=None, ge=1, le=365)
     comments: List[CommentData] = []
     subtasks: List["TaskData"] = []
 
@@ -81,6 +83,8 @@ def _task_tree(task: Task, children: dict) -> dict:
         "order": task.order or 0,
         "deadline": task.deadline.isoformat() if task.deadline else None,
         "completed_at": task.completed_at.isoformat() if task.completed_at else None,
+        "recurrence_unit": task.recurrence_unit,
+        "recurrence_interval": task.recurrence_interval,
         "comments": [
             {
                 "author": c.author.username if c.author else c.author_name,
@@ -166,6 +170,8 @@ def import_projects(data: ExportFile, current_user: User = Depends(get_current_u
                 title=item.title, description=item.description, status=item.status,
                 priority=item.priority, order=item.order, deadline=item.deadline,
                 completed_at=item.completed_at, project_id=project_id, parent_task_id=parent_id,
+                recurrence_unit=item.recurrence_unit,
+                recurrence_interval=(item.recurrence_interval or 1) if item.recurrence_unit else None,
             )
             sync_completed_at(task)
             db.add(task)

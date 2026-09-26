@@ -2,6 +2,18 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.18.0 — 2026-09-26
+
+### Added
+- **Recurring tasks.** *Repeat* in the task form: every N days, weeks, months or years. Ticking a repeating task off creates the next occurrence — same title, description, project, assignee and priority — with the deadline moved forward **on its schedule** (a weekly Monday task stays on Mondays; if it's finished very late the next date is the first one not in the past). Month steps clamp to the month's end (31 Jan → 28/29 Feb). Subtasks are copied as a fresh, unticked checklist. Without a deadline, the next one is due one interval after today.
+- A **↻ badge** ("weekly", "3 d") on repeating tasks.
+- Unticking and re-ticking doesn't create a second occurrence; if the next one was deleted, ticking again creates a new one.
+- Export/import keeps the repeat settings.
+
+### Under the hood
+- Migration `0006`: `tasks.recurrence_unit`, `recurrence_interval`, `recurrence_next_id`; logic in `backend/app/recurrence.py`.
+- 11 new backend tests (102 in total), frontend test for the repeat labels.
+
 ## v1.17.0 — 2026-09-26
 
 ### Added

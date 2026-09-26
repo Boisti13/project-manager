@@ -68,6 +68,8 @@ function TaskForm({
     project_id: parentTask ? parentTask.project_id || null : defaultProjectId,
     assignee_id: null,
     parent_task_id: parentTask ? parentTask.id : null,
+    recurrence_unit: null,
+    recurrence_interval: 1,
   });
 
   useEffect(() => {
@@ -80,6 +82,8 @@ function TaskForm({
         deadline: task.deadline ? task.deadline.split('T')[0] : '',
         project_id: task.project_id || null,
         assignee_id: task.assignee_id || null,
+        recurrence_unit: task.recurrence_unit || null,
+        recurrence_interval: task.recurrence_interval || 1,
         parent_task_id: task.parent_task_id || null,
       });
     }
@@ -89,7 +93,11 @@ function TaskForm({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'priority' || name === 'project_id' || name === 'assignee_id'
+      [name]: name === 'recurrence_unit'
+        ? value || null
+        : name === 'recurrence_interval'
+        ? Math.max(1, parseInt(value, 10) || 1)
+        : name === 'priority' || name === 'project_id' || name === 'assignee_id'
         ? (value === '' ? null : parseInt(value, 10))
         : value,
     }));
@@ -111,7 +119,11 @@ function TaskForm({
       });
       return;
     }
-    onSubmit({ ...formData, deadline });
+    onSubmit({
+      ...formData,
+      deadline,
+      recurrence_interval: formData.recurrence_unit ? formData.recurrence_interval : null,
+    });
   };
 
   const nested = countNested(bulk.items);
@@ -267,6 +279,49 @@ function TaskForm({
           </select>
         </div>
       </div>
+
+      {mode === 'single' && (
+        <div className="form-group">
+          <label htmlFor="repeat-unit">Repeat</label>
+          <div className="repeat-row">
+            <select
+              id="repeat-unit"
+              name="recurrence_unit"
+              value={formData.recurrence_unit || ''}
+              onChange={handleChange}
+            >
+              <option value="">Doesn't repeat</option>
+              <option value="day">Every day</option>
+              <option value="week">Every week</option>
+              <option value="month">Every month</option>
+              <option value="year">Every year</option>
+            </select>
+            {formData.recurrence_unit && (
+              <label className="repeat-interval">
+                every
+                <input
+                  type="number"
+                  name="recurrence_interval"
+                  min="1"
+                  max="365"
+                  value={formData.recurrence_interval}
+                  onChange={handleChange}
+                  aria-label="Repeat interval"
+                />
+                {formData.recurrence_unit}
+                {formData.recurrence_interval === 1 ? '' : 's'}
+              </label>
+            )}
+          </div>
+          {formData.recurrence_unit && (
+            <small className="repeat-hint">
+              Ticking it off creates the next one
+              {formData.deadline ? ' with the deadline moved forward' : ', due one interval after today'}; subtasks
+              come along as a fresh checklist.
+            </small>
+          )}
+        </div>
+      )}
 
       <div className="form-group">
         <label>Assign To</label>

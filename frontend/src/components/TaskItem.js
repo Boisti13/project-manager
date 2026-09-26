@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { highlightParts } from '../taskFilters';
 import TaskComments from './TaskComments';
 import TaskMenu from './TaskMenu';
+import { describeRecurrence, shortRecurrence } from '../recurrence';
 import '../styles/TaskItem.css';
 
 function Highlight({ text, needle }) {
@@ -170,6 +171,11 @@ function TaskItem({
           {task.priority > 0 && (
             <span className="task-priority" data-priority={task.priority}>
               {priorityLabels[task.priority] || 'P' + task.priority}
+            </span>
+          )}
+          {task.recurrence_unit && (
+            <span className="task-repeat" title={describeRecurrence(task.recurrence_unit, task.recurrence_interval)}>
+              ↻ {shortRecurrence(task.recurrence_unit, task.recurrence_interval)}
             </span>
           )}
           {task.deadline && (

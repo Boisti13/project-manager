@@ -329,3 +329,13 @@
     box-shadow: 0 0 0 0 transparent;
   }
 }
+
+.task-repeat {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  color: var(--color-info-text);
+  background-color: var(--color-info-bg);
+}
