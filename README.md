@@ -55,7 +55,7 @@ See [CHANGELOG.md](CHANGELOG.md) and the [GitHub releases](https://github.com/Bo
 
 ## Tech Stack
 
-- **Backend**: FastAPI (Python 3.10+) + SQLAlchemy 2.1 + psycopg 3 + PostgreSQL; bcrypt password hashes, JWT sessions (PyJWT)
+- **Backend**: FastAPI (Python 3.10+) + SQLAlchemy 2.0 + psycopg 3 + PostgreSQL; bcrypt password hashes, JWT sessions (PyJWT)
 - **Frontend**: React 18 + React Router, dependency versions locked in `package-lock.json`
 - **Deployment**: Bare metal on LXC — Supervisor runs the API, Nginx serves the static React build. A Docker Compose setup also exists for local development but is not the production path.
 

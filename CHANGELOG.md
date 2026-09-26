@@ -5,7 +5,7 @@ All notable changes, newest first. Versions follow [semantic versioning](README.
 ## v1.15.0 — 2026-09-26
 
 ### Changed
-- **Dependencies updated** to current versions: FastAPI 0.141, SQLAlchemy 2.1, Pydantic 2.13, Alembic 1.20, Uvicorn 0.54 and friends. The PostgreSQL driver is now **psycopg 3** (SQLAlchemy 2.1's default); connections always use UTF-8.
+- **Dependencies updated** to current versions: FastAPI 0.141, SQLAlchemy 2.0.54, Pydantic 2.13, Alembic 1.20, Uvicorn 0.54 and friends (SQLAlchemy 2.1 needs Python 3.11; Ubuntu 22.04 installs have 3.10 — CI checks both). The PostgreSQL driver is now **psycopg 3**, named explicitly; connections always use UTF-8.
 - **passlib → bcrypt** and **python-jose → PyJWT**: both old libraries are unmaintained, and passlib printed a bcrypt error on every start. Existing password hashes and login sessions keep working (covered by tests using credentials created with the old libraries), including passwords longer than bcrypt's 72-byte limit.
 - **Frontend dependencies are locked** in `package-lock.json` (React 18.3, React Router 6.30); CI installs them with `npm ci`.
 - Code uses current APIs (no more deprecated `class Config`, `datetime.utcnow()` or `declarative_base` import); the test suite now fails on any warning.
