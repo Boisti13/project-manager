@@ -82,6 +82,21 @@ if [ -f "$SITE" ]; then
   fi
 fi
 
+step "Scheduling the nightly backup"
+if [ -d /etc/cron.d ]; then
+  CRON_LINE="15 3 * * * root bash $APP_DIR/scripts/backup-db.sh daily >>/var/log/project-manager-backup.log 2>&1"
+  if grep -qxF "$CRON_LINE" /etc/cron.d/project-manager 2>/dev/null; then
+    echo "Unchanged"
+  else
+    printf '%s\n' "# Project Manager: nightly database backup (see scripts/backup-db.sh)" "SHELL=/bin/bash" \
+      "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" "$CRON_LINE" >/etc/cron.d/project-manager
+    chmod 644 /etc/cron.d/project-manager
+    echo "Installed /etc/cron.d/project-manager (03:15 every night)"
+  fi
+else
+  echo "cron is not installed (apt install cron); skipping"
+fi
+
 step "Restarting backend"
 set_state restarting
 supervisorctl restart project-manager-backend || fail "supervisorctl restart failed"

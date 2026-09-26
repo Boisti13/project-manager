@@ -10,7 +10,7 @@
 | FastAPI backend | Supervisor (`project-manager-backend`), Uvicorn on 127.0.0.1:8000, Python venv, settings from `backend/.env` |
 | React frontend | Static production build in `frontend/build/`, served by Nginx — no Node process at runtime |
 | Nginx | :80 — `/api/*` → backend, everything else → `frontend/build/` ([`deploy/nginx.conf`](deploy/nginx.conf)) |
-| Backups | `/var/backups/project-manager/`, newest 3 kept (see [Backups & Export](#backups--export)) |
+| Backups | `/var/backups/project-manager/`, nightly at 03:15 via `/etc/cron.d/project-manager` and before every update; newest 3 of each kind kept (see [Backups & Export](#backups--export)) |
 
 **Production runs `main`.** Ongoing work happens on `dev`, which can be tried on the live instance via Settings → Updates → *Switch to dev*; merge to `main`, tag a release (see [README.md](README.md#versioning)) and switch back when ready to ship.
 
@@ -68,6 +68,7 @@ The schema is managed by Alembic (`backend/alembic/`). The app no longer creates
 
 - before every update from **Settings → Updates** (label `before-update-from-<commit>`)
 - before migrations when `install.sh` re-runs on an existing install (`before-reinstall`)
+- **every night at 03:15** (label `daily`), from `/etc/cron.d/project-manager` — written by `install.sh` and kept up to date by every update. Turn it off (and on) with **Settings → Backup & export → Back up automatically every night**; the cron job stays and just skips. Output goes to `/var/log/project-manager-backup.log`.
 
 and on demand via **Settings → Backup & export → Back up now** (admins) or by hand:
 
@@ -75,7 +76,7 @@ and on demand via **Settings → Backup & export → Back up now** (admins) or b
 cd /opt/project-manager && scripts/backup-db.sh my-label
 ```
 
-Only the newest backups are kept — **3** by default, adjustable under **Settings → Backup & export** (stored in the `app_settings` table; the script reads it from there). Override per run with `PM_BACKUP_KEEP=10`, or the location with `PM_BACKUP_DIR=/somewhere`. The directory is `700`, each dump `600`.
+Only the newest backups are kept — **3** by default, counted **separately for nightly and all other backups** (so a week of nightly dumps never pushes out the one taken before an update), adjustable under **Settings → Backup & export** (stored in the `app_settings` table; the script reads it from there). Override per run with `PM_BACKUP_KEEP=10`, or the location with `PM_BACKUP_DIR=/somewhere`. The directory is `700`, each dump `600`.
 
 Admins can **download** any listed backup from the Settings page, to keep a copy off the server, or **delete** backups they no longer need (with confirmation; this can't be undone).
 

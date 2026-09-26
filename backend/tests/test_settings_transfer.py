@@ -3,7 +3,7 @@ FORMAT = "project-manager/projects"
 
 def test_settings_defaults_and_admin_only(client, admin, alice):
     assert client.get("/api/settings/", headers=alice.headers).json() == {
-        "archive_after_days": 30, "backup_keep": 3, "allow_registration": False}
+        "archive_after_days": 30, "backup_keep": 3, "backup_daily": True, "allow_registration": False}
     assert client.put("/api/settings/", json={"backup_keep": 5}, headers=alice.headers).status_code == 403
     r = client.put("/api/settings/", json={"backup_keep": 5}, headers=admin.headers).json()
     assert (r["archive_after_days"], r["backup_keep"]) == (30, 5)

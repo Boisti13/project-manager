@@ -10,6 +10,8 @@ import ProjectList from './components/ProjectList';
 import Settings from './components/Settings';
 import './App.css';
 
+const REPO_URL = 'https://github.com/Boisti13/project-manager';
+
 function AppShell() {
   const { currentUser } = useAuth();
 
@@ -50,7 +52,12 @@ function AppShell() {
         </Routes>
       </main>
       <footer className="App-footer">
-        <p>© 2026 Project Manager | FastAPI + React</p>
+        <p>
+          © 2026 Project Manager | FastAPI + React |{' '}
+          <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
+            Source on GitHub
+          </a>
+        </p>
       </footer>
     </div>
   );

@@ -151,11 +151,13 @@ Task.model_rebuild()
 class AppSettings(BaseModel):
     archive_after_days: int = Field(ge=1, le=3650)
     backup_keep: int = Field(ge=1, le=100)
+    backup_daily: bool
     allow_registration: bool
 
 class AppSettingsUpdate(BaseModel):
     archive_after_days: Optional[int] = Field(default=None, ge=1, le=3650)
     backup_keep: Optional[int] = Field(default=None, ge=1, le=100)
+    backup_daily: Optional[bool] = None
     allow_registration: Optional[bool] = None
 
 

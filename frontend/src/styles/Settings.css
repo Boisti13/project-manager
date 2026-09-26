@@ -221,3 +221,18 @@
     grid-template-columns: 1fr;
   }
 }
+
+.backup-daily {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.backup-daily input {
+  width: 16px;
+  height: 16px;
+}

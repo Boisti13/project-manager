@@ -2,6 +2,16 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.20.0 — 2026-09-26
+
+### Added
+- **Nightly database backup** at 03:15 (`/etc/cron.d/project-manager`, installed by `install.sh` and by the next update). **Settings → Backup & export → Back up automatically every night** turns it off and on (on by default); output in `/var/log/project-manager-backup.log`.
+- **Link to the source on GitHub** in the footer.
+
+### Changed
+- Backup retention counts **nightly and other backups separately** (newest N of each), so nightly dumps never push out the backup taken before an update.
+- `install.sh` also installs `cron`.
+
 ## v1.19.0 — 2026-09-26
 
 ### Added

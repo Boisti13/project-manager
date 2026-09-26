@@ -75,6 +75,26 @@ def test_backup_retention_from_settings(client, admin, backup_dir):
     assert [n.rsplit("-", 1)[1] for n in dumps(backup_dir)] == ["b.dump"]
 
 
+def test_daily_backups_rotate_separately(client, admin, backup_dir):
+    client.put("/api/settings/", json={"backup_keep": 2}, headers=admin.headers)
+    backup("before-update")
+    for _ in range(3):
+        backup("daily")
+    backup("manual")
+    kinds = [n.rsplit("-", 1)[1] for n in dumps(backup_dir)]
+    assert sorted(kinds) == ["daily.dump", "daily.dump", "manual.dump", "update.dump"]
+
+
+def test_daily_backup_can_be_turned_off(client, admin, backup_dir):
+    assert client.get("/api/settings/", headers=admin.headers).json()["backup_daily"] is True
+    client.put("/api/settings/", json={"backup_daily": False}, headers=admin.headers)
+    rc, out = script("backup-db.sh", "daily")
+    assert rc == 0 and "turned off" in out
+    assert dumps(backup_dir) == []
+    backup("manual")  # other backups still work
+    assert len(dumps(backup_dir)) == 1
+
+
 def test_backup_fails_cleanly_with_bad_credentials(backup_dir, tmp_path):
     bad = tmp_path / "bad.env"
     bad.write_text(Path(os.environ["PM_ENV_FILE"]).read_text().replace("DB_NAME=", "DB_NAME=does_not_exist_"))

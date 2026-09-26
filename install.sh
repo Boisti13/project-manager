@@ -80,7 +80,7 @@ fi
 say "Installing system packages"
 apt-get update -qq
 apt-get install -y -qq ca-certificates curl gnupg git openssl \
-  python3 python3-venv python3-pip postgresql nginx supervisor >/dev/null
+  python3 python3-venv python3-pip postgresql nginx supervisor cron >/dev/null
 
 node_major() { node -v 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/' || echo 0; }
 if [[ "$(node_major)" -lt 18 ]]; then
@@ -201,6 +201,18 @@ systemctl enable --now supervisor >/dev/null 2>&1 || true
 supervisorctl reread >/dev/null
 supervisorctl update >/dev/null
 supervisorctl restart project-manager-backend >/dev/null
+
+say "Scheduling the nightly backup"
+# Nightly database backup (scripts/backup-db.sh daily; can be turned off
+# in Settings -> Backup & export).
+cat > /etc/cron.d/project-manager <<EOF
+# Project Manager: nightly database backup (see scripts/backup-db.sh)
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+15 3 * * * root bash $INSTALL_DIR/scripts/backup-db.sh daily >>/var/log/project-manager-backup.log 2>&1
+EOF
+chmod 644 /etc/cron.d/project-manager
+systemctl enable --now cron >/dev/null 2>&1 || true
 
 say "Configuring Nginx"
 sed "s#/opt/project-manager/frontend/build#$INSTALL_DIR/frontend/build#" deploy/nginx.conf \

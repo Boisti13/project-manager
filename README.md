@@ -25,7 +25,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Assigned to me**: One click next to the search shows only your tasks, with a count of your open ones
 - **Dark Mode**: Toggle in the nav, persisted per browser, defaults to OS preference
 - **In-app Updates**: Settings shows the running version/branch/commit; anyone can check a branch for updates, admins can update or switch branches (backup, pull, migrate, rebuild the frontend, sync the Nginx config, restart) with a live log
-- **Backups & Restore**: Automatic database backup before every update; *Back up now*, download, delete, upload and one-click **restore** (with automatic safety backup and rollback) in Settings for admins; keeps the newest N (default 3). Move a whole instance to a new server by restoring a backup there — also straight from the Proxmox helper script
+- **Backups & Restore**: Automatic database backup **every night** (can be turned off) and before every update; *Back up now*, download, delete, upload and one-click **restore** (with automatic safety backup and rollback) in Settings for admins; keeps the newest N of each kind — nightly / other (default 3). Move a whole instance to a new server by restoring a backup there — also straight from the Proxmox helper script
 - **Export & Import**: Export a project (with categories, tasks, subtasks) or everything as JSON and import it into another account or installation; CSV export of all tasks for Excel — see [DEPLOYMENT.md](DEPLOYMENT.md#backups--export)
 - **Self-Hosted**: One-command install on Proxmox VE (creates the LXC for you) or into any Debian/Ubuntu LXC/VM, no Docker
 
@@ -160,7 +160,7 @@ project-manager/
 │   └── project-manager-lxc.sh # Run on the PVE host: creates an LXC and runs install.sh
 ├── scripts/
 │   ├── update.sh            # In-app updater (fetch, backup, install, migrate, build, sync nginx, restart)
-│   ├── backup-db.sh         # pg_dump to /var/backups/project-manager, keeps the newest N
+│   ├── backup-db.sh         # pg_dump to /var/backups/project-manager, keeps the newest N (also nightly via cron)
 │   ├── restore-db.sh        # Safety backup, restore, migrate; rolls back on failure
 │   └── fix-db-encoding.sh   # Converts a SQL_ASCII database to UTF-8 (older installs)
 ├── deploy/nginx.conf        # Production Nginx config (static build + /api proxy)

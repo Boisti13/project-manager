@@ -43,6 +43,15 @@ main {
   margin: 0;
 }
 
+.App-footer a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.App-footer a:hover {
+  color: var(--color-primary);
+}
+
 @media (max-width: 600px) {
   .App-header {
     padding: 10px 12px;

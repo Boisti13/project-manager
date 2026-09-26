@@ -9,10 +9,11 @@ from app.models import AppSetting, User
 
 router = APIRouter()
 
-# backup_keep is also read by scripts/backup-db.sh straight from the table.
+# backup_keep and backup_daily are also read by scripts/backup-db.sh straight
+# from the table.
 # allow_registration: once an admin exists, self-registration is closed
 # unless an admin turns it on (the very first account can always register).
-DEFAULTS = {"archive_after_days": 30, "backup_keep": 3, "allow_registration": False}
+DEFAULTS = {"archive_after_days": 30, "backup_keep": 3, "backup_daily": True, "allow_registration": False}
 
 
 def _parse(default, raw: str):

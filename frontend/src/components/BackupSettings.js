@@ -30,6 +30,7 @@ function BackupSettings() {
 
   const [keep, setKeep] = useState('');
   const [savedKeep, setSavedKeep] = useState(null);
+  const [daily, setDaily] = useState(null);
   const [backups, setBackups] = useState(null);
   const [backupDir, setBackupDir] = useState('');
   const [busy, setBusy] = useState(false);
@@ -51,6 +52,7 @@ function BackupSettings() {
       .then((d) => {
         setKeep(String(d.backup_keep));
         setSavedKeep(d.backup_keep);
+        setDaily(d.backup_daily);
       })
       .catch(() => {});
     loadBackups().catch((err) => setStatus({ ok: false, text: 'Could not list backups: ' + err.message }));
@@ -83,6 +85,19 @@ function BackupSettings() {
       setStatus({ ok: true, text: 'Saved. Applies from the next backup.' });
     });
   };
+
+  const saveDaily = (on) =>
+    run(async () => {
+      const res = await authFetch('/api/settings/', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backup_daily: on }),
+      });
+      if (!res.ok) throw new Error('Could not save: ' + (await errorText(res)));
+      const d = await res.json();
+      setDaily(d.backup_daily);
+      setStatus({ ok: true, text: d.backup_daily ? 'Nightly backups are on.' : 'Nightly backups are off.' });
+    });
 
   const backupNow = () =>
     run(async () => {
@@ -179,8 +194,8 @@ function BackupSettings() {
             <div>
               <strong>Database backups</strong>
               <p className="settings-help">
-                Full database dumps in <code>{backupDir || '…'}</code>. One is made automatically before every update,
-                re-install and restore. <em>Restore</em> replaces all data with a backup; to move to a new server,
+                Full database dumps in <code>{backupDir || '…'}</code>. One is made automatically every night (if turned on below)
+                and before every update, re-install and restore. <em>Restore</em> replaces all data with a backup; to move to a new server,
                 download a backup here and upload it there.
               </p>
             </div>
@@ -205,6 +220,16 @@ function BackupSettings() {
             </div>
           </div>
 
+          <label className="backup-daily">
+            <input
+              type="checkbox"
+              checked={!!daily}
+              disabled={daily === null || busy}
+              onChange={(e) => saveDaily(e.target.checked)}
+            />
+            Back up automatically every night (03:15)
+          </label>
+
           <form className="archive-form" onSubmit={saveKeep}>
             <label htmlFor="backup-keep">Keep the newest</label>
             <input
@@ -218,7 +243,7 @@ function BackupSettings() {
               disabled={savedKeep === null}
               required
             />
-            <span>backups</span>
+            <span>backups of each kind (nightly / other)</span>
             <button type="submit" className="btn btn-primary btn-small" disabled={busy || String(savedKeep) === keep}>
               Save
             </button>
