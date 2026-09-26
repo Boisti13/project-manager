@@ -2,6 +2,19 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.19.0 — 2026-09-26
+
+### Added
+- **Task history.** The 💬 panel shows what happened to a task, interleaved with the comments: who created it, and who changed its status, assignee, project/category, title, description, deadline, priority or repeat setting — e.g. *anna changed priority from High to Critical*, *preview took it on*, *bob completed it*. Repeating tasks note when the next occurrence was created.
+- **Hide history / Show history (n)** in the panel to see only the comments; the choice is remembered in the browser.
+- The history refreshes while the panel is open when the task changes.
+- Names are stored as they were at the time, so the history stays readable after users or projects are renamed or deleted; it's removed together with the task. Saving the form without changes adds nothing.
+
+### Under the hood
+- Migration `0007`: `task_activity` table; logging in `backend/app/activity.py`; `GET /api/tasks/{id}/activity`.
+- 3 new backend tests (105 in total), frontend test for the history sentences.
+- Not part of project export/import (comments still are).
+
 ## v1.18.0 — 2026-09-26
 
 ### Added

@@ -187,7 +187,7 @@ function TaskItem({
           <button
             className={`task-action-btn comment-btn ${showComments ? 'active' : ''}`}
             onClick={() => setShowComments((v) => !v)}
-            title={task.comment_count ? `${task.comment_count} comment${task.comment_count === 1 ? '' : 's'}` : 'Comments'}
+            title={task.comment_count ? `${task.comment_count} comment${task.comment_count === 1 ? '' : 's'} · history` : 'Comments & history'}
             aria-expanded={showComments}
           >
             💬{task.comment_count > 0 && <span className="comment-count">{task.comment_count}</span>}
@@ -222,7 +222,16 @@ function TaskItem({
         </p>
       )}
 
-      {showComments && <TaskComments taskId={task.id} onCountChange={(n) => onCommentCount?.(task.id, n)} />}
+      {showComments && (
+        <TaskComments
+          taskId={task.id}
+          onCountChange={(n) => onCommentCount?.(task.id, n)}
+          changeKey={[
+            task.updated_at, task.status, task.title, task.description, task.priority, task.deadline,
+            task.assignee_id, task.project_id, task.recurrence_unit, task.recurrence_interval,
+          ].join('|')}
+        />
+      )}
 
       {showSubtasks && subtasks.length > 0 && (
         <div className="subtasks">

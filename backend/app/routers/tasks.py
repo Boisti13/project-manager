@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import Project, Task, TaskComment, TaskStatus, User
-from app import notify, recurrence, schemas
+from app.models import Project, Task, TaskActivity, TaskComment, TaskStatus, User
+from app import activity, notify, recurrence, schemas
 from app.timeutil import utcnow
 from app.auth import get_current_user
 
@@ -17,6 +17,13 @@ def normalize_recurrence(task: Task):
     else:
         task.recurrence_unit = None
         task.recurrence_interval = None
+
+
+def record_spawn(db: Session, task: Task, actor: User):
+    nxt = recurrence.spawn_next(db, task)
+    if nxt is not None:
+        activity.created(db, nxt, actor)
+        activity.repeated(db, task, nxt, actor)
 
 
 def sync_completed_at(task: Task):
@@ -35,7 +42,8 @@ def create_task(task: schemas.TaskCreate, current_user: User = Depends(get_curre
     db.add(db_task)
     db.flush()
     notify.assigned(db, db_task, current_user)
-    recurrence.spawn_next(db, db_task)
+    activity.created(db, db_task, current_user)
+    record_spawn(db, db_task, current_user)
     db.commit()
     db.refresh(db_task)
     return db_task
@@ -81,6 +89,7 @@ def create_tasks_bulk(data: schemas.BulkTaskCreate, current_user: User = Depends
             sync_completed_at(task)
             db.add(task)
             db.flush()
+            activity.created(db, task, current_user)
             created.append(task.id)
             order += 1
             if item.children:
@@ -123,6 +132,7 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
         raise HTTPException(status_code=404, detail="Task not found")
 
     update_data = task_update.model_dump(exclude_unset=True)
+    before = activity.snapshot(db_task)
     previous_assignee = db_task.assignee_id
     previous_project = db_task.project_id
     if "project_id" in update_data and update_data["project_id"] is not None             and not db.get(Project, update_data["project_id"]):
@@ -142,11 +152,23 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
     sync_completed_at(db_task)
     if db_task.assignee_id != previous_assignee:
         notify.assigned(db, db_task, current_user)
-    recurrence.spawn_next(db, db_task)
+    activity.changed(db, db_task, before, current_user)
+    record_spawn(db, db_task, current_user)
 
     db.commit()
     db.refresh(db_task)
     return db_task
+
+@router.get("/{task_id}/activity", response_model=list[schemas.ActivityEntry])
+def task_activity(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not db.get(Task, task_id):
+        raise HTTPException(status_code=404, detail="Task not found")
+    rows = db.query(TaskActivity).filter(TaskActivity.task_id == task_id).order_by(TaskActivity.id)
+    return [
+        schemas.ActivityEntry(id=a.id, kind=a.kind, actor=a.actor.username if a.actor else None,
+                              old_value=a.old_value, new_value=a.new_value, created_at=a.created_at)
+        for a in rows
+    ]
 
 @router.delete("/{task_id}")
 def delete_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

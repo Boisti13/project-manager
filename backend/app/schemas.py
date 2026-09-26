@@ -113,6 +113,15 @@ class BulkTaskCreate(BaseModel):
 
 BulkTaskItem.model_rebuild()
 
+class ActivityEntry(BaseModel):
+    id: int
+    kind: str
+    actor: Optional[str] = None
+    old_value: Optional[str] = None
+    new_value: Optional[str] = None
+    created_at: datetime
+
+
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None

@@ -88,6 +88,57 @@
   margin-top: 6px;
 }
 
+/* History entries between the comments */
+.activity-toggle {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 2px;
+}
+
+.activity-toggle .link-btn {
+  font-size: 12px;
+}
+
+.activity-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0 4px 14px;
+  position: relative;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.activity-entry::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--color-text-muted);
+}
+
+.activity-entry .comment-author {
+  font-weight: 600;
+}
+
+.activity-text {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.activity-time {
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+
+.activity-entry:last-of-type {
+  margin-bottom: 8px;
+}
+
 /* 💬 button on the task row */
 .comment-btn {
   width: auto !important;

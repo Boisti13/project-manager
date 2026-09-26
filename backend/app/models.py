@@ -84,8 +84,31 @@ class Task(Base):
         order_by="TaskComment.id",
     )
 
+    activity = relationship(
+        "TaskActivity",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="TaskActivity.id",
+    )
+
     # Filled in by the task list endpoint; not a column.
     comment_count = 0
+
+
+class TaskActivity(Base):
+    """History of a task (app/activity.py): created, status/assignee/...
+    changed. old_value/new_value are display text, not ids."""
+    __tablename__ = "task_activity"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False, index=True)
+    actor_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    kind = Column(String(20), nullable=False)
+    old_value = Column(String(300), nullable=True)
+    new_value = Column(String(300), nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    actor = relationship("User")
 
 
 class TaskComment(Base):

@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Boisti13/project-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/Boisti13/project-manager/actions/workflows/ci.yml)
 
-A self-hosted task management application with hierarchical tasks (main tasks + subtasks), color-coded projects with categories, task comments, multi-user support, deadlines, search and filtering, a phone-friendly layout and in-app updates.
+A self-hosted task management application with hierarchical tasks (main tasks + subtasks), color-coded projects with categories, task comments and history, recurring tasks, multi-user support, deadlines, search and filtering, a phone-friendly layout and in-app updates.
 
 ![Tasks grouped by project and category](docs/screenshots/tasks-desktop.png)
 
@@ -16,6 +16,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Done Checkbox & Archive**: Tick tasks off with a checkbox; they move into a collapsed *✓ Completed* row at the end of their project/category (most recent first). After a configurable number of days (Settings → *Completed tasks*, default 30) they're archived — hidden from the list but still found by search or the *Done* filter. Nothing is deleted
 - **Multi-User**: Task assignment, per-user notifications
 - **Comments**: Discussion thread on every task and subtask (💬 with count on the row); authors can edit (marked *edited*) and delete their comments, admins can delete any; search also finds tasks by comment text; comments travel with project export/import
+- **Task History**: The 💬 panel also shows who created the task and who changed what — status, assignee, project, title, description, deadline, priority, repeat — interleaved with the comments (*Hide history* to see comments only)
 - **Search & Filters**: Full-text search over titles, descriptions and comments (subtasks included), filters for status, project, assignee and deadline, sorting by deadline/priority/date/title; filters are kept in the URL
 - **Projects & Categories**: Projects with one level of categories (e.g. *6GHub → General, Ordering, Documentation*), each project color-coded; the Tasks page lists tasks in collapsible sections per project and per category (remembered per browser), with every task carrying its project's color
 - **Phone-friendly**: Bottom tab bar, two-line task rows with large touch targets and a ⋯ menu that opens as a bottom sheet (add subtask, edit, move, delete), folding filters, no input zoom on iOS; installable via *Add to Home Screen* (web app manifest) to run full-screen like an app
@@ -35,7 +36,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 | ![Tasks, dark mode](docs/screenshots/tasks-desktop-dark.png) | ![Tasks on a phone](docs/screenshots/tasks-phone.png) |
 | ![Search with highlighted matches](docs/screenshots/tasks-filtered.png) | ![Completed row on a phone, dark mode](docs/screenshots/tasks-phone-dark.png) |
 | ![Projects with categories](docs/screenshots/projects-desktop.png) | ![Projects on a phone](docs/screenshots/projects-phone.png) |
-| ![Comments on a task](docs/screenshots/comments-desktop.png) | ![Comments on a phone](docs/screenshots/comments-phone.png) |
+| ![Comments and history of a task](docs/screenshots/comments-desktop.png) | ![Comments and history on a phone](docs/screenshots/comments-phone.png) |
 | ![Bulk entry: one task per line, indented lines become subtasks](docs/screenshots/bulk-desktop.png) | ![Login with registration closed](docs/screenshots/login-phone.png) |
 | ![Notifications: assignments, comments, deadlines](docs/screenshots/bell-desktop.png) | ![Task menu on a phone](docs/screenshots/menu-phone.png) |
 
@@ -122,7 +123,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-With no configuration it starts a throwaway PostgreSQL via the `pgserver` package (nothing to install); set `PM_TEST_DATABASE_URL=postgresql://user:pw@host/postgres` to use an existing server instead (the user needs `CREATE DATABASE`). Each run uses its own database and removes it afterwards. The suite covers auth and user management, projects/categories, tasks, comments, settings, export/import, the backup endpoints, the migrations (upgrade/downgrade, models vs. migrations, stamping pre-Alembic databases) and the `backup-db.sh`/`restore-db.sh` scripts including rollback — the script tests need `bash` and the PostgreSQL client tools and are skipped without them.
+With no configuration it starts a throwaway PostgreSQL via the `pgserver` package (nothing to install); set `PM_TEST_DATABASE_URL=postgresql://user:pw@host/postgres` to use an existing server instead (the user needs `CREATE DATABASE`). Each run uses its own database and removes it afterwards. The suite covers auth and user management, projects/categories, tasks, comments, task history, recurring tasks, settings, export/import, the backup endpoints, the migrations (upgrade/downgrade, models vs. migrations, stamping pre-Alembic databases) and the `backup-db.sh`/`restore-db.sh` scripts including rollback — the script tests need `bash` and the PostgreSQL client tools and are skipped without them.
 
 **Frontend** — Jest:
 
@@ -152,6 +153,7 @@ project-manager/
 │       ├── exportCsv.js     # CSV export of all tasks
 │       ├── bulkParse.js     # "One task per line" text → task tree
 │       ├── recurrence.js    # Repeat settings as text
+│       ├── activity.js      # Task history entries as sentences
 │       └── projects.js      # Project tree, colors, grouping tasks by project/category
 ├── install.sh               # Installer for a Debian/Ubuntu LXC or VM (idempotent)
 ├── proxmox/

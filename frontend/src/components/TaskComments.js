@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { authFetch, useAuth } from '../context/AuthContext';
 import { parseServerDate } from '../taskFilters';
+import { describeActivity } from '../activity';
 import '../styles/TaskComments.css';
 
 const errorText = async (res) => {
@@ -19,11 +20,24 @@ export function timeAgo(value, now = Date.now()) {
   return d.toLocaleDateString();
 }
 
-// Comment thread under a task. onCountChange(n) keeps the task's 💬 count
-// in the list up to date without reloading everything.
-function TaskComments({ taskId, onCountChange }) {
+const SHOW_ACTIVITY_KEY = 'pm.showActivity';
+
+function readShowActivity() {
+  try {
+    return localStorage.getItem(SHOW_ACTIVITY_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
+
+// Comments and the task's history as one timeline. onCountChange(n) keeps
+// the task's 💬 count in the list up to date without reloading everything;
+// changeKey changes whenever the task does, so the history refreshes.
+function TaskComments({ taskId, onCountChange, changeKey }) {
   const { currentUser } = useAuth();
   const [comments, setComments] = useState(null);
+  const [activity, setActivity] = useState([]);
+  const [showActivity, setShowActivity] = useState(readShowActivity);
   const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState(null); // { id, body }
   const [busy, setBusy] = useState(false);
@@ -45,6 +59,33 @@ function TaskComments({ taskId, onCountChange }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    authFetch(`/api/tasks/${taskId}/activity`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((list) => !cancelled && setActivity(list))
+      .catch(() => {}); // the history is a nice-to-have; comments still work
+    return () => {
+      cancelled = true;
+    };
+  }, [taskId, changeKey]);
+
+  const toggleActivity = () => {
+    const next = !showActivity;
+    setShowActivity(next);
+    try {
+      localStorage.setItem(SHOW_ACTIVITY_KEY, next ? '1' : '0');
+    } catch {
+      /* not remembered */
+    }
+  };
+
+  const time = (x) => parseServerDate(x.created_at)?.getTime() || 0;
+  const timeline = [
+    ...(comments || []).map((c) => ({ type: 'comment', key: `c${c.id}`, at: time(c), item: c })),
+    ...(showActivity ? activity : []).map((a) => ({ type: 'activity', key: `a${a.id}`, at: time(a), item: a })),
+  ].sort((x, y) => x.at - y.at);
 
   const act = async (fn) => {
     setBusy(true);
@@ -111,15 +152,34 @@ function TaskComments({ taskId, onCountChange }) {
   return (
     <div className="task-comments" onDragStart={(e) => e.stopPropagation()}>
       {error && <div className="error-message">{error}</div>}
+      {activity.length > 0 && (
+        <div className="activity-toggle">
+          <button className="link-btn" onClick={toggleActivity} aria-pressed={showActivity}>
+            {showActivity ? 'Hide history' : `Show history (${activity.length})`}
+          </button>
+        </div>
+      )}
       {comments === null && !error && <p className="comments-empty">Loading…</p>}
       {comments && comments.length === 0 && <p className="comments-empty">No comments yet.</p>}
 
       {comments &&
-        comments.map((c) => {
+        timeline.map(({ type, key, item: c }) => {
+          if (type === 'activity') {
+            return (
+              <div className="activity-entry" key={key}>
+                <span className="activity-text">
+                  <span className="comment-author">{c.actor || 'Someone'}</span> {describeActivity(c)}
+                </span>
+                <span className="activity-time" title={parseServerDate(c.created_at)?.toLocaleString()}>
+                  {timeAgo(c.created_at)}
+                </span>
+              </div>
+            );
+          }
           const mine = c.author_id != null && c.author_id === currentUser?.id;
           const canDelete = mine || currentUser?.is_admin;
           return (
-            <div className="comment" key={c.id}>
+            <div className="comment" key={key}>
               <div className="comment-meta">
                 <span className="comment-author">{c.author || 'Unknown'}</span>
                 <span title={parseServerDate(c.created_at)?.toLocaleString()}>{timeAgo(c.created_at)}</span>
