@@ -139,7 +139,7 @@ Once you've checked everything, remove the fallback with the `DROP DATABASE` com
 
 ### CSV export
 
-**Settings → Backup & export → Export CSV** (any user) downloads all tasks — including subtasks, done and archived ones — as a semicolon-separated UTF-8 CSV that Excel opens directly: ID, project, category, task, parent task, status, priority, assignee, deadline, created, completed, description. It's for spreadsheets and reporting; use the database backups to restore.
+**Settings → Backup & export → Export CSV** (any user) downloads all tasks — including subtasks, done and archived ones — as a semicolon-separated UTF-8 CSV that Excel opens directly: ID, project, category, task, parent task, status, priority, assignee, deadline, created, completed, description, labels. It's for spreadsheets and reporting; use the database backups to restore.
 
 ## Fresh Install
 

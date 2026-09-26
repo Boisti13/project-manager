@@ -5,6 +5,7 @@ import UpdatePanel from './UpdatePanel';
 import ArchiveSettings from './ArchiveSettings';
 import AccountSettings from './AccountSettings';
 import BackupSettings from './BackupSettings';
+import LabelSettings from './LabelSettings';
 import '../styles/Settings.css';
 
 function Settings() {
@@ -87,6 +88,8 @@ function Settings() {
       <AccountSettings />
 
       <ArchiveSettings />
+
+      <LabelSettings />
 
       <BackupSettings />
 

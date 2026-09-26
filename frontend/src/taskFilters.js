@@ -6,6 +6,7 @@ export const DEFAULT_FILTERS = {
   status: 'all', // all | open | todo | in_progress | blocked | done
   project: '', // '' | project id (string)
   assignee: '', // '' | 'me' | 'none' | user id (string)
+  label: '', // '' | label id (string)
   due: '', // '' | 'overdue' | 'week' | 'none'
   sort: 'manual', // manual | deadline | priority | created | title
   view: 'list', // list | board | calendar (not a filter; kept in the URL too)
@@ -37,7 +38,9 @@ export function filtersToParams(filters) {
 }
 
 export function hasActiveFilters(f) {
-  return f.q.trim() !== '' || f.status !== 'all' || f.project !== '' || f.assignee !== '' || f.due !== '';
+  return (
+    f.q.trim() !== '' || f.status !== 'all' || f.project !== '' || f.assignee !== '' || f.due !== '' || f.label !== ''
+  );
 }
 
 function matchesText(task, needle) {
@@ -120,6 +123,7 @@ export function buildTaskTree(
     projectParentOf = () => null,
     archiveAfterDays = null,
     commentMatchIds = null,
+    labelNameOf = () => '',
   } = {}
 ) {
   const children = new Map();
@@ -165,7 +169,10 @@ export function buildTaskTree(
   const walk = (task, inheritedProject) => {
     const project = task.project_id ?? inheritedProject;
     const matches =
-      (matchesText(task, needle) || (needle !== '' && commentMatchIds?.has(task.id))) &&
+      (matchesText(task, needle) ||
+        (needle !== '' && commentMatchIds?.has(task.id)) ||
+        (needle !== '' && (task.label_ids || []).some((id) => labelNameOf(id).toLowerCase().includes(needle)))) &&
+      (filters.label === '' || (task.label_ids || []).some((id) => String(id) === filters.label)) &&
       matchesStatus(task, filters.status) &&
       // Filtering by a project includes its categories.
       (filters.project === '' ||

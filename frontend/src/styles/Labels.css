@@ -1,0 +1,144 @@
+.label-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  vertical-align: middle;
+}
+
+.label-chip {
+  display: inline-block;
+  max-width: 180px;
+  padding: 1px 8px;
+  border: none;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+button.label-chip {
+  cursor: pointer;
+}
+
+button.label-chip:hover {
+  filter: brightness(0.92);
+}
+
+.label-chips.small .label-chip {
+  font-size: 10px;
+  line-height: 16px;
+  padding: 0 6px;
+}
+
+/* Picker in the task form */
+.label-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.label-option {
+  font-size: 12px;
+  line-height: 22px;
+  padding: 1px 10px;
+  border: 1px solid var(--label-color, var(--color-border));
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.label-option.on {
+  border-color: transparent;
+}
+
+.label-add {
+  font-size: 12px;
+  line-height: 22px;
+  padding: 1px 10px;
+  border: 1px dashed var(--color-border);
+  background: none;
+  color: var(--color-text-secondary);
+}
+
+.label-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.label-new input {
+  width: 160px;
+  padding: 4px 8px;
+}
+
+.label-error {
+  flex-basis: 100%;
+  color: var(--color-error-text);
+}
+
+/* Settings → Labels */
+.label-list {
+  list-style: none;
+  margin: 0 0 12px 0;
+  padding: 0;
+}
+
+.label-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.label-list .label-chip {
+  font-size: 13px;
+  line-height: 22px;
+  max-width: 260px;
+}
+
+.label-list input[type='text'] {
+  flex: 1 1 160px;
+  padding: 6px 8px;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.label-list input[type='color'] {
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: none;
+}
+
+.label-usage {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.label-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.archive-form input.label-name-input {
+  width: 220px;
+}
+
+/* On task rows */
+.task-left .label-chips {
+  margin-left: 6px;
+  flex-shrink: 1;
+  min-width: 0;
+}

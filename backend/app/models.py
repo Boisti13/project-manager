@@ -33,6 +33,25 @@ project_members = Table(
 )
 
 
+# Labels on tasks (many-to-many).
+task_labels = Table(
+    "task_labels",
+    Base.metadata,
+    Column("task_id", Integer, ForeignKey("tasks.id", ondelete="CASCADE"), primary_key=True),
+    Column("label_id", Integer, ForeignKey("labels.id", ondelete="CASCADE"), primary_key=True, index=True),
+)
+
+
+class Label(Base):
+    """A colored tag, shared by everyone (routers/labels.py)."""
+    __tablename__ = "labels"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(40), nullable=False, unique=True)
+    color = Column(String(7), nullable=False)
+    created_at = Column(DateTime, default=utcnow)
+
+
 class Project(Base):
     __tablename__ = "projects"
 
@@ -100,6 +119,12 @@ class Task(Base):
         passive_deletes=True,
         order_by="TaskComment.id",
     )
+
+    labels = relationship("Label", secondary=task_labels, order_by="Label.name", passive_deletes=True)
+
+    @property
+    def label_ids(self):
+        return [l.id for l in self.labels]
 
     activity = relationship(
         "TaskActivity",

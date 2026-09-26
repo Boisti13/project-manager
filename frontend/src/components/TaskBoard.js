@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BOARD_COLUMNS, boardColumns } from '../views';
 import { shortRecurrence } from '../recurrence';
+import LabelChips from './LabelChips';
 import '../styles/TaskViews.css';
 
 const PRIORITY = { 1: 'Medium', 2: 'High', 3: 'Critical' };
@@ -13,7 +14,7 @@ export const isOverdue = (task) => !!task.deadline && task.status !== 'done' && 
 
 // Kanban board of the top-level tasks the list would show. Cards move
 // between columns by drag and drop, or with the ◀ ▶ buttons (touch).
-function TaskBoard({ roots, projectIndex, users, progressOf, onSetStatus, onOpen, onEdit }) {
+function TaskBoard({ roots, projectIndex, users, progressOf, onSetStatus, onOpen, onEdit, labelIndex, onLabelClick }) {
   const [dragId, setDragId] = useState(null);
   const [overCol, setOverCol] = useState(null);
   const [showAllDone, setShowAllDone] = useState(false);
@@ -58,6 +59,7 @@ function TaskBoard({ roots, projectIndex, users, progressOf, onSetStatus, onOpen
             {projectIndex.labelOf(project.id)}
           </span>
         )}
+        {labelIndex && <LabelChips labels={labelIndex.of(task)} onClick={onLabelClick} small />}
         <span className="board-card-meta">
           {task.priority > 0 && (
             <span className="task-priority" data-priority={task.priority}>

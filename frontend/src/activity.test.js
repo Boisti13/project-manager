@@ -19,6 +19,9 @@ test('describes activity entries', () => {
   assert.strictEqual(d('assignee', null, 'me'), 'took it on');
   assert.strictEqual(d('assignee', 'bob', 'me'), 'took it over from bob');
   assert.strictEqual(d('project', '6GHub', '6GHub / Ordering'), 'moved it from 6GHub to 6GHub / Ordering');
+  assert.strictEqual(d('labels', null, 'urgent'), 'labeled it urgent');
+  assert.strictEqual(d('labels', 'urgent', 'urgent, waiting'), 'changed labels from urgent to urgent, waiting');
+  assert.strictEqual(d('labels', 'urgent', null), 'removed the labels (urgent)');
   assert.strictEqual(d('recurrence', null, 'week:1'), 'made it repeat weekly');
   assert.strictEqual(d('recurrence', null, 'day:3'), 'made it repeat every 3 days');
   assert.strictEqual(d('recurrence', 'day:3', null), 'stopped repeating it');

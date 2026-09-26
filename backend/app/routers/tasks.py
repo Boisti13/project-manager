@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from app.database import get_db
 from app.models import Task, TaskActivity, TaskComment, TaskStatus, User
 from app import access, activity, notify, recurrence, schemas
 from app.timeutil import utcnow
 from app.auth import get_current_user
+from app.routers.labels import resolve as resolve_labels
 
 router = APIRouter()
 
@@ -41,7 +42,8 @@ def create_task(task: schemas.TaskCreate, current_user: User = Depends(get_curre
     if task.project_id is not None:
         access.require_project(db, current_user, task.project_id, status=400)
     access.check_assignee(db, task.assignee_id, task.project_id)
-    db_task = Task(**task.model_dump())
+    db_task = Task(**task.model_dump(exclude={"label_ids"}))
+    db_task.labels = resolve_labels(db, task.label_ids)
     normalize_recurrence(db_task)
     sync_completed_at(db_task)
     db.add(db_task)
@@ -83,6 +85,7 @@ def create_tasks_bulk(data: schemas.BulkTaskCreate, current_user: User = Depends
         return (current + 1) if current is not None else 0
 
     created = []
+    labels = resolve_labels(db, data.label_ids)
 
     def add(items, parent_id):
         order = next_order(parent_id)
@@ -90,7 +93,7 @@ def create_tasks_bulk(data: schemas.BulkTaskCreate, current_user: User = Depends
             task = Task(
                 title=item.title.strip(), status=item.status or data.status, priority=data.priority,
                 deadline=data.deadline, project_id=project_id, parent_task_id=parent_id,
-                assignee_id=data.assignee_id, order=order,
+                assignee_id=data.assignee_id, order=order, labels=list(labels),
             )
             sync_completed_at(task)
             db.add(task)
@@ -118,7 +121,7 @@ def list_tasks(project_id: int = None, parent_id: int = None, current_user: User
     if parent_id:
         query = query.filter(Task.parent_task_id == parent_id)
 
-    tasks = access.filter_tasks(db, current_user, query.order_by(Task.order, Task.id).all())
+    tasks = access.filter_tasks(db, current_user, query.options(selectinload(Task.labels)).order_by(Task.order, Task.id).all())
     counts = dict(db.query(TaskComment.task_id, func.count(TaskComment.id)).group_by(TaskComment.task_id))
     for t in tasks:
         t.comment_count = counts.get(t.id, 0)
@@ -134,6 +137,9 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
 
     update_data = task_update.model_dump(exclude_unset=True)
     before = activity.snapshot(db_task)
+    label_ids = update_data.pop("label_ids", None)
+    if label_ids is not None:
+        db_task.labels = resolve_labels(db, label_ids)
     previous_assignee = db_task.assignee_id
     previous_project = db_task.project_id
     if update_data.get("project_id") is not None:

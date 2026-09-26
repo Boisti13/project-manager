@@ -5,6 +5,8 @@ import TaskForm from './TaskForm';
 import TaskBoard from './TaskBoard';
 import TaskCalendar from './TaskCalendar';
 import { flattenVisible } from '../views';
+import { buildLabelIndex } from '../labels';
+import LabelChips from './LabelChips';
 import { authFetch, useAuth } from '../context/AuthContext';
 import {
   DEFAULT_FILTERS,
@@ -38,6 +40,7 @@ function TaskList() {
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
+  const [labels, setLabels] = useState([]);
   const [archiveAfterDays, setArchiveAfterDays] = useState(null);
   // Expanded "Completed (n)" rows; collapsed by default, not persisted.
   const [openCompleted, setOpenCompleted] = useState(new Set());
@@ -135,12 +138,14 @@ function TaskList() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [tasksRes, projectsRes, usersRes, settingsRes] = await Promise.all([
+      const [tasksRes, projectsRes, usersRes, settingsRes, labelsRes] = await Promise.all([
         fetchJson('/api/tasks/'),
         fetchJson('/api/projects/'),
         fetchJson('/api/users/'),
         fetchJson('/api/settings/'),
+        fetchJson('/api/labels/'),
       ]);
+      setLabels(labelsRes);
       setTasks(tasksRes);
       setProjects(projectsRes);
       setUsers(usersRes);
@@ -419,6 +424,8 @@ function TaskList() {
   };
 
   const projectIndex = useMemo(() => buildProjectIndex(projects), [projects]);
+  const labelIndex = useMemo(() => buildLabelIndex(labels), [labels]);
+  const filterByLabel = (label) => setFilter('label', String(label.id));
 
   const myOpenCount = useMemo(
     () => tasks.filter((t) => t.assignee_id === currentUser?.id && t.status !== 'done').length,
@@ -480,8 +487,9 @@ function TaskList() {
         projectParentOf: projectIndex.parentIdOf,
         archiveAfterDays,
         commentMatchIds,
+        labelNameOf: labelIndex.nameOf,
       }),
-    [tasks, filters, currentUser, projectIndex, archiveAfterDays, commentMatchIds]
+    [tasks, filters, currentUser, projectIndex, archiveAfterDays, commentMatchIds, labelIndex]
   );
 
   // While filtering, only sections with results are shown; otherwise every
@@ -532,6 +540,8 @@ function TaskList() {
       getMoveState={getMoveState}
       onMove={handleMove}
       onMoveTo={handleMoveTo}
+      labelIndex={labelIndex}
+      onLabelClick={filterByLabel}
     />
   );
 
@@ -599,6 +609,8 @@ function TaskList() {
             defaultProjectId={projectForNew}
             projectIndex={projectIndex}
             users={users}
+            labels={labels}
+            onLabelCreated={(l) => setLabels((ls) => [...ls, l])}
             onSubmit={selectedTask ? handleUpdateTask : handleCreateTask}
             onBulkSubmit={handleBulkCreate}
             onCancel={handleFormCancel}
@@ -638,7 +650,12 @@ function TaskList() {
           aria-expanded={filtersOpen}
         >
           {filtersOpen ? '▲' : '▼'} Filters & sort
-          {filters.status !== 'all' || filters.project || filters.assignee || filters.due || filters.sort !== 'manual'
+          {filters.status !== 'all' ||
+          filters.project ||
+          filters.assignee ||
+          filters.due ||
+          filters.label ||
+          filters.sort !== 'manual'
             ? ' •'
             : ''}
         </button>
@@ -690,6 +707,20 @@ function TaskList() {
             </select>
           </div>
 
+          {labels.length > 0 && (
+            <div className="filter-group">
+              <label htmlFor="f-label">Label</label>
+              <select id="f-label" value={filters.label} onChange={(e) => setFilter('label', e.target.value)}>
+                <option value="">Any</option>
+                {labelIndex.list.map((l) => (
+                  <option key={l.id} value={String(l.id)}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="filter-group">
             <label htmlFor="f-due">Deadline</label>
             <select id="f-due" value={filters.due} onChange={(e) => setFilter('due', e.target.value)}>
@@ -719,6 +750,15 @@ function TaskList() {
         </div>
       </div>
 
+      {filters.label && labelIndex.byId.has(parseInt(filters.label, 10)) && (
+        <p className="archive-note label-filter-note">
+          Label: <LabelChips labels={[labelIndex.byId.get(parseInt(filters.label, 10))]} />{' '}
+          <button className="link-btn" onClick={() => setFilter('label', '')}>
+            Show all
+          </button>
+        </p>
+      )}
+
       {tree.archivedCount > 0 && (
         <p className="archive-note">
           {tree.archivedCount} task{tree.archivedCount === 1 ? '' : 's'} completed more than {archiveAfterDays}{' '}
@@ -737,6 +777,8 @@ function TaskList() {
           users={users}
           progressOf={tree.progressOf}
           onSetStatus={handleSetStatus}
+          labelIndex={labelIndex}
+          onLabelClick={filterByLabel}
           onOpen={openInList}
           onEdit={(task) => {
             handleEditTask(task);

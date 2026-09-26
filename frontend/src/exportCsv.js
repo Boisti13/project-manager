@@ -16,10 +16,11 @@ const PRIORITY_LABELS = { 0: 'Low', 1: 'Medium', 2: 'High', 3: 'Critical' };
 
 export const CSV_COLUMNS = [
   'ID', 'Project', 'Category', 'Task', 'Parent task', 'Status', 'Priority',
-  'Assignee', 'Deadline', 'Created', 'Completed', 'Description',
+  'Assignee', 'Deadline', 'Created', 'Completed', 'Description', 'Labels',
 ];
 
-export function tasksToCsv(tasks, projectIndex, users) {
+export function tasksToCsv(tasks, projectIndex, users, labels = []) {
+  const labelName = new Map(labels.map((l) => [l.id, l.name]));
   const byId = new Map(tasks.map((t) => [t.id, t]));
   const userName = new Map(users.map((u) => [u.id, u.username]));
 
@@ -50,6 +51,7 @@ export function tasksToCsv(tasks, projectIndex, users) {
         day(t.created_at),
         day(t.completed_at),
         t.description,
+        (t.label_ids || []).map((id) => labelName.get(id)).filter(Boolean).sort().join(', '),
       ];
     });
 

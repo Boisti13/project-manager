@@ -2,6 +2,21 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.24.0 — 2026-09-26
+
+### Added
+- **Labels.** Colored tags for tasks across all projects (e.g. *urgent*, *waiting for supplier*), shared by everyone.
+  - Task form: a *Labels* row to toggle labels, with **+ New label** to create one on the spot (a free palette color is picked).
+  - **Settings → Labels**: all labels with how many tasks use them; rename, recolor, delete (deleting only takes the label off its tasks), add.
+  - Labels show as chips on list rows and board cards; **clicking a chip shows all tasks with that label** (a note above the list says which, with *Show all*).
+  - A **Label** filter next to the others, and the search also matches label names — in the list, board and calendar.
+  - Bulk entry applies the chosen labels to every new task; repeating tasks pass their labels on to the next occurrence and its checklist.
+  - The task history records label changes; the CSV export has a *Labels* column; project export/import carries labels by name (matched ignoring case, missing ones created with their exported color).
+
+### Under the hood
+- Migration `0009`: `labels`, `task_labels`; `/api/labels/` (list with usage counts, create, update, delete); tasks take and return `label_ids`.
+- 4 new backend tests (119 in total), frontend tests for labels and the CSV column.
+
 ## v1.23.1 — 2026-09-26
 
 ### Fixed

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import LabelPicker from './LabelPicker';
 import { parseBulk, countNested } from '../bulkParse';
 import '../styles/TaskForm.css';
 
@@ -51,6 +52,8 @@ function TaskForm({
   defaultProjectId = null,
   projectIndex,
   users,
+  labels = [],
+  onLabelCreated,
   onSubmit,
   onBulkSubmit,
   onCancel,
@@ -70,6 +73,7 @@ function TaskForm({
     parent_task_id: parentTask ? parentTask.id : null,
     recurrence_unit: null,
     recurrence_interval: 1,
+    label_ids: [],
   });
 
   useEffect(() => {
@@ -85,6 +89,7 @@ function TaskForm({
         recurrence_unit: task.recurrence_unit || null,
         recurrence_interval: task.recurrence_interval || 1,
         parent_task_id: task.parent_task_id || null,
+        label_ids: task.label_ids || [],
       });
     }
   }, [task]);
@@ -116,6 +121,7 @@ function TaskForm({
         priority: formData.priority || 0,
         deadline,
         assignee_id: formData.assignee_id,
+        label_ids: formData.label_ids,
       });
       return;
     }
@@ -327,6 +333,16 @@ function TaskForm({
           )}
         </div>
       )}
+
+      <div className="form-group">
+        <label>Labels</label>
+        <LabelPicker
+          labels={labels}
+          value={formData.label_ids}
+          onChange={(ids) => setFormData((prev) => ({ ...prev, label_ids: ids }))}
+          onCreated={onLabelCreated}
+        />
+      </div>
 
       <div className="form-group">
         <label>Assign To</label>

@@ -14,7 +14,8 @@ from app.timeutil import utcnow
 from app.auth import get_current_user
 from app.database import get_db
 from app.version import APP_VERSION
-from app.models import Project, Task, TaskComment, TaskStatus, User
+from app.models import Label, Project, Task, TaskComment, TaskStatus, User
+from app.routers.labels import next_label_color
 from app.routers.projects import next_color
 from app.routers.tasks import sync_completed_at
 
@@ -42,6 +43,7 @@ class TaskData(BaseModel):
     completed_at: Optional[datetime] = None
     recurrence_unit: Optional[Literal["day", "week", "month", "year"]] = None
     recurrence_interval: Optional[int] = Field(default=None, ge=1, le=365)
+    labels: List[str] = []  # by name; matched (or created) on import
     comments: List[CommentData] = []
     subtasks: List["TaskData"] = []
 
@@ -63,6 +65,11 @@ class ProjectData(BaseModel):
     categories: List[CategoryData] = []
 
 
+class LabelData(BaseModel):
+    name: str = Field(min_length=1, max_length=40)
+    color: Optional[str] = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
+
+
 class ExportFile(BaseModel):
     format: Literal["project-manager/projects"]
     version: int = Field(ge=1, le=FORMAT_VERSION)
@@ -71,6 +78,7 @@ class ExportFile(BaseModel):
     projects: List[ProjectData] = []
     # Tasks without a project; only in "export everything".
     unassigned_tasks: List[TaskData] = []
+    labels: List[LabelData] = []  # colors of the labels used above
 
 
 TaskData.model_rebuild()
@@ -89,6 +97,7 @@ def _task_tree(task: Task, children: dict) -> dict:
         "completed_at": task.completed_at.isoformat() if task.completed_at else None,
         "recurrence_unit": task.recurrence_unit,
         "recurrence_interval": task.recurrence_interval,
+        "labels": [l.name for l in task.labels],
         "comments": [
             {
                 "author": c.author.username if c.author else c.author_name,
@@ -150,7 +159,24 @@ def export_projects(
         "app_version": APP_VERSION,
         "projects": projects,
         "unassigned_tasks": [] if project_id else tree(None),
+        "labels": _labels_used(projects, [] if project_id else tree(None), db),
     }
+
+
+def _labels_used(projects, unassigned, db: Session):
+    names = set()
+
+    def walk(items):
+        for t in items:
+            names.update(t["labels"])
+            walk(t["subtasks"])
+
+    for p in projects:
+        walk(p["tasks"])
+        for c in p["categories"]:
+            walk(c["tasks"])
+    walk(unassigned)
+    return [{"name": l.name, "color": l.color} for l in db.query(Label).filter(Label.name.in_(names)).order_by(Label.name)]
 
 
 # ---- import ----------------------------------------------------------------
@@ -169,6 +195,17 @@ def _free_name(db: Session, name: str) -> str:
 def import_projects(data: ExportFile, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     counts = {"projects": 0, "categories": 0, "tasks": 0, "comments": 0}
     renamed = []
+    labels = {l.name.lower(): l for l in db.query(Label)}
+    colors = {l.name.lower(): l.color for l in data.labels}
+
+    def label(name: str) -> Label:
+        name = " ".join(name.split())[:40]
+        if name.lower() not in labels:
+            new = Label(name=name, color=colors.get(name.lower()) or next_label_color(db))
+            db.add(new)
+            db.flush()
+            labels[name.lower()] = new
+        return labels[name.lower()]
 
     def add_tasks(items: List[TaskData], project_id, parent_id=None):
         for item in items:
@@ -178,6 +215,7 @@ def import_projects(data: ExportFile, current_user: User = Depends(get_current_u
                 completed_at=item.completed_at, project_id=project_id, parent_task_id=parent_id,
                 recurrence_unit=item.recurrence_unit,
                 recurrence_interval=(item.recurrence_interval or 1) if item.recurrence_unit else None,
+                labels=list({id(l): l for l in (label(n) for n in item.labels if n.strip())}.values()),
             )
             sync_completed_at(task)
             db.add(task)

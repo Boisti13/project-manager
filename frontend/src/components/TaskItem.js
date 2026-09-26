@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { highlightParts } from '../taskFilters';
 import TaskComments from './TaskComments';
 import TaskMenu from './TaskMenu';
+import LabelChips from './LabelChips';
 import { describeRecurrence, shortRecurrence } from '../recurrence';
 import '../styles/TaskItem.css';
 
@@ -31,6 +32,8 @@ function TaskItem({
   getMoveState = null,
   onMove = null,
   onMoveTo = null,
+  labelIndex = null,
+  onLabelClick = null,
   indent = 0,
 }) {
   const subtasks = childrenOf(task);
@@ -152,6 +155,7 @@ function TaskItem({
           <span className={`task-title ${task.status === 'done' ? 'task-title-done' : ''}`}>
             <Highlight text={task.title} needle={searchText} />
           </span>
+          {labelIndex && <LabelChips labels={labelIndex.of(task)} onClick={onLabelClick} small />}
         </div>
 
         <div className="task-right">
@@ -229,6 +233,7 @@ function TaskItem({
           changeKey={[
             task.updated_at, task.status, task.title, task.description, task.priority, task.deadline,
             task.assignee_id, task.project_id, task.recurrence_unit, task.recurrence_interval,
+            (task.label_ids || []).join(','),
           ].join('|')}
         />
       )}
@@ -257,6 +262,8 @@ function TaskItem({
               getMoveState={getMoveState}
               onMove={onMove}
               onMoveTo={onMoveTo}
+              labelIndex={labelIndex}
+              onLabelClick={onLabelClick}
               indent={indent + 1}
             />
           ))}

@@ -72,6 +72,21 @@ class Project(ProjectBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+# Labels
+class LabelCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=40)
+    color: Optional[str] = Field(default=None, pattern=HEX_COLOR)
+
+class LabelUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=40)
+    color: Optional[str] = Field(default=None, pattern=HEX_COLOR)
+
+class Label(BaseModel):
+    id: int
+    name: str
+    color: str
+    task_count: int = 0
+
 # Task schemas
 RecurrenceUnit = Literal["day", "week", "month", "year"]
 
@@ -87,6 +102,7 @@ class TaskBase(BaseModel):
     assignee_id: Optional[int] = None
     recurrence_unit: Optional[RecurrenceUnit] = None
     recurrence_interval: Optional[int] = Field(default=None, ge=1, le=365)
+    label_ids: List[int] = []
 
 class TaskCreate(TaskBase):
     pass
@@ -115,6 +131,7 @@ class BulkTaskCreate(BaseModel):
     priority: int = 0
     deadline: Optional[datetime] = None
     assignee_id: Optional[int] = None
+    label_ids: List[int] = []
 
 BulkTaskItem.model_rebuild()
 
@@ -138,6 +155,7 @@ class TaskUpdate(BaseModel):
     assignee_id: Optional[int] = None
     recurrence_unit: Optional[RecurrenceUnit] = None
     recurrence_interval: Optional[int] = Field(default=None, ge=1, le=365)
+    label_ids: Optional[List[int]] = None
 
 class Task(TaskBase):
     id: int

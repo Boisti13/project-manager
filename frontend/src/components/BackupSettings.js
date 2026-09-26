@@ -161,12 +161,13 @@ function BackupSettings() {
         if (!r.ok) throw new Error('Export failed: ' + (await errorText(r)));
         return r.json();
       };
-      const [tasks, projects, users] = await Promise.all([
+      const [tasks, projects, users, labels] = await Promise.all([
         get('/api/tasks/'),
         get('/api/projects/'),
         get('/api/users/'),
+        get('/api/labels/'),
       ]);
-      const csv = tasksToCsv(tasks, buildProjectIndex(projects), users);
+      const csv = tasksToCsv(tasks, buildProjectIndex(projects), users, labels);
       const day = new Date().toISOString().slice(0, 10);
       saveBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `project-manager-tasks-${day}.csv`);
       setStatus({ ok: true, text: `Exported ${tasks.length} tasks.` });

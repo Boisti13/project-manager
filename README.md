@@ -18,7 +18,8 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Private Projects**: Projects are visible to everyone by default; mark one **🔒 Private** and pick its members, and the project — its categories, tasks, subtasks, comments, history, notifications and exports — is visible only to members and admins (non-members get *not found*). Tasks in a private project can only be assigned to members; whoever creates or manages a private project stays a member. Tasks without a project stay visible to everyone
 - **Comments**: Discussion thread on every task and subtask (💬 with count on the row); authors can edit (marked *edited*) and delete their comments, admins can delete any; search also finds tasks by comment text; comments travel with project export/import
 - **Task History**: The 💬 panel also shows who created the task and who changed what — status, assignee, project, title, description, deadline, priority, repeat — interleaved with the comments (*Hide history* to see comments only)
-- **Search & Filters**: Full-text search over titles, descriptions and comments (subtasks included), filters for status, project, assignee and deadline, sorting by deadline/priority/date/title; filters are kept in the URL
+- **Labels**: Colored tags such as *urgent* or *waiting for supplier*, shared across all projects. Pick or create them in the task form, manage them under Settings → Labels (rename, recolor, delete); they show on list rows and board cards, clicking one filters by it, the *Label* filter and the search find them, and they're kept by repeating tasks, bulk entry, the history, CSV and export/import
+- **Search & Filters**: Full-text search over titles, descriptions and comments (subtasks included), filters for status, project, assignee, label and deadline, sorting by deadline/priority/date/title; filters are kept in the URL
 - **List, Board & Calendar Views**: Switch the Tasks page between the list, a **board** with To Do / In Progress / Blocked / Done columns (drag cards between columns, or ◀ ▶ on touch) and a **month calendar** of deadlines (subtasks included; drag a task to another day to move its deadline; on phones days show colored dots and the tapped day's tasks are listed below). Search and filters apply to all three; clicking a task opens it in the list
 - **Projects & Categories**: Projects with one level of categories (e.g. *6GHub → General, Ordering, Documentation*), each project color-coded; the Tasks page lists tasks in collapsible sections per project and per category (remembered per browser), with every task carrying its project's color
 - **Progress Overview**: The Projects page shows each project's progress bar and % done (categories included), open / overdue / due-this-week counts that open the matching filter on the Tasks page, and the next deadline; each category has its own mini bar and overdue count
@@ -135,7 +136,7 @@ With no configuration it starts a throwaway PostgreSQL via the `pgserver` packag
 
 ```bash
 cd frontend
-npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, views (board/calendar), exportCsv, bulkParse, recurrence, activity
+npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, views (board/calendar), labels, exportCsv, bulkParse, recurrence, activity
 ```
 
 **CI** — [GitHub Actions](.github/workflows/ci.yml) runs the backend tests (PostgreSQL 16, Python 3.10 and 3.12), the frontend tests and production build, and shellcheck on every push to `main`/`dev` and on pull requests.
@@ -160,6 +161,7 @@ project-manager/
 │       ├── bulkParse.js     # "One task per line" text → task tree
 │       ├── recurrence.js    # Repeat settings as text
 │       ├── activity.js      # Task history entries as sentences
+│       ├── labels.js        # Label index, readable text color on a label
 │       ├── progress.js      # Per-project progress for the Projects page
 │       ├── views.js         # Board columns, calendar grid and deadlines by day
 │       └── projects.js      # Project tree, colors, grouping tasks by project/category

@@ -44,6 +44,7 @@ def _copy_subtasks(db: Session, source: Task, target: Task, shift: timedelta):
             order=sub.order, deadline=(sub.deadline + shift) if sub.deadline else None,
             project_id=sub.project_id, parent_task_id=target.id, assignee_id=sub.assignee_id,
             recurrence_unit=sub.recurrence_unit, recurrence_interval=sub.recurrence_interval,
+            labels=list(sub.labels),
         )
         db.add(copy)
         db.flush()
@@ -65,7 +66,7 @@ def spawn_next(db: Session, task: Task):
         title=task.title, description=task.description, status=TaskStatus.TODO, priority=task.priority,
         order=task.order, deadline=nxt_deadline, project_id=task.project_id,
         parent_task_id=task.parent_task_id, assignee_id=task.assignee_id,
-        recurrence_unit=task.recurrence_unit, recurrence_interval=n,
+        recurrence_unit=task.recurrence_unit, recurrence_interval=n, labels=list(task.labels),
     )
     db.add(nxt)
     db.flush()
