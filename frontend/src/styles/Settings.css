@@ -187,3 +187,37 @@
     flex-direction: column;
   }
 }
+
+.account-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.account-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.account-form label small {
+  color: var(--color-text-muted);
+}
+
+.account-form input {
+  padding: 7px 10px;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 700px) {
+  .account-form {
+    grid-template-columns: 1fr;
+  }
+}

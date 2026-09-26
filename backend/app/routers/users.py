@@ -3,13 +3,36 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 from app import schemas
-from app.auth import get_current_user, get_current_admin_user
+from app.auth import get_current_user, get_current_admin_user, get_password_hash
+from app.routers.auth import ensure_unique
 
 router = APIRouter()
 
 @router.get("/", response_model=list[schemas.User])
 def list_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return db.query(User).filter(User.is_active == True).all()
+
+@router.post("/", response_model=schemas.User)
+def create_user(data: schemas.AdminUserCreate, current_user: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+    """Admins add accounts (works whether or not self-registration is open)."""
+    ensure_unique(db, data.username, data.email)
+    user = User(username=data.username, email=data.email, is_admin=data.is_admin,
+                hashed_password=get_password_hash(data.password))
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.put("/{user_id}/password")
+def set_password(user_id: int, data: schemas.PasswordSet, current_user: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.hashed_password = get_password_hash(data.password)
+    db.commit()
+    return {"ok": True}
+
 
 @router.get("/admin/all", response_model=list[schemas.User])
 def list_all_users(current_user: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):

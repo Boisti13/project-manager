@@ -8,8 +8,8 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 
 ## Features
 
-- **Authentication**: JWT-based login/registration; first registered user becomes admin
-- **User Management**: Admins can promote/demote and activate/deactivate users
+- **Authentication**: JWT-based login; the first account registered becomes the admin, after that self-registration is **closed** unless an admin allows it (Settings → User Management). New passwords need at least 8 characters; everyone can change their own password under Settings → *Your account*
+- **User Management**: Admins add accounts, set passwords, promote/demote and activate/deactivate users (deactivated users are locked out immediately)
 - **Hierarchical Tasks**: Main tasks with subtasks in a tree structure, drag-to-reorder at any level (in manual sort order), subtask progress (e.g. *1/2*) on the parent; when all subtasks are ticked the parent is highlighted as ready (*✓ 2/2*) but stays open — it only moves to *Completed* when you tick it yourself, so more subtasks can still be added
 - **Done Checkbox & Archive**: Tick tasks off with a checkbox; they move into a collapsed *✓ Completed* row at the end of their project/category (most recent first). After a configurable number of days (Settings → *Completed tasks*, default 30) they're archived — hidden from the list but still found by search or the *Done* filter. Nothing is deleted
 - **Multi-User**: Task assignment
@@ -33,9 +33,10 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 | ![Search with highlighted matches](docs/screenshots/tasks-filtered.png) | ![Completed row on a phone, dark mode](docs/screenshots/tasks-phone-dark.png) |
 | ![Projects with categories](docs/screenshots/projects-desktop.png) | ![Projects on a phone](docs/screenshots/projects-phone.png) |
 | ![Comments on a task](docs/screenshots/comments-desktop.png) | ![Comments on a phone](docs/screenshots/comments-phone.png) |
+| | ![Login with registration closed](docs/screenshots/login-phone.png) |
 
 <details>
-<summary>Settings (archive days, backup &amp; restore, export, updates, users)</summary>
+<summary>Settings (your account, archive days, backup &amp; restore, export, updates, users &amp; registration)</summary>
 
 ![Settings](docs/screenshots/settings-desktop.png)
 
@@ -73,7 +74,7 @@ To start the new container from a backup of another instance, put `PM_RESTORE_FI
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Boisti13/project-manager/main/install.sh)"
 ```
 
-Both install PostgreSQL, Nginx, Supervisor and Node.js without Docker, generate the database password and secret key, build the frontend and print the URL. Register the first account to become admin; later updates happen from **Settings → Updates**. Options, unattended mode and the manual steps are in [DEPLOYMENT.md](DEPLOYMENT.md#fresh-install).
+Both install PostgreSQL, Nginx, Supervisor and Node.js without Docker, generate the database password and secret key, build the frontend and print the URL. Register the first account to become admin — registration then closes, and you add further users under **Settings → User Management**. Later updates happen from **Settings → Updates**. Options, unattended mode and the manual steps are in [DEPLOYMENT.md](DEPLOYMENT.md#fresh-install).
 
 ## Development Setup
 

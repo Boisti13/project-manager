@@ -2,6 +2,24 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.13.0 — 2026-09-26
+
+### Changed
+- **Registration is closed once an admin exists.** Only the very first account can sign up on its own (and becomes admin); after that the login page hides *Register* and says to ask an admin. Admins can re-open it with **Allow new registrations** in Settings → User Management. Existing installs are closed after updating.
+- New passwords (registration, admin-set, change) need at least **8 characters**; existing passwords keep working. Usernames can't contain spaces (new accounts only).
+
+### Added
+- **Admins add users** (username, email, initial password, optional admin) and **set a new password** for any user, in Settings → User Management.
+- **Change your own password** in Settings → *Your account*.
+- Registration errors from the server are shown as readable messages.
+
+### Fixed
+- On phones the login page no longer shows the app header twice.
+
+### Under the hood
+- New API: `GET /api/auth/registration`, `POST /api/auth/change-password`, `POST /api/users/` (admin), `PUT /api/users/{id}/password` (admin); `allow_registration` in `/api/settings`.
+- 9 new backend tests (66 in total).
+
 ## v1.12.1 — 2026-09-25
 
 ### Fixed

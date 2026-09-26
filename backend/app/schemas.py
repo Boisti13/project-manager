@@ -4,12 +4,27 @@ from datetime import datetime
 from app.models import TaskStatus
 
 # User schemas
+PASSWORD_MIN = 8
+
 class UserBase(BaseModel):
     username: str
     email: EmailStr
 
 class UserCreate(UserBase):
-    password: str
+    # Rules apply to new accounts only; responses use UserBase as-is so
+    # existing accounts never fail validation.
+    username: str = Field(min_length=1, max_length=50, pattern=r"^\S+$")
+    password: str = Field(min_length=PASSWORD_MIN, max_length=200)
+
+class AdminUserCreate(UserCreate):
+    is_admin: bool = False
+
+class PasswordSet(BaseModel):
+    password: str = Field(min_length=PASSWORD_MIN, max_length=200)
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=PASSWORD_MIN, max_length=200)
 
 class User(UserBase):
     id: int
@@ -97,10 +112,12 @@ Task.model_rebuild()
 class AppSettings(BaseModel):
     archive_after_days: int = Field(ge=1, le=3650)
     backup_keep: int = Field(ge=1, le=100)
+    allow_registration: bool
 
 class AppSettingsUpdate(BaseModel):
     archive_after_days: Optional[int] = Field(default=None, ge=1, le=3650)
     backup_keep: Optional[int] = Field(default=None, ge=1, le=100)
+    allow_registration: Optional[bool] = None
 
 
 # Comments

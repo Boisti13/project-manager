@@ -10,13 +10,21 @@ from app.models import AppSetting, User
 router = APIRouter()
 
 # backup_keep is also read by scripts/backup-db.sh straight from the table.
-DEFAULTS = {"archive_after_days": 30, "backup_keep": 3}
+# allow_registration: once an admin exists, self-registration is closed
+# unless an admin turns it on (the very first account can always register).
+DEFAULTS = {"archive_after_days": 30, "backup_keep": 3, "allow_registration": False}
+
+
+def _parse(default, raw: str):
+    if isinstance(default, bool):
+        return raw.strip().lower() in ("1", "true", "yes", "on")
+    return type(default)(raw)
 
 
 def read_settings(db: Session) -> dict:
     values = dict(DEFAULTS)
     for row in db.query(AppSetting).filter(AppSetting.key.in_(DEFAULTS.keys())):
-        values[row.key] = type(DEFAULTS[row.key])(row.value)
+        values[row.key] = _parse(DEFAULTS[row.key], row.value)
     return values
 
 

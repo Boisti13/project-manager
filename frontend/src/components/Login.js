@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Login.css';
@@ -10,8 +10,20 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  // null while loading; the Register tab only shows when sign-up is open.
+  const [registrationOpen, setRegistrationOpen] = useState(null);
   const { login, register } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch('/api/auth/registration')
+      .then((r) => (r.ok ? r.json() : { open: false }))
+      .then((d) => {
+        setRegistrationOpen(d.open);
+        if (!d.open) setMode('login');
+      })
+      .catch(() => setRegistrationOpen(false));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,22 +47,24 @@ function Login() {
     <div className="login-page">
       <div className="login-card">
         <h1>📋 Project Manager</h1>
-        <div className="login-tabs">
-          <button
-            type="button"
-            className={mode === 'login' ? 'login-tab active' : 'login-tab'}
-            onClick={() => setMode('login')}
-          >
-            Log In
-          </button>
-          <button
-            type="button"
-            className={mode === 'register' ? 'login-tab active' : 'login-tab'}
-            onClick={() => setMode('register')}
-          >
-            Register
-          </button>
-        </div>
+        {registrationOpen && (
+          <div className="login-tabs">
+            <button
+              type="button"
+              className={mode === 'login' ? 'login-tab active' : 'login-tab'}
+              onClick={() => setMode('login')}
+            >
+              Log In
+            </button>
+            <button
+              type="button"
+              className={mode === 'register' ? 'login-tab active' : 'login-tab'}
+              onClick={() => setMode('register')}
+            >
+              Register
+            </button>
+          </div>
+        )}
 
         {error && <div className="error-message">{error}</div>}
 
@@ -74,14 +88,20 @@ function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={4}
+              minLength={mode === 'register' ? 8 : undefined}
+              autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
             />
+            {mode === 'register' && <small className="login-hint">At least 8 characters.</small>}
           </div>
 
           <button type="submit" className="btn btn-primary" disabled={submitting}>
             {submitting ? 'Please wait...' : mode === 'login' ? 'Log In' : 'Create Account'}
           </button>
         </form>
+
+        {registrationOpen === false && (
+          <p className="login-note">No account yet? Registration is closed — ask an admin to create one for you.</p>
+        )}
       </div>
     </div>
   );

@@ -84,7 +84,11 @@ export function AuthProvider({ children }) {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.detail || 'Registration failed');
+      // Validation errors come as a list: [{loc: [..., 'password'], msg}]
+      const detail = Array.isArray(data.detail)
+        ? data.detail.map((d) => `${d.loc[d.loc.length - 1]}: ${d.msg}`).join('; ')
+        : data.detail;
+      throw new Error(detail || 'Registration failed');
     }
     await login(username, password);
   };

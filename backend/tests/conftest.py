@@ -143,12 +143,15 @@ def client(database):
 
 
 class User:
-    """A registered user with a ready-to-use auth header."""
+    """A user with a ready-to-use auth header. Self-registers, or is created
+    by `created_by` (an admin) -- registration is closed once an admin exists."""
 
-    def __init__(self, client, username, password="Secret-pass-1"):
-        r = client.post("/api/auth/register", json={
-            "username": username, "email": f"{username}@example.com", "password": password,
-        })
+    def __init__(self, client, username, password="Secret-pass-1", created_by=None):
+        data = {"username": username, "email": f"{username}@example.com", "password": password}
+        if created_by is None:
+            r = client.post("/api/auth/register", json=data)
+        else:
+            r = client.post("/api/users/", json=data, headers=created_by.headers)
         assert r.status_code == 200, r.text
         self.data = r.json()
         self.id = self.data["id"]
@@ -166,12 +169,12 @@ def admin(client):
 
 @pytest.fixture
 def alice(client, admin):
-    return User(client, "alice")
+    return User(client, "alice", created_by=admin)
 
 
 @pytest.fixture
 def bob(client, admin):
-    return User(client, "bob")
+    return User(client, "bob", created_by=admin)
 
 
 @pytest.fixture

@@ -7,6 +7,7 @@ def test_first_account_is_admin_later_ones_are_not(client, admin, alice):
 
 
 def test_register_rejects_duplicates(client, admin):
+    client.put("/api/settings/", json={"allow_registration": True}, headers=admin.headers)
     r = client.post("/api/auth/register", json={"username": "admin", "email": "other@example.com", "password": "x" * 8})
     assert r.status_code == 400
     r = client.post("/api/auth/register", json={"username": "other", "email": "admin@example.com", "password": "x" * 8})
@@ -25,7 +26,7 @@ def test_admin_manages_users(client, admin, alice):
     r = client.put(f"/api/users/{alice.id}", json={"is_admin": True}, headers=admin.headers)
     assert r.status_code == 200 and r.json()["is_admin"] is True
     # Non-admins can't
-    bob = User(client, "bob")
+    bob = User(client, "bob", created_by=admin)
     assert client.put(f"/api/users/{alice.id}", json={"is_admin": False}, headers=bob.headers).status_code == 403
     assert client.get("/api/users/admin/all", headers=bob.headers).status_code == 403
 

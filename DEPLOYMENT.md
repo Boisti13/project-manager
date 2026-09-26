@@ -128,7 +128,7 @@ Any logged-in user can export and import. The file format is `project-manager/pr
 
 ## Fresh Install
 
-All options install without Docker: PostgreSQL, a Python venv under Supervisor, and Nginx serving the built frontend. The app lives in `/opt/project-manager` as a git checkout, so **Settings → Updates** works right away. The first account you register becomes the admin.
+All options install without Docker: PostgreSQL, a Python venv under Supervisor, and Nginx serving the built frontend. The app lives in `/opt/project-manager` as a git checkout, so **Settings → Updates** works right away. The first account you register becomes the admin; after that, self-registration is closed — add users under **Settings → User Management**, or switch *Allow new registrations* on there.
 
 ### Option A: New LXC from the Proxmox host (recommended)
 

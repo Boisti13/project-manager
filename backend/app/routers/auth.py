@@ -6,17 +6,34 @@ from app.database import get_db
 from app.models import User
 from app import schemas
 from app.auth import verify_password, get_password_hash, create_access_token, get_current_user
+from app.routers.settings import read_settings
 
 router = APIRouter()
 
 
-@router.post("/register", response_model=schemas.User)
-def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(
-        (User.username == user.username) | (User.email == user.email)
-    ).first()
+def registration_open(db: Session) -> bool:
+    """The first account can always register (it becomes the admin); after
+    that only while an admin has registration switched on."""
+    return db.query(User).count() == 0 or read_settings(db)["allow_registration"]
+
+
+def ensure_unique(db: Session, username: str, email: str):
+    existing = db.query(User).filter((User.username == username) | (User.email == email)).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username or email already registered")
+
+
+@router.get("/registration")
+def registration_status(db: Session = Depends(get_db)):
+    """Public: lets the login page show or hide the Register tab."""
+    return {"open": registration_open(db)}
+
+
+@router.post("/register", response_model=schemas.User)
+def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    if not registration_open(db):
+        raise HTTPException(status_code=403, detail="Registration is closed. Ask an admin for an account.")
+    ensure_unique(db, user.username, user.email)
 
     is_first_user = db.query(User).count() == 0
 
@@ -50,3 +67,14 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 @router.get("/me", response_model=schemas.User)
 def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/change-password")
+def change_password(data: schemas.PasswordChange, current_user: User = Depends(get_current_user),
+                    db: Session = Depends(get_db)):
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is wrong")
+    user = db.get(User, current_user.id)
+    user.hashed_password = get_password_hash(data.new_password)
+    db.commit()
+    return {"ok": True}

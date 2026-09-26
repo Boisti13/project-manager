@@ -56,8 +56,14 @@ main {
 
   .App-subtitle,
   .App-footer,
-  .App-header:has(+ .app-nav) {
+  .App-header:has(+ .app-nav),
+  .App:has(.login-page) .App-header {
     display: none;
+  }
+
+  /* The login page brings its own full-screen background. */
+  .App:has(.login-page) main {
+    padding: 0;
   }
 
   main {

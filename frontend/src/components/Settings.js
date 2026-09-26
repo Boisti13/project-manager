@@ -3,6 +3,7 @@ import { authFetch, useAuth } from '../context/AuthContext';
 import UserManagement from './UserManagement';
 import UpdatePanel from './UpdatePanel';
 import ArchiveSettings from './ArchiveSettings';
+import AccountSettings from './AccountSettings';
 import BackupSettings from './BackupSettings';
 import '../styles/Settings.css';
 
@@ -82,6 +83,8 @@ function Settings() {
           </div>
         </div>
       </div>
+
+      <AccountSettings />
 
       <ArchiveSettings />
 
