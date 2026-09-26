@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import ProjectForm from './ProjectForm';
-import { authFetch } from '../context/AuthContext';
+import { authFetch, useAuth } from '../context/AuthContext';
 import { buildProjectIndex } from '../projects';
 import { progressByProject, combineProgress, percentDone } from '../progress';
 import '../styles/TaskList.css';
@@ -58,6 +58,8 @@ function ProjectProgress({ stats, projectId }) {
 }
 
 function ProjectList() {
+  const { currentUser } = useAuth();
+  const [users, setUsers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [progress, setProgress] = useState(new Map());
   const [loading, setLoading] = useState(true);
@@ -89,8 +91,13 @@ function ProjectList() {
 
   const loadData = async () => {
     try {
-      const [projectsRes, tasksRes] = await Promise.all([fetchJson('/api/projects/'), fetchJson('/api/tasks/')]);
+      const [projectsRes, tasksRes, usersRes] = await Promise.all([
+        fetchJson('/api/projects/'),
+        fetchJson('/api/tasks/'),
+        fetchJson('/api/users/'),
+      ]);
       setProjects(projectsRes);
+      setUsers(usersRes);
       setProgress(progressByProject(tasksRes));
       setError(null);
     } catch (err) {
@@ -197,6 +204,11 @@ function ProjectList() {
   if (loading) return <div className="container"><p>Loading projects...</p></div>;
 
   const EMPTY = combineProgress([]);
+  const memberNames = (p) =>
+    (p.member_ids || [])
+      .map((id) => users.find((u) => u.id === id)?.username)
+      .filter(Boolean)
+      .join(', ');
   const statsOf = (id) => progress.get(id) || EMPTY;
 
   return (
@@ -245,6 +257,8 @@ function ProjectList() {
             project={form.project || null}
             defaultParentId={form.parentId ?? null}
             projectIndex={projectIndex}
+            users={users}
+            currentUser={currentUser}
             onSubmit={handleSubmit}
             onCancel={() => setForm(null)}
           />
@@ -263,7 +277,20 @@ function ProjectList() {
                 <div className="project-row">
                   <span className="project-swatch" />
                   <div className="project-info">
-                    <h3>{project.name}</h3>
+                    <h3>
+                      {project.name}
+                      {project.is_private && (
+                        <span
+                          className="private-badge"
+                          title={`Private: visible to ${memberNames(project) || 'nobody but admins'} and admins`}
+                        >
+                          🔒 Private
+                        </span>
+                      )}
+                    </h3>
+                    {project.is_private && (
+                      <p className="project-members">Members: {memberNames(project) || 'none (admins only)'}</p>
+                    )}
                     {project.description && <p>{project.description}</p>}
                     <ProjectProgress stats={stats} projectId={project.id} />
                   </div>

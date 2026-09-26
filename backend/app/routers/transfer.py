@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app import access
 from app.timeutil import utcnow
 from app.auth import get_current_user
 from app.database import get_db
@@ -55,6 +56,9 @@ class ProjectData(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     description: Optional[str] = None
     color: Optional[str] = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
+    # Members aren't exported (users differ between installations); a
+    # private project is imported with the importing user as its member.
+    is_private: bool = False
     tasks: List[TaskData] = []
     categories: List[CategoryData] = []
 
@@ -105,8 +109,9 @@ def export_projects(
 ):
     """Selected top-level projects (?project_id=1&project_id=2), or everything
     including tasks without a project when none are given."""
-    all_projects = db.query(Project).order_by(Project.name, Project.id).all()
-    tasks = db.query(Task).order_by(Task.order, Task.id).all()
+    visible = access.visible_project_ids(db, current_user)
+    all_projects = [p for p in db.query(Project).order_by(Project.name, Project.id) if access.project_visible(visible, p.id)]
+    tasks = access.filter_tasks(db, current_user, db.query(Task).order_by(Task.order, Task.id).all())
 
     children, roots_by_project = {}, {}
     for t in tasks:
@@ -129,6 +134,7 @@ def export_projects(
             "name": p.name,
             "description": p.description,
             "color": p.color,
+            "is_private": bool(p.is_private),
             "tasks": tree(p.id),
             "categories": [
                 {"name": c.name, "description": c.description, "tasks": tree(c.id)}
@@ -188,7 +194,8 @@ def import_projects(data: ExportFile, current_user: User = Depends(get_current_u
         name = _free_name(db, p.name)
         if name != p.name:
             renamed.append({"from": p.name, "to": name})
-        project = Project(name=name, description=p.description, color=p.color or next_color(db))
+        project = Project(name=name, description=p.description, color=p.color or next_color(db),
+                          is_private=p.is_private, members=[current_user] if p.is_private else [])
         db.add(project)
         db.flush()
         counts["projects"] += 1

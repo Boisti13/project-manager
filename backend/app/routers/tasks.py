@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import Project, Task, TaskActivity, TaskComment, TaskStatus, User
-from app import activity, notify, recurrence, schemas
+from app.models import Task, TaskActivity, TaskComment, TaskStatus, User
+from app import access, activity, notify, recurrence, schemas
 from app.timeutil import utcnow
 from app.auth import get_current_user
 
@@ -36,6 +36,11 @@ def sync_completed_at(task: Task):
 
 @router.post("/", response_model=schemas.Task)
 def create_task(task: schemas.TaskCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if task.parent_task_id is not None:
+        access.require_task(db, current_user, task.parent_task_id)
+    if task.project_id is not None:
+        access.require_project(db, current_user, task.project_id, status=400)
+    access.check_assignee(db, task.assignee_id, task.project_id)
     db_task = Task(**task.model_dump())
     normalize_recurrence(db_task)
     sync_completed_at(db_task)
@@ -61,14 +66,15 @@ def create_tasks_bulk(data: schemas.BulkTaskCreate, current_user: User = Depends
     project_id = data.project_id
     if data.parent_task_id is not None:
         parent = db.get(Task, data.parent_task_id)
-        if not parent:
+        if not parent or not access.task_visible(db, current_user, parent):
             raise HTTPException(status_code=404, detail="Parent task not found")
         if project_id is None:
             project_id = parent.project_id
-    if project_id is not None and not db.get(Project, project_id):
-        raise HTTPException(status_code=400, detail="Project not found")
+    if project_id is not None:
+        access.require_project(db, current_user, project_id, status=400)
     if data.assignee_id is not None and not db.get(User, data.assignee_id):
         raise HTTPException(status_code=400, detail="Assignee not found")
+    access.check_assignee(db, data.assignee_id, project_id)
 
     def next_order(parent_id):
         current = db.query(func.max(Task.order)).filter(
@@ -112,7 +118,7 @@ def list_tasks(project_id: int = None, parent_id: int = None, current_user: User
     if parent_id:
         query = query.filter(Task.parent_task_id == parent_id)
 
-    tasks = query.order_by(Task.order, Task.id).all()
+    tasks = access.filter_tasks(db, current_user, query.order_by(Task.order, Task.id).all())
     counts = dict(db.query(TaskComment.task_id, func.count(TaskComment.id)).group_by(TaskComment.task_id))
     for t in tasks:
         t.comment_count = counts.get(t.id, 0)
@@ -120,23 +126,18 @@ def list_tasks(project_id: int = None, parent_id: int = None, current_user: User
 
 @router.get("/{task_id}", response_model=schemas.Task)
 def get_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id).first()
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return task
+    return access.require_task(db, current_user, task_id)
 
 @router.put("/{task_id}", response_model=schemas.Task)
 def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    db_task = db.query(Task).filter(Task.id == task_id).first()
-    if not db_task:
-        raise HTTPException(status_code=404, detail="Task not found")
+    db_task = access.require_task(db, current_user, task_id)
 
     update_data = task_update.model_dump(exclude_unset=True)
     before = activity.snapshot(db_task)
     previous_assignee = db_task.assignee_id
     previous_project = db_task.project_id
-    if "project_id" in update_data and update_data["project_id"] is not None             and not db.get(Project, update_data["project_id"]):
-        raise HTTPException(status_code=400, detail="Project not found")
+    if update_data.get("project_id") is not None:
+        access.require_project(db, current_user, update_data["project_id"], status=400)
     for key, value in update_data.items():
         setattr(db_task, key, value)
     if db_task.project_id != previous_project:
@@ -148,6 +149,8 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
             if sub.project_id in (previous_project, None):
                 sub.project_id = db_task.project_id
             stack.extend(sub.subtasks)
+    if db_task.assignee_id != previous_assignee or db_task.project_id != previous_project:
+        access.check_assignee(db, db_task.assignee_id, db_task.project_id)
     normalize_recurrence(db_task)
     sync_completed_at(db_task)
     if db_task.assignee_id != previous_assignee:
@@ -161,8 +164,7 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
 
 @router.get("/{task_id}/activity", response_model=list[schemas.ActivityEntry])
 def task_activity(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if not db.get(Task, task_id):
-        raise HTTPException(status_code=404, detail="Task not found")
+    access.require_task(db, current_user, task_id)
     rows = db.query(TaskActivity).filter(TaskActivity.task_id == task_id).order_by(TaskActivity.id)
     return [
         schemas.ActivityEntry(id=a.id, kind=a.kind, actor=a.actor.username if a.actor else None,
@@ -172,9 +174,7 @@ def task_activity(task_id: int, current_user: User = Depends(get_current_user), 
 
 @router.delete("/{task_id}")
 def delete_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    db_task = db.query(Task).filter(Task.id == task_id).first()
-    if not db_task:
-        raise HTTPException(status_code=404, detail="Task not found")
+    db_task = access.require_task(db, current_user, task_id)
 
     db.delete(db_task)
     db.commit()

@@ -2,6 +2,20 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.23.0 — 2026-09-26
+
+### Added
+- **Private projects.** In the project form, *Visibility*: **Everyone** (default, as before) or **🔒 Private — only members and admins**, with a member picker. A private project, its categories, tasks, subtasks, comments and history are visible only to its members and to admins; for everyone else they don't exist (lists leave them out, direct links answer *not found*, comment search skips them).
+- The Projects page shows a **🔒 Private** badge and the members; the Tasks page a 🔒 next to the project name.
+- Tasks in a private project can only be **assigned to members** (the assignee list only offers them); a task assigned to a non-member can't be moved into the project.
+- The creator of a private project is a member; members can change the members and the visibility, and non-admins stay members of projects they manage (so nobody locks themselves out). Categories always follow their project.
+- Notifications about tasks you can no longer see are hidden, and comments don't notify people who can't see the task.
+- Export only includes projects you can see; the *private* flag is exported, and an imported private project gets the importing user as its member.
+
+### Under the hood
+- Migration `0008`: `projects.is_private`, `project_members` table; all checks in `backend/app/access.py`.
+- 8 new backend tests (115 in total), frontend test for the project-index helpers.
+
 ## v1.22.0 — 2026-09-26
 
 ### Added

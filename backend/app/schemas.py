@@ -52,16 +52,21 @@ class ProjectBase(BaseModel):
     parent_id: Optional[int] = None
 
 class ProjectCreate(ProjectBase):
-    pass
+    is_private: bool = False
+    member_ids: List[int] = []
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     color: Optional[str] = Field(default=None, pattern=HEX_COLOR)
     parent_id: Optional[int] = None
+    is_private: Optional[bool] = None
+    member_ids: Optional[List[int]] = None
 
 class Project(ProjectBase):
     id: int
+    is_private: bool = False
+    member_ids: List[int] = []
     created_at: datetime
     updated_at: datetime
 

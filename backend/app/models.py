@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Table, Enum as SQLEnum, false
 from sqlalchemy.orm import relationship, backref
 from app.database import Base
 from app.timeutil import utcnow
@@ -23,6 +23,16 @@ class User(Base):
 
     tasks = relationship("Task", back_populates="assignee")
 
+# Members of private projects (app/access.py). Only top-level projects have
+# members; categories follow their project.
+project_members = Table(
+    "project_members",
+    Base.metadata,
+    Column("project_id", Integer, ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+)
+
+
 class Project(Base):
     __tablename__ = "projects"
 
@@ -34,11 +44,18 @@ class Project(Base):
     color = Column(String(7), nullable=True)
     # Set for categories (sub-projects); only one level of nesting.
     parent_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True)
+    # Private: only members (and admins) see it, its categories and tasks.
+    is_private = Column(Boolean, nullable=False, default=False, server_default=false())
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     tasks = relationship("Task", back_populates="project")
     children = relationship("Project", passive_deletes=True)
+    members = relationship("User", secondary=project_members, order_by="User.username")
+
+    @property
+    def member_ids(self):
+        return [u.id for u in self.members]
 
 class Task(Base):
     __tablename__ = "tasks"

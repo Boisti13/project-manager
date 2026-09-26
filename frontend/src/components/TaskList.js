@@ -785,6 +785,11 @@ function TaskList() {
                     <span className="project-group-caret">{collapsed ? '▶' : '▼'}</span>
                     <span className="project-swatch" />
                     <span className="project-group-name">{group.project ? group.project.name : 'No project'}</span>
+                    {group.project?.is_private && (
+                      <span className="private-lock" title="Private project: only members and admins see it">
+                        🔒
+                      </span>
+                    )}
                     <span className="project-group-count">{groupTaskCount(group)}</span>
                   </button>
                   <button

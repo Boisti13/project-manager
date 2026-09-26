@@ -128,6 +128,11 @@ function TaskForm({
 
   const nested = countNested(bulk.items);
 
+  // Subtasks without their own project belong to their parent's.
+  const effectiveProject = formData.project_id ?? parentTask?.project_id ?? null;
+  const privateProject = effectiveProject != null && projectIndex.isPrivate(effectiveProject);
+  const assignable = projectIndex.assignableUsers(effectiveProject, users);
+
   return (
     <form className="task-form" onSubmit={handleSubmit}>
       {parentTask && (
@@ -327,12 +332,20 @@ function TaskForm({
         <label>Assign To</label>
         <select name="assignee_id" value={formData.assignee_id || ''} onChange={handleChange}>
           <option value="">Unassigned</option>
-          {users.map((u) => (
+          {assignable.map((u) => (
             <option key={u.id} value={u.id}>
               {u.username}
             </option>
           ))}
+          {formData.assignee_id && !assignable.some((u) => u.id === formData.assignee_id) && (
+            <option value={formData.assignee_id} disabled>
+              {users.find((u) => u.id === formData.assignee_id)?.username || 'Unknown'} (not a member)
+            </option>
+          )}
         </select>
+        {privateProject && (
+          <small className="repeat-hint">🔒 Private project: only its members and admins can be assigned.</small>
+        )}
       </div>
 
       <div className="form-actions">

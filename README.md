@@ -15,6 +15,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Recurring Tasks**: *Repeat* every N days, weeks, months or years. Ticking a repeating task creates the next one with the deadline moved forward on its schedule (month ends handled, never already overdue) and its subtasks as a fresh checklist; shown with a ↻ badge
 - **Done Checkbox & Archive**: Tick tasks off with a checkbox; they move into a collapsed *✓ Completed* row at the end of their project/category (most recent first). After a configurable number of days (Settings → *Completed tasks*, default 30) they're archived — hidden from the list but still found by search or the *Done* filter. Nothing is deleted
 - **Multi-User**: Task assignment, per-user notifications
+- **Private Projects**: Projects are visible to everyone by default; mark one **🔒 Private** and pick its members, and the project — its categories, tasks, subtasks, comments, history, notifications and exports — is visible only to members and admins (non-members get *not found*). Tasks in a private project can only be assigned to members; whoever creates or manages a private project stays a member. Tasks without a project stay visible to everyone
 - **Comments**: Discussion thread on every task and subtask (💬 with count on the row); authors can edit (marked *edited*) and delete their comments, admins can delete any; search also finds tasks by comment text; comments travel with project export/import
 - **Task History**: The 💬 panel also shows who created the task and who changed what — status, assignee, project, title, description, deadline, priority, repeat — interleaved with the comments (*Hide history* to see comments only)
 - **Search & Filters**: Full-text search over titles, descriptions and comments (subtasks included), filters for status, project, assignee and deadline, sorting by deadline/priority/date/title; filters are kept in the URL
@@ -43,6 +44,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 | ![Comments and history of a task](docs/screenshots/comments-desktop.png) | ![Comments and history on a phone](docs/screenshots/comments-phone.png) |
 | ![Bulk entry: one task per line, indented lines become subtasks](docs/screenshots/bulk-desktop.png) | ![Login with registration closed](docs/screenshots/login-phone.png) |
 | ![Notifications: assignments, comments, deadlines](docs/screenshots/bell-desktop.png) | ![Task menu on a phone](docs/screenshots/menu-phone.png) |
+| ![Private project with members](docs/screenshots/project-private-desktop.png) | |
 
 <details>
 <summary>Settings (your account, archive days, backup &amp; restore, export, updates, users &amp; registration)</summary>
@@ -127,7 +129,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-With no configuration it starts a throwaway PostgreSQL via the `pgserver` package (nothing to install); set `PM_TEST_DATABASE_URL=postgresql://user:pw@host/postgres` to use an existing server instead (the user needs `CREATE DATABASE`). Each run uses its own database and removes it afterwards. The suite covers auth and user management, projects/categories, tasks, comments, task history, recurring tasks, settings, export/import, the backup endpoints, the migrations (upgrade/downgrade, models vs. migrations, stamping pre-Alembic databases) and the `backup-db.sh`/`restore-db.sh` scripts including rollback — the script tests need `bash` and the PostgreSQL client tools and are skipped without them.
+With no configuration it starts a throwaway PostgreSQL via the `pgserver` package (nothing to install); set `PM_TEST_DATABASE_URL=postgresql://user:pw@host/postgres` to use an existing server instead (the user needs `CREATE DATABASE`). Each run uses its own database and removes it afterwards. The suite covers auth and user management, projects/categories, private projects and access, tasks, comments, task history, recurring tasks, settings, export/import, the backup endpoints, the migrations (upgrade/downgrade, models vs. migrations, stamping pre-Alembic databases) and the `backup-db.sh`/`restore-db.sh` scripts including rollback — the script tests need `bash` and the PostgreSQL client tools and are skipped without them.
 
 **Frontend** — Jest:
 
@@ -145,7 +147,7 @@ project-manager/
 ├── VERSION                  # Single source of truth for the app version
 ├── .github/workflows/ci.yml # Tests, build and shellcheck on every push
 ├── backend/
-│   ├── app/                 # FastAPI application (routers/, models.py, schemas.py, ...)
+│   ├── app/                 # FastAPI application (routers/, models.py, schemas.py, access.py = who sees what, ...)
 │   ├── alembic/versions/    # Database migrations
 │   ├── tests/               # pytest suite (real PostgreSQL)
 │   └── migrate.py           # Applies migrations; stamps pre-Alembic databases

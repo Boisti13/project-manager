@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app import access
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import Notification, User
@@ -30,10 +31,15 @@ def list_notifications(limit: int = 50, current_user: User = Depends(get_current
     ).delete(synchronize_session=False)
     db.commit()
 
+    # Tasks in private projects the user has left (or was removed from) are
+    # hidden, notifications about them too.
+    visible = access.visible_project_ids(db, current_user)
+    seen = lambda n: n.task is None or access.task_visible(db, current_user, n.task, visible)  # noqa: E731
     base = db.query(Notification).filter(Notification.user_id == current_user.id)
-    items = base.order_by(Notification.created_at.desc(), Notification.id.desc()).limit(max(1, min(limit, 200))).all()
+    items = [n for n in base.order_by(Notification.created_at.desc(), Notification.id.desc()).limit(max(1, min(limit, 200)))
+             if seen(n)]
     return {
-        "unread": base.filter(Notification.read_at.is_(None)).count(),
+        "unread": sum(1 for n in base.filter(Notification.read_at.is_(None)) if seen(n)),
         "items": [
             {
                 "id": n.id,

@@ -43,6 +43,16 @@ export function buildProjectIndex(projects) {
       const p = byId.get(id);
       return p && p.parent_id != null && byId.has(p.parent_id) ? p.parent_id : null;
     },
+    // Private projects: only members (and admins) see them; categories
+    // follow their project.
+    isPrivate: (id) => !!topOf(id)?.is_private,
+    /** Users who may be assigned tasks in project `id` (all when it's public). */
+    assignableUsers: (id, users) => {
+      const top = topOf(id);
+      if (!top || !top.is_private) return users;
+      const members = new Set(top.member_ids || []);
+      return users.filter((u) => members.has(u.id) || u.is_admin);
+    },
     colorOf: (id) => {
       const p = byId.get(id);
       if (!p) return NO_PROJECT_COLOR;

@@ -156,3 +156,17 @@ test('search also matches tasks by their comments', () => {
   assert.deepStrictEqual(r.roots.map((x) => x.id), [2]);
   assert.ok(r.autoExpandIds.has(2));
 });
+
+test('private projects: categories follow, only members are assignable', () => {
+  const idx = buildProjectIndex([
+    { id: 1, name: 'Secret', parent_id: null, is_private: true, member_ids: [10] },
+    { id: 2, name: 'Inner', parent_id: 1 },
+    { id: 3, name: 'Open', parent_id: null },
+  ]);
+  const users = [{ id: 10, is_admin: false }, { id: 11, is_admin: false }, { id: 12, is_admin: true }];
+  assert.strictEqual(idx.isPrivate(2), true);
+  assert.strictEqual(idx.isPrivate(3), false);
+  assert.deepStrictEqual(idx.assignableUsers(2, users).map((u) => u.id), [10, 12]);
+  assert.strictEqual(idx.assignableUsers(3, users).length, 3);
+  assert.strictEqual(idx.assignableUsers(null, users).length, 3);
+});

@@ -5,12 +5,16 @@ import '../styles/TaskForm.css';
 // project: the project being edited (null for new)
 // defaultParentId: pre-selected parent for a new category
 // projectIndex: from buildProjectIndex, for the parent choices
-function ProjectForm({ project, defaultParentId = null, projectIndex, onSubmit, onCancel }) {
+// users/currentUser: for the members of a private project
+function ProjectForm({ project, defaultParentId = null, projectIndex, users = [], currentUser, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     name: project?.name || '',
     description: project?.description || '',
     parent_id: project ? project.parent_id ?? null : defaultParentId,
     color: project?.color || '',
+    is_private: !!project?.is_private,
+    // A new project starts with its creator as the only member.
+    member_ids: project ? project.member_ids || [] : currentUser ? [currentUser.id] : [],
   });
 
   const hasCategories = project ? projectIndex.categoriesOf(project.id).length > 0 : false;
@@ -18,6 +22,14 @@ function ProjectForm({ project, defaultParentId = null, projectIndex, onSubmit, 
   const isCategory = formData.parent_id !== null;
 
   const set = (key, value) => setFormData((prev) => ({ ...prev, [key]: value }));
+  // Non-admins stay members of private projects they manage (the server
+  // enforces this too), so they can't lock themselves out.
+  const lockedIn = (id) => id === currentUser?.id && !currentUser?.is_admin;
+  const toggleMember = (id) =>
+    set(
+      'member_ids',
+      formData.member_ids.includes(id) ? formData.member_ids.filter((m) => m !== id) : [...formData.member_ids, id]
+    );
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,6 +40,8 @@ function ProjectForm({ project, defaultParentId = null, projectIndex, onSubmit, 
       // Categories use their parent's color; an empty color on a top-level
       // project lets the server pick the next palette color.
       color: isCategory ? null : formData.color || null,
+      // Categories follow their project's visibility.
+      ...(isCategory ? {} : { is_private: formData.is_private, member_ids: formData.member_ids }),
     });
   };
 
@@ -97,6 +111,50 @@ function ProjectForm({ project, defaultParentId = null, projectIndex, onSubmit, 
             </label>
           </div>
           {!formData.color && <small className="color-hint">None picked — one will be assigned automatically.</small>}
+        </div>
+      )}
+
+      {isCategory ? (
+        projectIndex.isPrivate(formData.parent_id) && (
+          <p className="color-hint">🔒 Private like its project: only the project's members can see it.</p>
+        )
+      ) : (
+        <div className="form-group">
+          <label>Visibility</label>
+          <div className="visibility-options">
+            <label>
+              <input type="radio" checked={!formData.is_private} onChange={() => set('is_private', false)} />
+              Everyone
+            </label>
+            <label>
+              <input type="radio" checked={formData.is_private} onChange={() => set('is_private', true)} />
+              🔒 Private — only members and admins
+            </label>
+          </div>
+          {formData.is_private && (
+            <fieldset className="member-picker">
+              <legend>Members</legend>
+              {users
+                .filter((u) => u.is_active !== false)
+                .map((u) => (
+                  <label key={u.id} className={lockedIn(u.id) ? 'locked' : ''}>
+                    <input
+                      type="checkbox"
+                      checked={formData.member_ids.includes(u.id) || lockedIn(u.id)}
+                      disabled={lockedIn(u.id)}
+                      onChange={() => toggleMember(u.id)}
+                    />
+                    {u.username}
+                    {u.id === currentUser?.id && ' (you)'}
+                    {u.is_admin && <span className="member-admin">admin, sees it anyway</span>}
+                  </label>
+                ))}
+              <small className="color-hint">
+                The project, its categories, tasks, comments and history are hidden from everyone else. Tasks can only
+                be assigned to members.
+              </small>
+            </fieldset>
+          )}
         </div>
       )}
 

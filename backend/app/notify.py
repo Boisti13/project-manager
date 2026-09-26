@@ -2,6 +2,7 @@
 commit saves them together with the change that caused them."""
 from sqlalchemy.orm import Session
 
+from app import access
 from app.models import Notification, Task, TaskComment, User
 
 
@@ -32,6 +33,6 @@ def commented(db: Session, comment: TaskComment, actor: User):
     body = " ".join(comment.body.split())
     excerpt = body if len(body) <= 140 else body[:139] + "…"
     for uid in sorted(recipients):
-        if _active(db, uid):
+        if _active(db, uid) and task and access.task_visible(db, db.get(User, uid), task):
             db.add(Notification(user_id=uid, kind="comment", task_id=comment.task_id,
                                 actor_id=actor.id, excerpt=excerpt))
