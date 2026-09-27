@@ -170,9 +170,21 @@ export class SyncEngine {
           this.store.setMeta('idMap', { ...this.idMap(), [`${op.entity}:${op.tempId}`]: data.id });
         }
       } else if (res.status === 409 && data.detail && data.detail.conflicts) {
-        this.conflict({
-          kind: 'conflict', title: data.detail.task?.title || op.title || null, fields: data.detail.conflicts,
-        });
+        const conflicts = data.detail.conflicts;
+        this.conflict({ kind: 'conflict', title: data.detail.task?.title || op.title || null, fields: conflicts });
+        // Only those fields lose; the rest of the edit still goes through.
+        const rest = { ...request.body, expected: { ...(request.body.expected || {}) } };
+        for (const field of Object.keys(conflicts)) {
+          delete rest[field];
+          delete rest.expected[field];
+        }
+        if (Object.keys(rest).some((k) => k !== 'expected')) {
+          const retry = await this.fetcher(request.path, {
+            method: op.method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rest),
+          });
+          if (retry.status === 401) throw new AuthError('Not signed in');
+          if (retry.status >= 500) throw new ServerError(`Server error ${retry.status}`);
+        }
       } else if (res.status === 404 && op.kind !== 'create') {
         // Deleted on the server meanwhile: nothing left to change.
       } else {

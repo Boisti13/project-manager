@@ -199,7 +199,9 @@ test('a field changed on the server meanwhile is a conflict, not overwritten', a
   assert.strictEqual(s.conflicts[0].kind, 'conflict');
   assert.deepStrictEqual(Object.keys(s.conflicts[0].fields), ['priority']);
   assert.strictEqual(srv.tasks.get(t.id).priority, 2); // server's version kept
+  assert.strictEqual(srv.tasks.get(t.id).title, 'Order cables'); // the other field still went through
   assert.strictEqual(call('GET', `/api/tasks/${t.id}`).data.priority, 2); // and shown locally
+  assert.strictEqual(call('GET', `/api/tasks/${t.id}`).data.title, 'Order cables');
   engine.dismissConflicts();
   assert.deepStrictEqual(engine.status().conflicts, []);
 });
