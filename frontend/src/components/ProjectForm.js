@@ -46,8 +46,28 @@ function ProjectForm({ project, defaultParentId = null, projectIndex, users = []
     });
   };
 
+  // Ctrl/Cmd+Enter saves from anywhere in the form (Enter alone already does
+  // in single-line fields); Esc cancels unless a picker used it to close.
+  const handleFormKeys = (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      e.currentTarget.requestSubmit();
+    } else if (e.key === 'Escape' && !e.defaultPrevented) {
+      onCancel();
+    }
+  };
+
   return (
-    <form className="task-form" onSubmit={handleSubmit}>
+    <form className="task-form" onSubmit={handleSubmit} onKeyDown={handleFormKeys}>
+      <div className="form-actions form-actions-top">
+        <button type="submit" className="btn btn-primary">
+          {project ? t('Save') : isCategory ? t('Create Category') : t('Create Project')}
+        </button>
+        <button type="button" className="btn btn-secondary" onClick={onCancel}>
+          {t('Cancel')}
+        </button>
+        <small className="form-keys">{t('Enter to save · Esc to cancel')}</small>
+      </div>
       <div className="form-group">
         <label>{t('Name *')}</label>
         <input
@@ -162,14 +182,6 @@ function ProjectForm({ project, defaultParentId = null, projectIndex, users = []
         </div>
       )}
 
-      <div className="form-actions">
-        <button type="submit" className="btn btn-primary">
-          {project ? t('Save') : isCategory ? t('Create Category') : t('Create Project')}
-        </button>
-        <button type="button" className="btn btn-secondary" onClick={onCancel}>
-          {t('Cancel')}
-        </button>
-      </div>
     </form>
   );
 }

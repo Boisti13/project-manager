@@ -56,7 +56,8 @@ function DependencyPicker({ tasks, task, value, onChange, projectIndex }) {
             if (e.key === 'Enter') {
               e.preventDefault();
               if (suggestions[0]) add(suggestions[0]);
-            } else if (e.key === 'Escape') {
+            } else if (e.key === 'Escape' && open) {
+              e.preventDefault(); // closes the list, not the form
               setOpen(false);
             }
           }}

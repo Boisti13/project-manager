@@ -96,7 +96,7 @@ api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via
 |---|---|
 | `/auth/login`, `/auth/me`, `/auth/me/preferences` | log in, current user, language |
 | `/auth/tokens/` | personal API tokens (password login only) |
-| `/tasks/`, `/tasks/{id}`, `/tasks/bulk`, `/tasks/{id}/activity` | tasks (fields incl. `label_ids`, `blocked_by_ids`, `recurrence_unit`) and their history |
+| `/tasks/`, `/tasks/{id}`, `/tasks/bulk`, `/tasks/{id}/activity` | tasks (fields incl. `label_ids`, `blocked_by_ids`, repeat rule: `recurrence_unit`, `recurrence_interval`, `recurrence_weekdays` (0 = Monday), `recurrence_monthly`, `recurrence_from`) and their history |
 | `/tasks/{id}/comments`, `/comments/{id}`, `/comments/search` | comments |
 | `/projects/`, `/projects/{id}` | projects and categories (`parent_id`), `is_private`, `member_ids` |
 | `/labels/` | labels |

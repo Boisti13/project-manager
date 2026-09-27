@@ -28,8 +28,33 @@ export function normalizeDeadline(value) {
 // Fields a task create/update may carry, as the server takes them.
 const TASK_FIELDS = [
   'title', 'description', 'status', 'priority', 'order', 'deadline', 'project_id', 'parent_task_id',
-  'assignee_id', 'recurrence_unit', 'recurrence_interval', 'label_ids', 'blocked_by_ids',
+  'assignee_id', 'recurrence_unit', 'recurrence_interval', 'recurrence_weekdays', 'recurrence_monthly',
+  'recurrence_from', 'label_ids', 'blocked_by_ids',
 ];
+
+/**
+ * Repeat settings as the server stores them (routers/tasks.py
+ * normalize_recurrence): refinements only where they apply, defaults as null.
+ */
+export function normalizeRecurrence(task) {
+  const t = { ...task };
+  if (!t.recurrence_unit) {
+    t.recurrence_unit = null;
+    t.recurrence_interval = null;
+    t.recurrence_weekdays = null;
+    t.recurrence_monthly = null;
+    t.recurrence_from = null;
+    return t;
+  }
+  t.recurrence_interval = t.recurrence_interval || 1;
+  const days = t.recurrence_unit === 'week' ? [...new Set(t.recurrence_weekdays || [])].sort((a, b) => a - b) : [];
+  t.recurrence_weekdays = days.length ? days : null;
+  if (!['month', 'year'].includes(t.recurrence_unit) || !t.recurrence_monthly || t.recurrence_monthly === 'day') {
+    t.recurrence_monthly = null;
+  }
+  if (!t.recurrence_from || t.recurrence_from === 'schedule') t.recurrence_from = null;
+  return t;
+}
 const UPDATABLE = TASK_FIELDS.filter((f) => f !== 'parent_task_id');
 
 const json = (status, data, changed = false) => ({ status, data, changed });
@@ -139,7 +164,6 @@ export class LocalApi {
     const store = this.store;
     const now = nowIso();
     const status = body.status || 'todo';
-    const unit = body.recurrence_unit || null;
     const task = {
       id: store.nextTempId(),
       uid: body.uid || uuid(),
@@ -152,8 +176,11 @@ export class LocalApi {
       project_id: body.project_id ?? null,
       parent_task_id: body.parent_task_id ?? null,
       assignee_id: body.assignee_id ?? null,
-      recurrence_unit: unit,
-      recurrence_interval: unit ? body.recurrence_interval || 1 : null,
+      recurrence_unit: body.recurrence_unit || null,
+      recurrence_interval: body.recurrence_interval ?? null,
+      recurrence_weekdays: body.recurrence_weekdays ?? null,
+      recurrence_monthly: body.recurrence_monthly ?? null,
+      recurrence_from: body.recurrence_from ?? null,
       label_ids: body.label_ids || [],
       blocked_by_ids: body.blocked_by_ids || [],
       completed_at: status === 'done' ? now : null,
@@ -161,6 +188,7 @@ export class LocalApi {
       updated_at: now,
       local: true, // not on the server yet
     };
+    Object.assign(task, normalizeRecurrence(task));
     store.put('tasks', task);
     const payload = { uid: task.uid };
     for (const f of TASK_FIELDS) if (task[f] !== null && task[f] !== undefined) payload[f] = task[f];
@@ -195,20 +223,18 @@ export class LocalApi {
     const store = this.store;
     const task = store.get('tasks', id);
     if (!task) return notFound('Task');
+    // Apply the request, normalize like the server, then see what really changed.
+    const candidate = { ...task };
+    for (const f of UPDATABLE) if (f in body) candidate[f] = f === 'deadline' ? normalizeDeadline(body[f]) : body[f];
+    const normalized = normalizeRecurrence(candidate);
     const changes = {};
     for (const f of UPDATABLE) {
-      if (!(f in body)) continue;
-      let value = body[f];
-      if (f === 'deadline') value = normalizeDeadline(value);
-      if (JSON.stringify(value) !== JSON.stringify(task[f] ?? null)) changes[f] = value;
+      if (JSON.stringify(normalized[f] ?? null) !== JSON.stringify(task[f] ?? null)) changes[f] = normalized[f] ?? null;
     }
     if (Object.keys(changes).length === 0) return json(200, this.withCount(task));
 
     const before = Object.fromEntries(Object.keys(changes).map((f) => [f, task[f] ?? null]));
     const updated = { ...task, ...changes, updated_at: nowIso() };
-    if ('recurrence_unit' in changes || 'recurrence_interval' in changes) {
-      updated.recurrence_interval = updated.recurrence_unit ? updated.recurrence_interval || 1 : null;
-    }
     if ('status' in changes) updated.completed_at = updated.status === 'done' ? task.completed_at || nowIso() : null;
     store.put('tasks', updated);
 

@@ -186,6 +186,38 @@ test('changes to something created offline fold into its queued create', async (
   assert.deepStrictEqual([...srv.tasks.values()].map((t) => t.title), ['Final']);
 });
 
+test('repeat rules are passed through and normalized like the server does', async () => {
+  const { srv, store, engine, call } = setup();
+  await engine.sync();
+  srv.online = false;
+  const created = call('POST', '/api/tasks/', {
+    title: 'Standup', recurrence_unit: 'week', recurrence_interval: 1, recurrence_weekdays: [3, 0, 3],
+    recurrence_monthly: 'day', recurrence_from: 'completion',
+  }).data;
+  assert.deepStrictEqual(
+    [created.recurrence_weekdays, created.recurrence_monthly, created.recurrence_from],
+    [[0, 3], null, 'completion']
+  );
+  assert.deepStrictEqual(store.outbox[0].body.recurrence_weekdays, [0, 3]);
+  assert.ok(!('recurrence_monthly' in store.outbox[0].body)); // default: not sent
+  srv.online = true;
+  await engine.sync();
+  const onServer = [...srv.tasks.values()].find((t) => t.title === 'Standup');
+  assert.deepStrictEqual(onServer.recurrence_weekdays, [0, 3]);
+
+  // Saving the form unchanged (it sends the defaults) queues nothing.
+  const local = call('GET', '/api/tasks/').data.find((t) => t.title === 'Standup');
+  call('PUT', `/api/tasks/${local.id}`, {
+    title: 'Standup', recurrence_unit: 'week', recurrence_interval: 1, recurrence_weekdays: [0, 3],
+    recurrence_monthly: 'day', recurrence_from: 'completion',
+  });
+  assert.strictEqual(store.outbox.length, 0);
+  // Switching to monthly drops the weekdays.
+  call('PUT', `/api/tasks/${local.id}`, { recurrence_unit: 'month', recurrence_monthly: 'last_weekday' });
+  const changed = call('GET', `/api/tasks/${local.id}`).data;
+  assert.deepStrictEqual([changed.recurrence_weekdays, changed.recurrence_monthly], [null, 'last_weekday']);
+});
+
 test('a field changed on the server meanwhile is a conflict, not overwritten', async () => {
   const { srv, engine, call } = setup();
   const t = srv.addTask({ title: 'Order', priority: 1 });

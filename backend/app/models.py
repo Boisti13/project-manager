@@ -122,6 +122,21 @@ class Task(Base):
     # Repeating tasks (app/recurrence.py): unit day|week|month|year, every N.
     recurrence_unit = Column(String(10), nullable=True)
     recurrence_interval = Column(Integer, nullable=True)
+    # Optional refinements (app/recurrence.py): weekdays "0,3" (weeks only,
+    # 0 = Monday), a monthly mode, and "completion" to count from when it was
+    # done instead of from the schedule.
+    recurrence_days = Column("recurrence_weekdays", String(20), nullable=True)
+    recurrence_monthly = Column(String(20), nullable=True)
+    recurrence_from = Column(String(12), nullable=True)
+
+    @property
+    def recurrence_weekdays(self):
+        return [int(d) for d in self.recurrence_days.split(",")] if self.recurrence_days else None
+
+    @recurrence_weekdays.setter
+    def recurrence_weekdays(self, days):
+        self.recurrence_days = ",".join(str(d) for d in sorted(set(days))) if days else None
+
     # The occurrence created when this one was completed (prevents duplicates).
     recurrence_next_id = Column(Integer, ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, default=utcnow)
