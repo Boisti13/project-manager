@@ -1,0 +1,89 @@
+/* Windows app only (components/desktop) */
+
+.connect-intro {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
+}
+
+.sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sync-pill:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #66bb6a;
+}
+
+.sync-busy .sync-dot {
+  background-color: #ffca28;
+}
+
+.sync-off .sync-dot {
+  background-color: #bdbdbd;
+}
+
+.sync-bad {
+  border-color: #ffab91;
+  background: rgba(244, 67, 54, 0.35);
+}
+
+.sync-bad .sync-dot {
+  background-color: #ff7043;
+}
+
+.sync-conflicts {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-radius: 4px;
+  background-color: var(--color-warning-bg);
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+.sync-conflicts ul {
+  margin: 6px 0 10px 18px;
+  padding: 0;
+}
+
+.sync-conflict-time {
+  color: var(--color-text-muted);
+}
+
+.desktop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+@media (max-width: 600px) {
+  .sync-text {
+    display: none;
+  }
+}

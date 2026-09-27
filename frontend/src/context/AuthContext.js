@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { t } from '../i18n';
+import { IS_DESKTOP } from '../desktop/platform';
+import * as desktop from '../desktop';
 
 const AuthContext = createContext(null);
 
@@ -13,6 +15,8 @@ function setToken(token) {
 }
 
 export async function authFetch(url, options = {}) {
+  // Windows app: the local copy answers first, the server for the rest.
+  if (IS_DESKTOP) return desktop.desktopFetch(url, options);
   const token = getToken();
   const headers = { ...(options.headers || {}) };
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -30,6 +34,22 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (IS_DESKTOP) {
+      // Start with the local copy (works offline); sync in the background.
+      desktop.whenReady().then(() => {
+        const me = desktop.store.getMeta('me');
+        if (desktop.isConnected() && me) {
+          setCurrentUser(me);
+          desktop.engine.start();
+        }
+        setLoading(false);
+      });
+      // Keep the name, language etc. current after syncs.
+      return desktop.engine.subscribe(() => {
+        const me = desktop.store.getMeta('me');
+        if (desktop.isConnected() && me) setCurrentUser((cur) => (cur && JSON.stringify(cur) === JSON.stringify(me) ? cur : me));
+      });
+    }
     const init = async () => {
       const token = getToken();
       if (!token) {
@@ -94,13 +114,23 @@ export function AuthProvider({ children }) {
     await login(username, password);
   };
 
-  const logout = () => {
+  const logout = async (options) => {
+    if (IS_DESKTOP) await desktop.disconnect(options);
     setToken(null);
     setCurrentUser(null);
   };
 
+  // Windows app: connect to a server (see desktop/index.js).
+  const connect = async (server, username, password) => {
+    const me = await desktop.connect(server, username, password);
+    setCurrentUser(me);
+    return me;
+  };
+
   return (
-    <AuthContext.Provider value={{ currentUser, loading, login, register, logout, updateCurrentUser: setCurrentUser }}>
+    <AuthContext.Provider
+      value={{ currentUser, loading, login, register, logout, connect, updateCurrentUser: setCurrentUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

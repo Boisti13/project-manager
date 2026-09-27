@@ -21,6 +21,7 @@ import '../styles/TaskList.css';
 import '../styles/TaskViews.css';
 import { t, tn } from '../i18n';
 import { STATUSES, statusName } from '../names';
+import { useSyncRefresh } from '../desktop/useSyncRefresh';
 
 const VIEWS = [
   { id: 'list', label: () => t('☰ List') },
@@ -119,6 +120,8 @@ function TaskList() {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // Windows app: show what a background sync brought in.
+  useSyncRefresh(() => loadData(true));
 
   const parseApiError = async (response) => {
     try {
@@ -138,9 +141,10 @@ function TaskList() {
     return response.json();
   };
 
-  const loadData = async () => {
+  // quiet: refresh in the background (Windows app sync) without the loading screen
+  const loadData = async (quiet = false) => {
     try {
-      setLoading(true);
+      if (!quiet) setLoading(true);
       const [tasksRes, projectsRes, usersRes, settingsRes, labelsRes] = await Promise.all([
         fetchJson('/api/tasks/'),
         fetchJson('/api/projects/'),

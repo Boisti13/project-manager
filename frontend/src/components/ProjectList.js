@@ -7,6 +7,7 @@ import { progressByProject, combineProgress, percentDone } from '../progress';
 import '../styles/TaskList.css';
 import '../styles/ProjectList.css';
 import { t, tn, shortDate } from '../i18n';
+import { useSyncRefresh } from '../desktop/useSyncRefresh';
 
 
 function ProgressBar({ stats, small = false }) {
@@ -109,6 +110,7 @@ function ProjectList() {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useSyncRefresh(loadData);
 
   const handleSubmit = async (formData) => {
     try {

@@ -3,16 +3,29 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import NotificationBell from './NotificationBell';
+import SyncStatus from './desktop/SyncStatus';
+import { IS_DESKTOP } from '../desktop/platform';
+import { engine } from '../desktop';
 import '../styles/Nav.css';
-import { t } from '../i18n';
+import { t, tn } from '../i18n';
 
 function Nav() {
   const { currentUser, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    if (IS_DESKTOP) {
+      // Windows app: logging out disconnects it and deletes the local copy.
+      const pending = engine.status().pending;
+      const warning = pending
+        ? tn(pending, 'One change hasn’t been sent to the server yet and will be lost. ', '{n} changes haven’t been sent to the server yet and will be lost. ')
+        : '';
+      if (!window.confirm(warning + t('Disconnect this app and delete its local copy of the data?'))) return;
+      await logout({ wipe: true });
+    } else {
+      logout();
+    }
     navigate('/login');
   };
 
@@ -38,6 +51,7 @@ function Nav() {
         </NavLink>
       </div>
       <div className="nav-user">
+        {IS_DESKTOP && <SyncStatus />}
         <NotificationBell />
         <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? t('Switch to light mode') : t('Switch to dark mode')}>
           {theme === 'dark' ? '☀️' : '🌙'}

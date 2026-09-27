@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Nav from './components/Nav';
@@ -10,6 +10,11 @@ import ProjectList from './components/ProjectList';
 import Settings from './components/Settings';
 import MyDay, { START_KEY } from './components/MyDay';
 import { detectLanguage, getLanguage, setLanguage, t } from './i18n';
+import { IS_DESKTOP } from './desktop/platform';
+import ConnectScreen from './components/desktop/ConnectScreen';
+
+// The Windows app loads its pages from files, where only #/… addresses work.
+const Router = IS_DESKTOP ? HashRouter : BrowserRouter;
 import './App.css';
 
 const REPO_URL = 'https://github.com/Boisti13/project-manager';
@@ -53,7 +58,7 @@ function AppShell() {
       {currentUser && <Nav />}
       <main>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={IS_DESKTOP ? <ConnectScreen /> : <Login />} />
           <Route
             path="/"
             element={
@@ -104,7 +109,7 @@ function AppShell() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <ThemeProvider>
         <AuthProvider>
           <LanguageGate>
@@ -112,7 +117,7 @@ function App() {
           </LanguageGate>
         </AuthProvider>
       </ThemeProvider>
-    </BrowserRouter>
+    </Router>
   );
 }
 

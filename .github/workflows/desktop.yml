@@ -1,0 +1,88 @@
+name: Windows app
+
+# Builds the Windows app (desktop/, Tauri) from the React frontend built with
+# REACT_APP_TARGET=desktop. Runs when the app or the frontend changes; tags
+# desktop-v* also publish the installer as a GitHub release.
+
+on:
+  push:
+    branches: [main, dev, "feature/desktop-*"]
+    tags: ["desktop-v*"]
+    paths:
+      - "frontend/**"
+      - "desktop/**"
+      - ".github/workflows/desktop.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "desktop/**"
+      - ".github/workflows/desktop.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write  # for the release on desktop-v* tags
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Frontend tests
+        working-directory: frontend
+        env:
+          CI: "true"
+        run: |
+          npm ci --no-audit --no-fund
+          npm test -- --watchAll=false
+
+      - name: Build the frontend for the app
+        working-directory: frontend
+        env:
+          CI: "true"
+          REACT_APP_TARGET: desktop
+          GENERATE_SOURCEMAP: "false"
+        run: npm run build
+
+      # The same build, for trying the app's offline logic in a browser.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-web-build
+          path: frontend/build
+          retention-days: 14
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+
+      - name: Icons
+        working-directory: desktop
+        run: npx --yes @tauri-apps/cli@^2 icon ../frontend/public/icon-512.png --output src-tauri/icons
+
+      - name: Build the installer
+        working-directory: desktop
+        run: npx --yes @tauri-apps/cli@^2 build --ci
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: project-manager-windows-installer
+          path: desktop/src-tauri/target/release/bundle/nsis/*.exe
+          retention-days: 30
+
+      - name: Release (desktop-v* tags)
+        if: startsWith(github.ref, 'refs/tags/desktop-v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="$(awk -v h="## ${GITHUB_REF_NAME#desktop-}" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f' desktop/CHANGELOG.md)"
+          gh release create "$GITHUB_REF_NAME" desktop/src-tauri/target/release/bundle/nsis/*.exe \
+            --title "Windows app ${GITHUB_REF_NAME#desktop-}" --notes "${notes:-Windows app}" --latest=false

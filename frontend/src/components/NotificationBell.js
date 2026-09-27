@@ -5,6 +5,7 @@ import { timeAgo } from './TaskComments';
 import { parseServerDate } from '../taskFilters';
 import '../styles/NotificationBell.css';
 import { t, tn, locale } from '../i18n';
+import { useSyncRefresh } from '../desktop/useSyncRefresh';
 
 const UPCOMING_WINDOW_DAYS = 3;
 const POLL_INTERVAL_MS = 60000;
@@ -50,6 +51,7 @@ function NotificationBell() {
     const interval = setInterval(load, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [load]);
+  useSyncRefresh(load);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
