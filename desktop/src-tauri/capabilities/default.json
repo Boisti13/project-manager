@@ -1,7 +1,12 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "The main window: core features only (the app talks to the server over plain HTTP from the web view).",
-  "windows": ["main"],
-  "permissions": ["core:default"]
+  "description": "The main window: core features plus the updater (the app talks to the server over plain HTTP from the web view).",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "updater:default"
+  ]
 }

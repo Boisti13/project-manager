@@ -3,6 +3,11 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.2.0 — 2026-09-27
+
+### Added
+- **Updates from within the app**: it checks for new versions on start and every six hours, shows *⬆ Update x.y.z* in the top bar, and *Settings → Windows app → Install and restart* downloads, installs and restarts it — changes waiting to be sent are kept. Updates are signed; the app only installs ones signed with the project's update key.
+
 ## v0.1.0 — 2026-09-27
 
 ### Added

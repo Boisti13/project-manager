@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { engine, getServer } from '../../desktop';
 import { DESKTOP_VERSION } from '../../desktop/platform';
+import { canUpdate, checkForUpdate, installUpdate, subscribeUpdates, updateStatus } from '../../desktop/updater';
 import { parseServerDate } from '../../taskFilters';
 import { t, tn, locale } from '../../i18n';
 import '../../styles/Desktop.css';
@@ -20,6 +21,8 @@ function DesktopSettings() {
   const navigate = useNavigate();
   const [s, setS] = useState(engine.status());
   useEffect(() => engine.subscribe((status) => setS(status)), []);
+  const [u, setU] = useState(updateStatus());
+  useEffect(() => subscribeUpdates(setU), []);
 
   const when = (value) => (value ? parseServerDate(value).toLocaleString(locale()) : '—');
 
@@ -66,6 +69,39 @@ function DesktopSettings() {
           <span className="info-value">{DESKTOP_VERSION}</span>
         </div>
       </div>
+
+      {canUpdate() && (
+        <div className="desktop-update">
+          {u.available ? (
+            <>
+              <p>
+                <strong>{t('Version {version} is available.', { version: u.available.version })}</strong>
+              </p>
+              {u.available.notes && <div className="desktop-update-notes">{u.available.notes}</div>}
+              <button type="button" className="btn btn-primary btn-small" onClick={installUpdate} disabled={u.installing}>
+                {u.installing
+                  ? u.progress != null && u.progress < 100
+                    ? t('Downloading… {progress}%', { progress: u.progress })
+                    : t('Installing…')
+                  : t('Install and restart')}
+              </button>
+              {s.pending > 0 && !u.installing && (
+                <p className="settings-help">
+                  {tn(s.pending, 'One change is still waiting; it’s kept and sent after the update.', '{n} changes are still waiting; they’re kept and sent after the update.')}
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <button type="button" className="btn btn-secondary btn-small" onClick={checkForUpdate} disabled={u.checking}>
+                {u.checking ? t('Checking…') : t('Check for updates')}
+              </button>
+              {u.checked && !u.checking && !u.error && <span className="settings-help"> {t('You have the latest version.')}</span>}
+            </>
+          )}
+          {u.error && <p className="error-message">{t('Update failed: {error}', { error: u.error })}</p>}
+        </div>
+      )}
 
       {s.error && <p className="error-message">{t('Sync failed: {error}', { error: s.error })}</p>}
 
