@@ -13,6 +13,13 @@ class ServerError extends Error {}
 
 const nowIso = () => new Date().toISOString().slice(0, 19);
 
+// Compare field values the way the server does: deadlines as dates, id lists unordered.
+function normalize(value) {
+  if (Array.isArray(value)) return [...value].sort();
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
+  return value ?? null;
+}
+
 export class SyncEngine {
   /** fetcher(path, options) -> Response (throws OfflineError when unreachable). */
   constructor(store, fetcher) {
@@ -170,8 +177,16 @@ export class SyncEngine {
           this.store.setMeta('idMap', { ...this.idMap(), [`${op.entity}:${op.tempId}`]: data.id });
         }
       } else if (res.status === 409 && data.detail && data.detail.conflicts) {
-        const conflicts = data.detail.conflicts;
-        this.conflict({ kind: 'conflict', title: data.detail.task?.title || op.title || null, fields: conflicts });
+        // A retried edit whose first attempt did arrive: the server already
+        // has our values, so it's not a conflict.
+        const same = (a, b) => JSON.stringify(normalize(a)) === JSON.stringify(normalize(b));
+        const conflicts = Object.fromEntries(
+          Object.entries(data.detail.conflicts).filter(([f, c]) => !same(c.current, request.body[f]))
+        );
+        if (Object.keys(conflicts).length) {
+          this.conflict({ kind: 'conflict', title: data.detail.task?.title || op.title || null, fields: conflicts });
+        }
+        for (const f of Object.keys(data.detail.conflicts)) if (!conflicts[f]) conflicts[f] = true;
         // Only those fields lose; the rest of the edit still goes through.
         const rest = { ...request.body, expected: { ...(request.body.expected || {}) } };
         for (const field of Object.keys(conflicts)) {

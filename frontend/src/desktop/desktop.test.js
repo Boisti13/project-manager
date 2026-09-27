@@ -206,6 +206,20 @@ test('a field changed on the server meanwhile is a conflict, not overwritten', a
   assert.deepStrictEqual(engine.status().conflicts, []);
 });
 
+test('an edit that arrived but whose answer was lost is not a conflict when re-sent', async () => {
+  const { srv, engine, call } = setup();
+  const t = srv.addTask({ title: 'Order', priority: 1 });
+  await engine.sync();
+  srv.online = false;
+  call('PUT', `/api/tasks/${t.id}`, { priority: 3 });
+  srv.edit(t.id, { priority: 3 }); // the first attempt reached the server
+  srv.online = true;
+  const s = await engine.sync();
+  assert.deepStrictEqual(s.conflicts, []);
+  assert.strictEqual(s.pending, 0);
+  assert.strictEqual(srv.tasks.get(t.id).priority, 3);
+});
+
 test('deleted or no longer visible on the server: removed locally', async () => {
   const { srv, engine, call } = setup();
   const a = srv.addTask({ title: 'A' });
