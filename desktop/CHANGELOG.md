@@ -3,6 +3,12 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.2.1 — 2026-09-27
+
+### Changed
+- First release delivered through the in-app updater (no changes to the app itself).
+- Build: GitHub Actions updated off the deprecated Node.js 20 (checkout, setup-node, upload-artifact v7).
+
 ## v0.2.0 — 2026-09-27
 
 ### Added
