@@ -36,18 +36,25 @@ with a local copy of your data.
 
 - Everything you can see stays available offline, including comments.
 - **Offline you can**: create, edit, tick off and delete tasks and subtasks
-  (also several at once), reorder them, and write, edit and delete comments.
+  (also several at once), reorder them, write, edit and delete comments, and
+  create, rename, recolor and delete **projects, categories and labels**
+  (including private projects and their members). Things created offline can
+  be used right away — a task in a new project with a new label is sent in the
+  right order.
   The changes wait in a queue and are sent in order once the server is
   reachable — within a few seconds of any change, every 30 seconds, and when
   the window gets focus.
-- **Needs a connection**: projects and categories, labels, settings, users,
-  updates, backups, export/import, the task history and notifications.
+- **Needs a connection**: settings, users, updates, backups, export/import,
+  the task history and notifications.
   Offline, these say so instead of failing silently.
 - **Conflicts**: if someone changed the same field of a task on the server
   while you were offline, your change to it isn't saved — the server's
   version wins, and the top bar shows *⚠ n changes not saved*; *Settings →
   Windows app* lists them. Changes to *different* fields of the same task are
-  merged.
+  merged. Projects and labels have no such check: the last change sent wins.
+  If something made offline can't be saved (e.g. someone created a label with
+  the same name meanwhile), it's listed there too; tasks that used it are
+  saved without it.
 - *Log Out* disconnects the app and deletes its local copy (it warns if
   changes are still waiting).
 

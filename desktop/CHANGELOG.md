@@ -3,6 +3,14 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.3.0 — unreleased
+
+### Added
+- **Projects, categories and labels work offline**: create, rename, recolor, delete, private projects and members — with the server's rules (categories one level deep, unique label names), and sent in the right order with the tasks that use them.
+
+### Changed
+- Syncing: a queued change that refers to something created later waits for it instead of failing; if creating something fails (e.g. a label name taken meanwhile), tasks using it are still saved without it, and the leftover local copy is removed.
+
 ## v0.2.1 — 2026-09-27
 
 ### Changed

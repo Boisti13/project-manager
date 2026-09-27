@@ -4,7 +4,9 @@
 //
 // handle(method, url, body) returns { status, data, changed } or null when
 // the call isn't handled locally (then desktopFetch passes it to the server:
-// settings, users, updates, backups, projects, labels, …).
+// settings, users, updates, backups, task history, …).
+
+import { PROJECT_COLORS } from '../projects';
 
 const nowIso = () => new Date().toISOString().slice(0, 19);
 
@@ -56,6 +58,15 @@ export function normalizeRecurrence(task) {
   return t;
 }
 const UPDATABLE = TASK_FIELDS.filter((f) => f !== 'parent_task_id');
+
+// Least-used palette color, like the server's next_color / next_label_color.
+function nextColor(items) {
+  const used = new Map();
+  for (const o of items) used.set(o.color, (used.get(o.color) || 0) + 1);
+  return PROJECT_COLORS.reduce((best, c) => ((used.get(c) || 0) < (used.get(best) || 0) ? c : best), PROJECT_COLORS[0]);
+}
+
+const PROJECT_FIELDS = ['name', 'description', 'color', 'parent_id', 'is_private', 'member_ids'];
 
 const json = (status, data, changed = false) => ({ status, data, changed });
 const notFound = (what) => json(404, { detail: `${what} not found` });
@@ -109,9 +120,24 @@ export class LocalApi {
       if (M === 'DELETE') return this.deleteComment(id);
       return null;
     }
+    if (a === 'projects' || a === 'labels') {
+      const isProject = a === 'projects';
+      if (!b) {
+        if (M === 'GET') return json(200, isProject ? this.listProjects() : this.listLabels());
+        if (M === 'POST') return isProject ? this.createProject(body || {}) : this.createLabel(body || {});
+        return null;
+      }
+      const id = Number(b);
+      if (!Number.isFinite(id) || c) return null;
+      if (M === 'GET') {
+        const found = isProject ? this.store.get('projects', id) : this.listLabels().find((l) => l.id === id);
+        return found ? json(200, clone(found)) : notFound(isProject ? 'Project' : 'Label');
+      }
+      if (M === 'PUT') return isProject ? this.updateProject(id, body || {}) : this.updateLabel(id, body || {});
+      if (M === 'DELETE') return isProject ? this.deleteProject(id) : this.deleteLabel(id);
+      return null;
+    }
     if (M !== 'GET') return null;
-    if (a === 'projects' && !b) return json(200, this.store.all('projects'));
-    if (a === 'labels' && !b) return json(200, this.listLabels());
     if (a === 'users' && !b && this.store.all('users').length) return json(200, this.store.all('users'));
     if (a === 'settings' && !b && this.store.getMeta('settings')) return json(200, this.store.getMeta('settings'));
     if (a === 'auth' && b === 'me' && !c && this.me) return json(200, this.me);
@@ -132,6 +158,13 @@ export class LocalApi {
       .all('tasks')
       .map((t) => ({ ...clone(t), comment_count: counts.get(t.id) || 0 }))
       .sort((x, y) => (x.order ?? 0) - (y.order ?? 0) || x.id - y.id);
+  }
+
+  listProjects() {
+    return this.store
+      .all('projects')
+      .map(clone)
+      .sort((x, y) => x.name.localeCompare(y.name) || x.id - y.id);
   }
 
   listLabels() {
@@ -344,6 +377,220 @@ export class LocalApi {
       store.enqueue({ kind: 'delete', entity: 'comment', commentId: id, taskId: comment.task_id, method: 'DELETE',
         path: `/api/v1/comments/${id}` });
     }
+    return json(200, { ok: true }, true);
+  }
+
+  // ---------------------------------------------------------------- queue helpers
+
+  /** Queues a change to a project or label, folded into a queued create or update. */
+  queueChange(entity, id, changes, title) {
+    const store = this.store;
+    const idKey = `${entity}Id`;
+    const op = store.outbox.find(
+      (o) => o.entity === entity && ((o.kind === 'create' && o.tempId === id) || (o.kind === 'update' && o[idKey] === id))
+    );
+    if (op) {
+      op.body = { ...op.body, ...changes };
+      store.saveOp(op);
+    } else {
+      store.enqueue({ kind: 'update', entity, [idKey]: id, title, method: 'PUT', path: `/api/v1/${entity}s/${id}`, body: changes });
+    }
+  }
+
+  /** Drops queued work about deleted projects/labels; returns the ids that were never sent. */
+  dropQueued(entity, ids) {
+    const store = this.store;
+    const idKey = `${entity}Id`;
+    const unsent = new Set();
+    for (const op of [...store.outbox]) {
+      if (op.entity !== entity) continue;
+      if (op.kind === 'create' && ids.has(op.tempId)) unsent.add(op.tempId);
+      if (ids.has(op.tempId) || ids.has(op[idKey])) store.removeOp(op.seq);
+    }
+    return unsent;
+  }
+
+  /** Edits the bodies of queued task changes; fn returns true when it changed one. */
+  rewriteQueuedTasks(fn) {
+    for (const op of this.store.outbox) {
+      if (op.entity === 'task' && op.body && fn(op.body)) this.store.saveOp(op);
+    }
+  }
+
+  // ---------------------------------------------------------------- projects
+
+  /** The server's rules for categories and privacy (routers/projects.py); an error response or null. */
+  checkProject(project, id) {
+    if (!(project.name || '').trim()) return json(400, { detail: 'Project name is empty' });
+    const parentId = project.parent_id;
+    if (parentId == null) return null;
+    if (parentId === id) return json(400, { detail: "A project can't be its own parent" });
+    const parent = this.store.get('projects', parentId);
+    if (!parent) return json(400, { detail: 'Project not found' });
+    if (parent.parent_id != null) return json(400, { detail: "Categories can't have categories of their own" });
+    if (id != null && this.store.all('projects').some((p) => p.parent_id === id)) {
+      return json(400, { detail: "This project has categories, so it can't become a category itself" });
+    }
+    if (project.is_private || (project.member_ids || []).length) {
+      return json(400, { detail: "Categories follow their project's visibility; make the project private instead" });
+    }
+    return null;
+  }
+
+  /** Categories have no privacy of their own; whoever creates a private project, or
+   * changes one without being admin, stays a member. */
+  withAccess(project, creating) {
+    const me = this.me || {};
+    const p = { ...project, member_ids: [...(project.member_ids || [])] };
+    if (p.parent_id != null) {
+      p.is_private = false;
+      p.member_ids = [];
+    } else if (p.is_private && (creating || !me.is_admin) && me.id != null && !p.member_ids.includes(me.id)) {
+      p.member_ids.push(me.id);
+    }
+    return p;
+  }
+
+  createProject(body) {
+    const store = this.store;
+    const now = nowIso();
+    let project = {
+      id: store.nextTempId(),
+      uid: body.uid || uuid(),
+      name: (body.name || '').trim(),
+      description: body.description ?? null,
+      color: body.color ?? null,
+      parent_id: body.parent_id ?? null,
+      is_private: Boolean(body.is_private),
+      member_ids: body.member_ids || [],
+      created_at: now,
+      updated_at: now,
+      local: true,
+    };
+    const error = this.checkProject(project, null);
+    if (error) return error;
+    project = this.withAccess(project, true);
+    if (project.parent_id == null && !project.color) {
+      project.color = nextColor(store.all('projects').filter((p) => p.parent_id == null));
+    }
+    store.put('projects', project);
+    const payload = { uid: project.uid };
+    for (const f of PROJECT_FIELDS) if (project[f] !== null && project[f] !== undefined) payload[f] = project[f];
+    store.enqueue({
+      kind: 'create', entity: 'project', tempId: project.id, title: project.name, method: 'POST',
+      path: '/api/v1/projects/', body: payload,
+    });
+    return json(200, clone(project), true);
+  }
+
+  updateProject(id, body) {
+    const store = this.store;
+    const project = store.get('projects', id);
+    if (!project) return notFound('Project');
+    const candidate = { ...project };
+    for (const f of PROJECT_FIELDS) if (f in body) candidate[f] = f === 'name' ? (body.name || '').trim() : body[f];
+    const error = this.checkProject(candidate, id);
+    if (error) return error;
+    let updated = this.withAccess(candidate, false);
+    if (updated.parent_id == null && !updated.color) {
+      updated.color = nextColor(store.all('projects').filter((p) => p.parent_id == null && p.id !== id));
+    }
+    const changes = {};
+    for (const f of PROJECT_FIELDS) {
+      if (JSON.stringify(updated[f] ?? null) !== JSON.stringify(project[f] ?? null)) changes[f] = updated[f] ?? null;
+    }
+    if (Object.keys(changes).length === 0) return json(200, clone(project));
+    updated = { ...updated, updated_at: nowIso() };
+    store.put('projects', updated);
+    this.queueChange('project', id, changes, project.name);
+    return json(200, clone(updated), true);
+  }
+
+  deleteProject(id) {
+    const store = this.store;
+    if (!store.get('projects', id)) return notFound('Project');
+    // Its categories go with it; their tasks, like its own, lose the project
+    // (the server does the same, so only the delete itself is queued).
+    const doomed = new Set([id, ...store.all('projects').filter((p) => p.parent_id === id).map((p) => p.id)]);
+    for (const pid of doomed) store.remove('projects', pid);
+    for (const t of store.all('tasks')) {
+      if (doomed.has(t.project_id)) store.put('tasks', { ...t, project_id: null });
+    }
+    this.rewriteQueuedTasks((b) => {
+      if (!doomed.has(b.project_id)) return false;
+      b.project_id = null;
+      return true;
+    });
+    const unsent = this.dropQueued('project', doomed).has(id);
+    if (!unsent) store.enqueue({ kind: 'delete', entity: 'project', projectId: id, method: 'DELETE', path: `/api/v1/projects/${id}` });
+    return json(200, { ok: true }, true);
+  }
+
+  // ---------------------------------------------------------------- labels
+
+  /** The name rules of routers/labels.py (_check_name): [name, errorResponse]. */
+  checkLabelName(raw, id) {
+    const name = (raw || '').split(/\s+/).filter(Boolean).join(' ');
+    if (!name) return [null, json(400, { detail: 'Label name is empty' })];
+    const clash = this.store.all('labels').find((l) => l.id !== id && l.name.toLowerCase() === name.toLowerCase());
+    if (clash) return [null, json(400, { detail: `A label "${name}" already exists` })];
+    return [name, null];
+  }
+
+  createLabel(body) {
+    const store = this.store;
+    const [name, error] = this.checkLabelName(body.name, null);
+    if (error) return error;
+    const label = {
+      id: store.nextTempId(),
+      uid: body.uid || uuid(),
+      name,
+      color: body.color || nextColor(store.all('labels')),
+      updated_at: nowIso(),
+      local: true,
+    };
+    store.put('labels', label);
+    store.enqueue({
+      kind: 'create', entity: 'label', tempId: label.id, title: name, method: 'POST', path: '/api/v1/labels/',
+      body: { uid: label.uid, name, color: label.color },
+    });
+    return json(200, { ...clone(label), task_count: 0 }, true);
+  }
+
+  updateLabel(id, body) {
+    const store = this.store;
+    const label = store.get('labels', id);
+    if (!label) return notFound('Label');
+    const changes = {};
+    if (body.name != null) {
+      const [name, error] = this.checkLabelName(body.name, id);
+      if (error) return error;
+      if (name !== label.name) changes.name = name;
+    }
+    if (body.color != null && body.color !== label.color) changes.color = body.color;
+    const count = store.all('tasks').filter((t) => (t.label_ids || []).includes(id)).length;
+    if (Object.keys(changes).length === 0) return json(200, { ...clone(label), task_count: count });
+    const updated = { ...label, ...changes, updated_at: nowIso() };
+    store.put('labels', updated);
+    this.queueChange('label', id, changes, label.name);
+    return json(200, { ...clone(updated), task_count: count }, true);
+  }
+
+  deleteLabel(id) {
+    const store = this.store;
+    if (!store.get('labels', id)) return notFound('Label');
+    store.remove('labels', id);
+    // It comes off every task (the server does the same).
+    for (const t of store.all('tasks')) {
+      if ((t.label_ids || []).includes(id)) store.put('tasks', { ...t, label_ids: t.label_ids.filter((x) => x !== id) });
+    }
+    this.rewriteQueuedTasks((b) => {
+      if (!Array.isArray(b.label_ids) || !b.label_ids.includes(id)) return false;
+      b.label_ids = b.label_ids.filter((x) => x !== id);
+      return true;
+    });
+    const unsent = this.dropQueued('label', new Set([id])).has(id);
+    if (!unsent) store.enqueue({ kind: 'delete', entity: 'label', labelId: id, method: 'DELETE', path: `/api/v1/labels/${id}` });
     return json(200, { ok: true }, true);
   }
 }

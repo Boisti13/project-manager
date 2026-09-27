@@ -19,6 +19,8 @@ function fakeServer() {
     online: true,
     tasks: new Map(),
     comments: new Map(),
+    projects: new Map(),
+    labels: new Map(),
     deletions: [],
     requests: [],
     uidIndex: new Map(),
@@ -41,6 +43,23 @@ function fakeServer() {
       srv.tasks.delete(id);
       srv.deletions.push({ entity: 'task', id, uid: null, deleted_at: tick() });
     },
+    addProject(fields) {
+      const id = nextId++;
+      const project = {
+        id, uid: fields.uid || `srv-p${id}`, name: '', description: null, color: '#2196f3', parent_id: null,
+        is_private: false, member_ids: [], created_at: '2026-09-27T10:00:00', ...fields, updated_at: tick(),
+      };
+      srv.projects.set(id, project);
+      srv.uidIndex.set(project.uid, id);
+      return project;
+    },
+    addLabel(fields) {
+      const id = nextId++;
+      const label = { id, uid: fields.uid || `srv-l${id}`, color: '#4caf50', ...fields, updated_at: tick() };
+      srv.labels.set(id, label);
+      srv.uidIndex.set(label.uid, id);
+      return label;
+    },
   };
   const reply = (status, data) => ({ status, ok: status < 400, json: async () => data });
 
@@ -54,15 +73,45 @@ function fakeServer() {
     let m;
     if (method === 'GET' && p === 'sync/') {
       const since = u.searchParams.get('since');
-      const changed = [...srv.tasks.values()].filter((t) => !since || t.updated_at > since);
+      const newer = (map) => [...map.values()].filter((o) => !since || o.updated_at > since);
+      const changed = newer(srv.tasks);
       const ids = new Set(changed.map((t) => t.id));
       return reply(200, {
         // the newest change included; later ones are "after" it
-        cursor: String(clock - 1).padStart(6, '0'), full: !since, tasks: changed, projects: [], labels: [],
+        cursor: String(clock - 1).padStart(6, '0'), full: !since, tasks: changed,
+        projects: newer(srv.projects), labels: newer(srv.labels),
         comments: [...srv.comments.values()].filter((c) => ids.has(c.task_id) || !since || c.created_at > since),
         users: [], deletions: srv.deletions.filter((d) => !since || d.deleted_at > since),
-        ids: { tasks: [...srv.tasks.keys()], projects: [], labels: [] },
+        ids: { tasks: [...srv.tasks.keys()], projects: [...srv.projects.keys()], labels: [...srv.labels.keys()] },
       });
+    }
+    // projects and labels: uid makes creates idempotent; no "expected" (last save wins)
+    for (const [coll, map] of [['projects', srv.projects], ['labels', srv.labels]]) {
+      if (method === 'POST' && p === `${coll}/`) {
+        if (body.uid && srv.uidIndex.has(body.uid)) return reply(200, map.get(srv.uidIndex.get(body.uid)));
+        if (coll === 'labels' && [...map.values()].some((l) => l.name.toLowerCase() === body.name.toLowerCase())) {
+          return reply(400, { detail: `A label "${body.name}" already exists` });
+        }
+        if (coll === 'projects' && body.parent_id != null && !map.has(body.parent_id)) return reply(400, { detail: 'Project not found' });
+        return reply(200, coll === 'projects' ? srv.addProject(body) : srv.addLabel(body));
+      }
+      if ((m = new RegExp(`^${coll}/(-?\\d+)$`).exec(p))) {
+        const id = Number(m[1]);
+        if (!map.has(id)) return reply(404, { detail: 'Not found' });
+        if (method === 'PUT') {
+          Object.assign(map.get(id), body, { updated_at: tick() });
+          return reply(200, map.get(id));
+        }
+        if (method === 'DELETE') {
+          const gone = new Set([id, ...[...map.values()].filter((o) => o.parent_id === id).map((o) => o.id)]);
+          for (const g of gone) map.delete(g);
+          for (const t of srv.tasks.values()) {
+            if (coll === 'projects' && gone.has(t.project_id)) srv.edit(t.id, { project_id: null });
+            if (coll === 'labels' && t.label_ids.includes(id)) srv.edit(t.id, { label_ids: t.label_ids.filter((x) => x !== id) });
+          }
+          return reply(200, { ok: true });
+        }
+      }
     }
     if (method === 'GET' && p === 'users/') return reply(200, [{ id: 1, username: 'me', is_admin: false }]);
     if (method === 'GET' && p === 'settings/') return reply(200, { archive_after_days: 30 });
@@ -70,6 +119,8 @@ function fakeServer() {
     if (method === 'POST' && p === 'tasks/') {
       if (body.uid && srv.uidIndex.has(body.uid)) return reply(200, srv.tasks.get(srv.uidIndex.get(body.uid)));
       if (body.parent_task_id != null && !srv.tasks.has(body.parent_task_id)) return reply(404, { detail: 'Parent task not found' });
+      if (body.project_id != null && !srv.projects.has(body.project_id)) return reply(400, { detail: 'Project not found' });
+      if ((body.label_ids || []).some((id) => !srv.labels.has(id))) return reply(400, { detail: 'Label not found' });
       return reply(200, srv.addTask(body));
     }
     if ((m = /^tasks\/(-?\d+)$/.exec(p))) {
@@ -270,6 +321,123 @@ test('deleted or no longer visible on the server: removed locally', async () => 
   assert.strictEqual(s.pending, 0);
   assert.deepStrictEqual(s.conflicts, []);
   assert.deepStrictEqual(call('GET', '/api/tasks/').data, []);
+});
+
+const noTempIds = (store) => {
+  for (const coll of ['tasks', 'projects', 'labels', 'comments']) {
+    for (const o of store.all(coll)) {
+      assert.ok(o.id > 0, `${coll} ${o.id}`);
+      for (const f of ['project_id', 'parent_id', 'parent_task_id']) assert.ok(!(o[f] < 0), `${coll}.${f}`);
+      assert.ok(!(o.label_ids || []).some((id) => id < 0), `${coll}.label_ids`);
+    }
+  }
+};
+
+test('projects, categories and labels created offline get real ids, and tasks follow', async () => {
+  const { srv, store, engine, call } = setup();
+  await engine.sync();
+  srv.online = false;
+
+  const garden = call('POST', '/api/projects/', { name: 'Garden' }).data;
+  const beds = call('POST', '/api/projects/', { name: 'Beds', parent_id: garden.id }).data;
+  const outside = call('POST', '/api/labels/', { name: 'Outside' }).data;
+  const dig = call('POST', '/api/tasks/', { title: 'Dig', project_id: beds.id, label_ids: [outside.id] }).data;
+  assert.ok(garden.id < 0 && garden.color, 'temporary id and a palette color');
+  assert.deepStrictEqual(call('GET', '/api/projects/').data.map((p) => p.name), ['Beds', 'Garden']);
+  assert.strictEqual(call('GET', '/api/labels/').data[0].task_count, 1);
+
+  // the server's rules apply offline too
+  assert.strictEqual(call('POST', '/api/projects/', { name: 'Too deep', parent_id: beds.id }).status, 400);
+  assert.strictEqual(call('POST', '/api/projects/', { name: 'Cat', parent_id: garden.id, is_private: true }).status, 400);
+  assert.strictEqual(call('POST', '/api/labels/', { name: '  outside ' }).status, 400);
+  const secret = call('POST', '/api/projects/', { name: 'Secret', is_private: true }).data;
+  assert.deepStrictEqual(secret.member_ids, [1], 'the creator is a member');
+
+  srv.online = true;
+  const s = await engine.sync();
+  assert.strictEqual(s.pending, 0);
+  assert.deepStrictEqual(s.conflicts, []);
+  const byName = (map, name) => [...map.values()].find((o) => o.name === name);
+  const g = byName(srv.projects, 'Garden');
+  const b = byName(srv.projects, 'Beds');
+  const l = byName(srv.labels, 'Outside');
+  assert.strictEqual(b.parent_id, g.id);
+  const task = [...srv.tasks.values()].find((t) => t.title === 'Dig');
+  assert.strictEqual(task.project_id, b.id);
+  assert.deepStrictEqual(task.label_ids, [l.id]);
+  noTempIds(store);
+  assert.strictEqual(call('GET', `/api/tasks/${task.id}`).data.project_id, b.id);
+  assert.ok(dig.id < 0);
+});
+
+test('a change waits for something created after it in the queue', async () => {
+  const { srv, store, engine, call } = setup();
+  await engine.sync();
+  srv.online = false;
+  const task = call('POST', '/api/tasks/', { title: 'Plan trip' }).data;
+  const trip = call('POST', '/api/projects/', { name: 'Trip' }).data;
+  const packing = call('POST', '/api/labels/', { name: 'Packing' }).data;
+  // folded into the task's create, which is queued before the project's and the label's
+  call('PUT', `/api/tasks/${task.id}`, { project_id: trip.id, label_ids: [packing.id] });
+  srv.online = true;
+  const s = await engine.sync();
+  assert.deepStrictEqual(s.conflicts, []);
+  const t = [...srv.tasks.values()].find((x) => x.title === 'Plan trip');
+  assert.strictEqual(srv.projects.get(t.project_id).name, 'Trip');
+  assert.strictEqual(srv.labels.get(t.label_ids[0]).name, 'Packing');
+  noTempIds(store);
+});
+
+test('projects and labels edited and deleted offline', async () => {
+  const { srv, store, engine, call } = setup();
+  const home = srv.addProject({ name: 'Home' });
+  const kitchen = srv.addProject({ name: 'Kitchen', parent_id: home.id });
+  const work = srv.addProject({ name: 'Work' });
+  const x = srv.addLabel({ name: 'X' });
+  const y = srv.addLabel({ name: 'Y' });
+  const t = srv.addTask({ title: 'Paint', project_id: kitchen.id, label_ids: [x.id, y.id] });
+  await engine.sync();
+  srv.online = false;
+
+  call('PUT', `/api/projects/${work.id}`, { name: 'Office', color: '#f44336' });
+  call('PUT', `/api/labels/${y.id}`, { name: 'Why' });
+  call('DELETE', `/api/labels/${x.id}`);
+  call('DELETE', `/api/projects/${home.id}`); // takes Kitchen with it
+  const local = call('GET', `/api/tasks/${t.id}`).data;
+  assert.strictEqual(local.project_id, null);
+  assert.deepStrictEqual(local.label_ids, [y.id]);
+  assert.deepStrictEqual(call('GET', '/api/projects/').data.map((p) => p.name), ['Office']);
+  // made and removed offline: the server never hears of it
+  const tmp = call('POST', '/api/projects/', { name: 'Tmp' }).data;
+  call('DELETE', `/api/projects/${tmp.id}`);
+
+  srv.online = true;
+  const s = await engine.sync();
+  assert.deepStrictEqual(s.conflicts, []);
+  assert.deepStrictEqual([...srv.projects.values()].map((p) => [p.name, p.color]), [['Office', '#f44336']]);
+  assert.deepStrictEqual([...srv.labels.values()].map((l) => l.name), ['Why']);
+  assert.strictEqual(srv.tasks.get(t.id).project_id, null);
+  assert.deepStrictEqual(srv.tasks.get(t.id).label_ids, [y.id]);
+  assert.ok(!srv.requests.some((r) => r.startsWith('POST projects')));
+  noTempIds(store);
+});
+
+test("a label that can't be created doesn't cost the task", async () => {
+  const { srv, store, engine, call } = setup();
+  await engine.sync();
+  srv.online = false;
+  const urgent = call('POST', '/api/labels/', { name: 'Urgent' }).data;
+  call('POST', '/api/tasks/', { title: 'Call back', label_ids: [urgent.id] });
+  srv.addLabel({ name: 'urgent' }); // someone else was quicker
+  srv.online = true;
+  const s = await engine.sync();
+  assert.strictEqual(s.conflicts.length, 1);
+  assert.strictEqual(s.conflicts[0].kind, 'failed');
+  assert.match(s.conflicts[0].detail, /already exists/);
+  const t = [...srv.tasks.values()].find((x) => x.title === 'Call back');
+  assert.deepStrictEqual(t.label_ids, []);
+  noTempIds(store);
+  assert.deepStrictEqual(call('GET', '/api/labels/').data.map((l) => l.name), ['urgent']);
 });
 
 test('helpers', () => {
