@@ -15,6 +15,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-updater = "2"
+serde_json = "1"  # generate_context! needs it for the plugin config
 
 [profile.release]
 codegen-units = 1
