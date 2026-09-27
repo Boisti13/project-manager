@@ -30,8 +30,7 @@ command -v openssl >/dev/null || { echo "setup-https: openssl not found (apt ins
 mkdir -p "$TLS_DIR"
 # Extra names persist, so updates (which run this without PM_TLS_NAMES) keep them.
 if [[ -n "${PM_TLS_NAMES+set}" ]]; then
-  printf '%s
-' "$PM_TLS_NAMES" > "$TLS_DIR/names"
+  printf '%s\n' "$PM_TLS_NAMES" > "$TLS_DIR/names"
 fi
 EXTRA_NAMES="$(cat "$TLS_DIR/names" 2>/dev/null || true)"
 
