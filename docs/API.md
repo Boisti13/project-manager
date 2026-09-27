@@ -3,16 +3,28 @@
 The web app is a client of a REST API; scripts and other apps (a future
 desktop client, automations) can use the same API.
 
-- **Base URL**: `http://<server>/api/v1` — stable: fields may be added, but
+- **Base URL**: `https://<server>/api/v1` — stable: fields may be added, but
   nothing is removed or changed in meaning within v1. The unversioned
   `/api/...` paths are the same endpoints for the bundled web app and may
   change with it; don't use them from other clients.
-- **Interactive docs**: `http://<server>/api/docs` (Swagger UI) and
+- **Interactive docs**: `https://<server>/api/docs` (Swagger UI) and
   `/api/redoc`; the machine-readable spec is `/api/openapi.json` (for client
   generators). The docs page loads its scripts from a CDN, so the browser
   needs internet access to show it.
 - **JSON** in and out; timestamps are UTC without a timezone suffix
   (`2026-09-27T10:15:00`), deadlines are dates at midnight.
+
+## HTTPS
+
+The server uses a certificate from its own local CA (see
+[DEPLOYMENT.md → HTTPS](../DEPLOYMENT.md#https)). Clients either trust that CA
+system-wide (import it once, then everything just works) or point at it
+explicitly: download it from `http://<server>/ca.crt` and pass it, e.g.
+`curl --cacert ca.crt …` or `requests.get(…, verify="ca.crt")`.
+
+On Windows, the built-in `curl.exe` (Schannel) additionally insists on a
+revocation check, which a private CA can't answer — add `--ssl-no-revoke`.
+Browsers and .NET's `HttpClient` don't need this.
 
 ## Authentication
 
@@ -39,7 +51,9 @@ invalid input (`{"detail": …}`).
 
 ```bash
 TOKEN=pm_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-API=http://192.168.100.113/api/v1
+API=https://192.168.100.113/api/v1
+curl -so ca.crt http://192.168.100.113/ca.crt     # once; or trust the CA system-wide
+alias curl='curl --cacert ca.crt'                 # Windows curl.exe: also --ssl-no-revoke
 
 # who am I
 curl -s -H "Authorization: Bearer $TOKEN" $API/auth/me
@@ -69,7 +83,8 @@ import requests
 
 api = requests.Session()
 api.headers["Authorization"] = "Bearer pm_…"
-base = "http://192.168.100.113/api/v1"
+api.verify = "ca.crt"  # the server's CA certificate (http://<server>/ca.crt)
+base = "https://192.168.100.113/api/v1"
 
 open_tasks = [t for t in api.get(f"{base}/tasks/").json() if t["status"] != "done"]
 api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via script"})

@@ -2,7 +2,7 @@
 
 ## Current Deployment
 
-**LXC 113** on PVE .103 (192.168.100.113) — Ubuntu 22.04, bare metal (no Docker).
+**LXC 113** on PVE .103 (https://192.168.100.113) — Ubuntu 22.04, bare metal (no Docker).
 
 | Component | How it runs |
 |---|---|
@@ -75,7 +75,7 @@ Download the CA certificate — `http://<server>/ca.crt`, or **Settings → Abou
 - **Android**: *Settings → Security → Encryption & credentials → Install a certificate → CA certificate* → choose the file.
 - **iPhone / iPad**: open `http://<server>/ca.crt` in Safari → *Allow* → *Settings → General → VPN & Device Management* → install the profile → then *Settings → General → About → Certificate Trust Settings* → enable it.
 
-Until a device trusts it, the browser shows a warning you can click through. The CA only vouches for this server: its key never leaves `/etc/project-manager/tls/ca.key` (readable by root only).
+Until a device trusts it, the browser shows a warning you can click through. Command-line tools: `curl --cacert ca.crt …` (Windows `curl.exe` also needs `--ssl-no-revoke`, since a private CA offers no revocation check). The CA only vouches for this server: its key never leaves `/etc/project-manager/tls/ca.key` (readable by root only).
 
 ### Other names, turning it off
 
