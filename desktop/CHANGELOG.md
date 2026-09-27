@@ -3,7 +3,7 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
-## v0.1.0 — unreleased
+## v0.1.0 — 2026-09-27
 
 ### Added
 - First version: the Project Manager interface in a Windows window (Tauri), connected to your server with an app token.
