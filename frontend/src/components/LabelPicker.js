@@ -72,6 +72,7 @@ function LabelPicker({ labels, value, onChange, onCreated }) {
                 e.preventDefault();
                 create();
               } else if (e.key === 'Escape') {
+                e.preventDefault(); // closes the new-label box, not the form
                 setAdding(false);
               }
             }}

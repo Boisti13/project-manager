@@ -270,3 +270,43 @@
 .repeat-option select {
   flex: 1 1 220px;
 }
+
+/* Save / Cancel at the top, staying in view while the form scrolls */
+.form-actions-top {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  align-items: center;
+  margin: -6px 0 4px 0;
+  padding: 6px 0 10px 0;
+  background-color: var(--color-surface-hover);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.form-actions-top .btn {
+  flex: 0 0 auto;
+  min-width: 140px;
+}
+
+.form-keys {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .form-actions-top {
+    /* below the sticky app bar */
+    top: calc(var(--app-nav-height, 48px) + env(safe-area-inset-top));
+  }
+
+  .form-actions-top .btn {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .form-keys {
+    display: none;
+  }
+}

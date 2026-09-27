@@ -2,6 +2,12 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.33.0 — 2026-09-27
+
+### Changed
+- **Create / Save and Cancel are at the top** of the task and project forms, in a bar that stays in view while the form scrolls — no more scrolling down to find the button on smaller screens.
+- **Quicker entry**: *+ New Task* puts the cursor in the title field, so *type → Enter* creates the task. **Ctrl+Enter** (⌘+Enter) saves from any field, also the description and the bulk list; **Esc** cancels (a first Esc only closes an open label box or task search). A hint next to the buttons says so.
+
 ## v1.32.0 — 2026-09-27
 
 ### Added

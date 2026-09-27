@@ -199,8 +199,34 @@ function TaskForm({
   const privateProject = effectiveProject != null && projectIndex.isPrivate(effectiveProject);
   const assignable = projectIndex.assignableUsers(effectiveProject, users);
 
+  // Ctrl/Cmd+Enter saves from anywhere in the form (Enter alone already does
+  // in single-line fields); Esc cancels unless a picker used it to close.
+  const handleFormKeys = (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      e.currentTarget.requestSubmit();
+    } else if (e.key === 'Escape' && !e.defaultPrevented) {
+      onCancel();
+    }
+  };
+
   return (
-    <form className="task-form" onSubmit={handleSubmit}>
+    <form className="task-form" onSubmit={handleSubmit} onKeyDown={handleFormKeys}>
+      <div className="form-actions form-actions-top">
+        <button type="submit" className="btn btn-primary" disabled={mode === 'bulk' && bulk.count === 0}>
+          {task
+            ? t('Update Task')
+            : mode === 'bulk'
+            ? bulk.count
+              ? tn(bulk.count, 'Create one task', 'Create {n} tasks')
+              : t('Create tasks')
+            : t('Create Task')}
+        </button>
+        <button type="button" className="btn btn-secondary" onClick={onCancel}>
+          {t('Cancel')}
+        </button>
+        <small className="form-keys">{t('Ctrl+Enter to save · Esc to cancel')}</small>
+      </div>
       {parentTask && (
         <div className="subtask-of-banner">
           {mode === 'bulk' ? t('Subtasks of') : t('Subtask of')}: <strong>{parentTask.title}</strong>
@@ -240,6 +266,7 @@ function TaskForm({
               value={formData.title}
               onChange={handleChange}
               required
+              autoFocus={!task}
               placeholder={t('Enter task title')}
             />
           </div>
@@ -497,20 +524,6 @@ function TaskForm({
         )}
       </div>
 
-      <div className="form-actions">
-        <button type="submit" className="btn btn-primary" disabled={mode === 'bulk' && bulk.count === 0}>
-          {task
-            ? t('Update Task')
-            : mode === 'bulk'
-            ? bulk.count
-              ? tn(bulk.count, 'Create one task', 'Create {n} tasks')
-              : t('Create tasks')
-            : t('Create Task')}
-        </button>
-        <button type="button" className="btn btn-secondary" onClick={onCancel}>
-          {t('Cancel')}
-        </button>
-      </div>
     </form>
   );
 }
