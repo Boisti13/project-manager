@@ -3,7 +3,7 @@ edit their own, authors and admins can delete."""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app import access, notify, schemas
+from app import access, notify, schemas, tombstones
 from app.timeutil import utcnow
 from app.auth import get_current_user
 from app.database import get_db
@@ -14,7 +14,7 @@ router = APIRouter()
 
 def to_schema(c: TaskComment) -> schemas.Comment:
     return schemas.Comment(
-        id=c.id, task_id=c.task_id, author_id=c.author_id,
+        id=c.id, uid=c.uid, task_id=c.task_id, author_id=c.author_id,
         author=c.author.username if c.author else c.author_name,
         body=c.body, created_at=c.created_at, edited_at=c.edited_at,
     )
@@ -35,10 +35,18 @@ def list_comments(task_id: int, current_user: User = Depends(get_current_user), 
 @router.post("/tasks/{task_id}/comments", response_model=schemas.Comment)
 def add_comment(task_id: int, data: schemas.CommentCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     access.require_task(db, current_user, task_id)
+    if data.uid is not None:
+        existing = db.query(TaskComment).filter(TaskComment.uid == str(data.uid)).first()
+        if existing is not None:
+            if existing.task_id != task_id:
+                raise HTTPException(status_code=409, detail="This uid is already in use")
+            return to_schema(existing)  # a retried create
     body = data.body.strip()
     if not body:
         raise HTTPException(status_code=400, detail="Comment is empty")
     comment = TaskComment(task_id=task_id, author_id=current_user.id, body=body)
+    if data.uid is not None:
+        comment.uid = str(data.uid)
     db.add(comment)
     db.flush()
     notify.commented(db, comment, current_user)
@@ -68,6 +76,7 @@ def delete_comment(comment_id: int, current_user: User = Depends(get_current_use
     comment = get_comment_or_404(db, current_user, comment_id)
     if comment.author_id != current_user.id and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Only the author or an admin can delete a comment")
+    tombstones.comment_deleted(db, comment, current_user)
     db.delete(comment)
     db.commit()
     return {"ok": True}

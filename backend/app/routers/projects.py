@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Project, User
-from app import access, schemas
+from app import access, schemas, tombstones
 from app.auth import get_current_user
 
 router = APIRouter()
@@ -59,8 +59,16 @@ def apply_access(db: Session, project: Project, user: User, is_private, member_i
 
 @router.post("/", response_model=schemas.Project)
 def create_project(project: schemas.ProjectCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if project.uid is not None:
+        existing = db.query(Project).filter(Project.uid == str(project.uid)).first()
+        if existing is not None:
+            if not access.project_visible(access.visible_project_ids(db, current_user), existing.id):
+                raise HTTPException(status_code=409, detail="This uid is already in use")
+            return existing  # a retried create
     validate_parent(db, current_user, None, project.parent_id)
-    db_project = Project(**project.model_dump(exclude={"is_private", "member_ids"}))
+    db_project = Project(**project.model_dump(exclude={"is_private", "member_ids", "uid"}))
+    if project.uid is not None:
+        db_project.uid = str(project.uid)
     apply_access(db, db_project, current_user, project.is_private, project.member_ids, creating=True)
     if db_project.parent_id is None and not db_project.color:
         db_project.color = next_color(db)
@@ -103,6 +111,7 @@ def delete_project(project_id: int, current_user: User = Depends(get_current_use
 
     # Categories go with it (ON DELETE CASCADE); their tasks, like the
     # project's own, lose the project reference (ON DELETE SET NULL).
+    tombstones.project_deleted(db, db_project, current_user)
     db.delete(db_project)
     db.commit()
     return {"ok": True}

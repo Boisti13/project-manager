@@ -1,8 +1,23 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Table, Enum as SQLEnum, false
+import uuid
+
+from sqlalchemy import (
+    Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Table, Uuid, Enum as SQLEnum, false, text,
+)
 from sqlalchemy.orm import relationship, backref
 from app.database import Base
 from app.timeutil import utcnow
 import enum
+
+def _new_uid() -> str:
+    return str(uuid.uuid4())
+
+
+def uid_column():
+    """Stable, globally unique id, also for clients that create things
+    offline and send the uid along (see docs/API.md)."""
+    return Column(Uuid(as_uuid=False), nullable=False, unique=True, default=_new_uid,
+                  server_default=text("gen_random_uuid()"))
+
 
 class TaskStatus(str, enum.Enum):
     TODO = "todo"
@@ -58,15 +73,18 @@ class Label(Base):
     __tablename__ = "labels"
 
     id = Column(Integer, primary_key=True, index=True)
+    uid = uid_column()
     name = Column(String(40), nullable=False, unique=True)
     color = Column(String(7), nullable=False)
     created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
 
 class Project(Base):
     __tablename__ = "projects"
 
     id = Column(Integer, primary_key=True, index=True)
+    uid = uid_column()
     name = Column(String, index=True)
     description = Column(Text, nullable=True)
     # Hex color like "#2196f3". Categories usually leave it empty and use
@@ -91,6 +109,7 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
+    uid = uid_column()
     title = Column(String, index=True)
     description = Column(Text, nullable=True)
     status = Column(SQLEnum(TaskStatus), default=TaskStatus.TODO)
@@ -181,6 +200,7 @@ class TaskComment(Base):
     __tablename__ = "task_comments"
 
     id = Column(Integer, primary_key=True, index=True)
+    uid = uid_column()
     task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False, index=True)
     author_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     # Shown when there's no author account: imported comments from another
@@ -209,6 +229,20 @@ class ApiToken(Base):
     expires_at = Column(DateTime, nullable=True)
 
     user = relationship("User")
+
+
+class Deletion(Base):
+    """Record of something deleted (app/tombstones.py), so clients that keep
+    a copy (offline apps, sync scripts) learn about it:
+    GET /api/v1/deletions?since=..."""
+    __tablename__ = "deletions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    entity = Column(String(20), nullable=False)  # task | comment | project | label
+    entity_id = Column(Integer, nullable=False)
+    uid = Column(Uuid(as_uuid=False), nullable=True)
+    deleted_at = Column(DateTime, default=utcnow, index=True)
+    deleted_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
 
 class AppSetting(Base):

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app import schemas
+from app import schemas, tombstones
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import Label, User, task_labels
@@ -41,20 +41,31 @@ def resolve(db: Session, label_ids) -> list:
     return labels
 
 
+def label_schema(label: Label, task_count: int) -> schemas.Label:
+    return schemas.Label(id=label.id, uid=label.uid, name=label.name, color=label.color, task_count=task_count,
+                         updated_at=label.updated_at)
+
+
 @router.get("/", response_model=list[schemas.Label])
 def list_labels(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     counts = dict(db.query(task_labels.c.label_id, func.count()).group_by(task_labels.c.label_id))
     labels = db.query(Label).order_by(func.lower(Label.name)).all()
-    return [schemas.Label(id=l.id, name=l.name, color=l.color, task_count=counts.get(l.id, 0)) for l in labels]
+    return [label_schema(l, counts.get(l.id, 0)) for l in labels]
 
 
 @router.post("/", response_model=schemas.Label)
 def create_label(data: schemas.LabelCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if data.uid is not None:
+        existing = db.query(Label).filter(Label.uid == str(data.uid)).first()
+        if existing is not None:  # a retried create
+            return label_schema(existing, db.query(task_labels).filter(task_labels.c.label_id == existing.id).count())
     label = Label(name=_check_name(db, data.name), color=data.color or next_label_color(db))
+    if data.uid is not None:
+        label.uid = str(data.uid)
     db.add(label)
     db.commit()
     db.refresh(label)
-    return schemas.Label(id=label.id, name=label.name, color=label.color, task_count=0)
+    return label_schema(label, 0)
 
 
 @router.put("/{label_id}", response_model=schemas.Label)
@@ -69,7 +80,7 @@ def update_label(label_id: int, data: schemas.LabelUpdate, current_user: User = 
         label.color = data.color
     db.commit()
     count = db.query(task_labels).filter(task_labels.c.label_id == label_id).count()
-    return schemas.Label(id=label.id, name=label.name, color=label.color, task_count=count)
+    return label_schema(label, count)
 
 
 @router.delete("/{label_id}")
@@ -77,6 +88,7 @@ def delete_label(label_id: int, current_user: User = Depends(get_current_user), 
     label = db.get(Label, label_id)
     if not label:
         raise HTTPException(status_code=404, detail="Label not found")
+    tombstones.label_deleted(db, label, current_user)
     db.delete(label)  # task_labels rows go with it (ON DELETE CASCADE)
     db.commit()
     return {"ok": True}

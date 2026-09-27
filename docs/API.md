@@ -103,6 +103,32 @@ api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via
 | `/notifications/`, `/notifications/read` | the current user's notifications |
 | `/users/` | users (admins: `/users/admin/all`, create, change) |
 | `/transfer/export`, `/transfer/import` | project export/import (JSON) |
+| `/deletions/?since=…` | what was deleted (tasks, comments, projects, labels), for clients that keep a copy |
 | `/settings/`, `/system/…` | instance settings, version/updates, backups (admins) |
 
 The full list with every field is in `/api/docs`.
+
+## Keeping a copy (offline clients, sync scripts)
+
+The groundwork for clients that keep their own copy of the data and sync
+it later:
+
+- **`uid`** — tasks, projects, labels and comments have a UUID besides the
+  numeric `id`. A client that creates something offline picks the uid
+  itself and sends it (`"uid": "…"`) when it syncs; **sending the same
+  create again returns the existing object** instead of making a second
+  one, so retries after a lost response are safe. Subtasks created offline
+  can point at their parent with `parent_task_uid`, tasks at a project with
+  `project_uid`.
+- **`updated_at`** — changes whenever an object's representation changes,
+  for tasks also when their labels or dependencies change, or when a label
+  or project they belong to is deleted. Poll lists and keep what's newer
+  than your copy.
+- **Deletions** — `GET /api/v1/deletions/?since=2026-09-27T10:00:00`
+  lists what was deleted after that time (`entity`, `id`, `uid`,
+  `deleted_at`), including subtasks and comments that went with a task, and
+  categories that went with a project. Remember the newest `deleted_at` you
+  saw and ask for everything after it next time.
+
+A full "changes since" endpoint and conflict handling for edits made
+offline are the next step; until then, the last write wins.

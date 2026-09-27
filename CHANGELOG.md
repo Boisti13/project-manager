@@ -2,6 +2,18 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.30.0 — 2026-09-27
+
+### Added
+- **UUIDs**: tasks, projects, labels and comments have a `uid` (existing ones got one during the migration). Clients can send their own `uid` when creating something — **sending the same create again returns the existing object** instead of a duplicate (safe retries for offline apps). New tasks can refer to their parent and project by uid (`parent_task_uid`, `project_uid`).
+- **Deletion records**: deleting a task (with its subtasks and their comments), a comment, a project (with its categories) or a label leaves a record; **`GET /api/v1/deletions/?since=…`** lists them (entity, id, uid, time).
+- **Reliable `updated_at`**: a task's `updated_at` now also changes when its labels or dependencies change, and when a label or project it belongs to, or a task it waits for, is deleted. Labels have an `updated_at` too.
+- [docs/API.md](docs/API.md) → *Keeping a copy* explains how a client uses these.
+
+### Under the hood
+- Migration `0013`: `uid` columns (filled with `gen_random_uuid()`), `deletions` table, `labels.updated_at`; `backend/app/tombstones.py`.
+- 5 new backend tests.
+
 ## v1.29.0 — 2026-09-27
 
 ### Added

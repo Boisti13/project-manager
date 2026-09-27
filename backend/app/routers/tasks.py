@@ -3,7 +3,8 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 from app.database import get_db
 from app.models import Task, TaskActivity, TaskComment, TaskStatus, User
-from app import access, activity, dependencies, notify, recurrence, schemas
+from app import access, activity, dependencies, notify, recurrence, schemas, tombstones
+from app.models import Project
 from app.timeutil import utcnow
 from app.auth import get_current_user
 from app.routers.labels import resolve as resolve_labels
@@ -37,12 +38,30 @@ def sync_completed_at(task: Task):
 
 @router.post("/", response_model=schemas.Task)
 def create_task(task: schemas.TaskCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if task.uid is not None:
+        existing = db.query(Task).filter(Task.uid == str(task.uid)).first()
+        if existing is not None:
+            if not access.task_visible(db, current_user, existing):
+                raise HTTPException(status_code=409, detail="This uid is already in use")
+            return existing  # a retried create: nothing new
+    if task.parent_task_uid is not None and task.parent_task_id is None:
+        parent = db.query(Task).filter(Task.uid == str(task.parent_task_uid)).first()
+        if parent is None:
+            raise HTTPException(status_code=400, detail="Parent task not found")
+        task.parent_task_id = parent.id
+    if task.project_uid is not None and task.project_id is None:
+        project = db.query(Project).filter(Project.uid == str(task.project_uid)).first()
+        if project is None:
+            raise HTTPException(status_code=400, detail="Project not found")
+        task.project_id = project.id
     if task.parent_task_id is not None:
         access.require_task(db, current_user, task.parent_task_id)
     if task.project_id is not None:
         access.require_project(db, current_user, task.project_id, status=400)
     access.check_assignee(db, task.assignee_id, task.project_id)
-    db_task = Task(**task.model_dump(exclude={"label_ids", "blocked_by_ids"}))
+    db_task = Task(**task.model_dump(exclude={"label_ids", "blocked_by_ids", "uid", "project_uid", "parent_task_uid"}))
+    if task.uid is not None:
+        db_task.uid = str(task.uid)
     db_task.labels = resolve_labels(db, task.label_ids)
     dependencies.set_blockers(db, current_user, db_task, task.blocked_by_ids)
     normalize_recurrence(db_task)
@@ -167,6 +186,8 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
     if db_task.assignee_id != previous_assignee:
         notify.assigned(db, db_task, current_user)
     activity.changed(db, db_task, before, current_user)
+    # Labels and dependencies aren't columns; mark the task changed anyway.
+    db_task.updated_at = utcnow()
     if db_task.status == TaskStatus.DONE and not was_done:
         dependencies.notify_unblocked(db, db_task, current_user)
     record_spawn(db, db_task, current_user)
@@ -189,6 +210,7 @@ def task_activity(task_id: int, current_user: User = Depends(get_current_user), 
 def delete_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     db_task = access.require_task(db, current_user, task_id)
 
+    tombstones.task_deleted(db, db_task, current_user)
     db.delete(db_task)
     db.commit()
     return {"ok": True}

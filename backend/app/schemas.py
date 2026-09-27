@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+import uuid
 from typing import Literal, Optional, List
 from datetime import datetime
 from app.models import TaskStatus
@@ -56,6 +57,12 @@ class ApiTokenInfo(BaseModel):
 class ApiTokenCreated(ApiTokenInfo):
     token: str  # shown once
 
+class DeletionEntry(BaseModel):
+    entity: Literal["task", "comment", "project", "label"]
+    id: int
+    uid: Optional[str] = None
+    deleted_at: datetime
+
 class Preferences(BaseModel):
     language: Optional[Literal["en", "de"]] = None  # None: follow the browser
 
@@ -73,6 +80,7 @@ class ProjectBase(BaseModel):
     parent_id: Optional[int] = None
 
 class ProjectCreate(ProjectBase):
+    uid: Optional[uuid.UUID] = None  # client-chosen; sending it again returns the existing project
     is_private: bool = False
     member_ids: List[int] = []
 
@@ -86,6 +94,7 @@ class ProjectUpdate(BaseModel):
 
 class Project(ProjectBase):
     id: int
+    uid: str
     is_private: bool = False
     member_ids: List[int] = []
     created_at: datetime
@@ -95,6 +104,7 @@ class Project(ProjectBase):
 
 # Labels
 class LabelCreate(BaseModel):
+    uid: Optional[uuid.UUID] = None
     name: str = Field(min_length=1, max_length=40)
     color: Optional[str] = Field(default=None, pattern=HEX_COLOR)
 
@@ -104,9 +114,11 @@ class LabelUpdate(BaseModel):
 
 class Label(BaseModel):
     id: int
+    uid: str
     name: str
     color: str
     task_count: int = 0
+    updated_at: Optional[datetime] = None
 
 # Task schemas
 RecurrenceUnit = Literal["day", "week", "month", "year"]
@@ -127,7 +139,12 @@ class TaskBase(BaseModel):
     blocked_by_ids: List[int] = []
 
 class TaskCreate(TaskBase):
-    pass
+    # Client-chosen uid (offline apps): sending the same uid again returns
+    # the existing task instead of creating a second one.
+    uid: Optional[uuid.UUID] = None
+    # Alternatives to project_id / parent_task_id for things known only by uid.
+    project_uid: Optional[uuid.UUID] = None
+    parent_task_uid: Optional[uuid.UUID] = None
 
 BULK_MAX_TASKS = 500
 
@@ -182,6 +199,7 @@ class TaskUpdate(BaseModel):
 
 class Task(TaskBase):
     id: int
+    uid: str
     completed_at: Optional[datetime] = None
     comment_count: int = 0
     created_at: datetime
@@ -209,10 +227,12 @@ class AppSettingsUpdate(BaseModel):
 
 # Comments
 class CommentCreate(BaseModel):
+    uid: Optional[uuid.UUID] = None
     body: str = Field(min_length=1, max_length=10000)
 
 class Comment(BaseModel):
     id: int
+    uid: str
     task_id: int
     author_id: Optional[int] = None
     author: Optional[str] = None
