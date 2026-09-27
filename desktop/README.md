@@ -16,6 +16,8 @@ with a local copy of your data.
    Artifacts*). It installs for the current user; no admin rights needed.
    The installer isn't code-signed yet, so on first run Windows SmartScreen
    warns ("Windows protected your PC"): click **More info → Run anyway**.
+   With **Smart App Control** switched on, Windows blocks unsigned apps
+   outright; it has to be off to install the app.
 2. On first start, enter the **server address** (e.g. `192.168.100.113`),
    your username and password. The password is used once to create an **app
    token** — it shows up in the web app under *Settings → API tokens*
