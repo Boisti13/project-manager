@@ -2,14 +2,14 @@
 
 ## Current Deployment
 
-**LXC 113** on PVE .103 (https://192.168.100.113) — Ubuntu 22.04, bare metal (no Docker).
+**LXC 113** on PVE .103 (http://192.168.100.113) — Ubuntu 22.04, bare metal (no Docker).
 
 | Component | How it runs |
 |---|---|
 | PostgreSQL 14 | systemd, native package |
 | FastAPI backend | Supervisor (`project-manager-backend`), Uvicorn on 127.0.0.1:8000, Python venv, settings from `backend/.env` |
 | React frontend | Static production build in `frontend/build/`, served by Nginx — no Node process at runtime |
-| Nginx | :443 (HTTPS, local CA) — `/api/*` → backend, everything else → `frontend/build/` ([`deploy/nginx-https.conf`](deploy/nginx-https.conf)); :80 redirects to HTTPS and serves the CA certificate at `/ca.crt` |
+| Nginx | :80 — `/api/*` → backend, everything else → `frontend/build/` ([`deploy/nginx.conf`](deploy/nginx.conf)). HTTPS is turned off here (`/etc/project-manager/no-https`): a private network, reached remotely over ZeroTier, which encrypts the traffic itself. New installs get HTTPS by default — see [HTTPS](#https) |
 | Backups | `/var/backups/project-manager/`, nightly at 03:15 via `/etc/cron.d/project-manager` and before every update; newest 3 of each kind kept (see [Backups & Export](#backups--export)) |
 
 **Production runs `main`.** Ongoing work happens on `dev`, which can be tried on the live instance via Settings → Updates → *Switch to dev*; merge to `main`, tag a release (see [README.md](README.md#versioning)) and switch back when ready to ship.
