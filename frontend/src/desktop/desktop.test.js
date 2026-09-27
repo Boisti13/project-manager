@@ -57,7 +57,8 @@ function fakeServer() {
       const changed = [...srv.tasks.values()].filter((t) => !since || t.updated_at > since);
       const ids = new Set(changed.map((t) => t.id));
       return reply(200, {
-        cursor: String(clock).padStart(6, '0'), full: !since, tasks: changed, projects: [], labels: [],
+        // the newest change included; later ones are "after" it
+        cursor: String(clock - 1).padStart(6, '0'), full: !since, tasks: changed, projects: [], labels: [],
         comments: [...srv.comments.values()].filter((c) => ids.has(c.task_id) || !since || c.created_at > since),
         users: [], deletions: srv.deletions.filter((d) => !since || d.deleted_at > since),
         ids: { tasks: [...srv.tasks.keys()], projects: [], labels: [] },
