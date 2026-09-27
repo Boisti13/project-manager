@@ -222,6 +222,17 @@ git push origin v1.4.0
 
 A tag alone shows up under *Tags* on GitHub; draft a GitHub Release from it for it to appear under *Releases*.
 
+## Code Signing Policy
+
+The Windows app's installer and program file are signed so Windows (SmartScreen, Smart App Control) accepts them.
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+
+- **Committers and reviewers**: [Boisti13](https://github.com/Boisti13)
+- **Approvers**: [Boisti13](https://github.com/Boisti13)
+- Only builds made by GitHub Actions from this repository's source are signed ([`.github/workflows/desktop.yml`](.github/workflows/desktop.yml)); every release signing is approved by hand.
+
+**Privacy**: This program will not transfer any information to other networking systems unless specifically requested by the user or the person installing or operating it. The Windows app only talks to the Project Manager server you connect it to.
+
 ---
 
 **Note**: The LXC only ever pulls from GitHub (via Settings → Updates or the manual steps in [DEPLOYMENT.md](DEPLOYMENT.md)) — never push to it or edit files there directly.

@@ -14,8 +14,10 @@ with a local copy of your data.
    [releases](https://github.com/Boisti13/project-manager/releases) tagged
    `desktop-v…`, or the latest build under *Actions → Windows app →
    Artifacts*). It installs for the current user; no admin rights needed.
-   The installer isn't code-signed yet, so on first run Windows SmartScreen
-   warns ("Windows protected your PC"): click **More info → Run anyway**.
+   Builds are code-signed once signing is set up (see *Code signing* below).
+   An **unsigned** build (from before that, or from a pull request) makes
+   SmartScreen warn — *More info → Run anyway* — and is blocked outright by
+   **Smart App Control**; use a signed build there.
 2. On first start, enter the **server address** (e.g. `192.168.100.113`),
    your username and password. The password is used once to create an **app
    token** — it shows up in the web app under *Settings → API tokens*
@@ -78,3 +80,41 @@ Releases: bump the version in `src-tauri/tauri.conf.json`,
 `src-tauri/Cargo.toml` and `frontend/src/desktop/platform.js` (a test checks
 they match), add a section to [CHANGELOG.md](CHANGELOG.md), and push a tag
 `desktop-vX.Y.Z` — the workflow attaches the installer to a GitHub release.
+
+## Code signing
+
+Signing uses [SignPath Foundation](https://signpath.org) (free for open-source
+projects; the certificate is issued to SignPath Foundation). The workflow
+signs in two rounds — the app's exe, then the installer built around it — and
+only on pushes, once the variables below exist; before that, and for pull
+requests, installers are built unsigned.
+
+One-time setup:
+
+1. The repository must be public with an OSI license (MIT: ✓) and the
+   *Code Signing Policy* section in the main [README](../README.md#code-signing-policy).
+2. Apply at [signpath.org/apply](https://signpath.org/apply) with the repository
+   link. After approval SignPath sets up an organization and a project.
+3. In SignPath:
+   - install the **SignPath GitHub App** for the repository (it verifies that
+     signing requests come from this repository's GitHub Actions);
+   - create the project (slug `project-manager`), an **artifact
+     configuration** from [`signpath/artifact-configuration.xml`](signpath/artifact-configuration.xml)
+     (slug `initial`, or set the variable below), and use the
+     `release-signing` policy SignPath provides (or a `test-signing` one to
+     try things first);
+   - create a **CI user**, give it submitter rights on the policy, and copy
+     its API token.
+4. In GitHub → *Settings → Secrets and variables → Actions*:
+   - secret `SIGNPATH_API_TOKEN` — the CI user's token;
+   - variable `SIGNPATH_ORGANIZATION_ID` — from SignPath (this switches
+     signing on);
+   - optional variables `SIGNPATH_PROJECT_SLUG` (default `project-manager`),
+     `SIGNPATH_POLICY_SLUG` (default `release-signing`),
+     `SIGNPATH_ARTIFACT_CONFIGURATION_SLUG` (default `initial`).
+5. Push. With `release-signing`, each build waits (up to an hour) until you
+   approve its two signing requests in SignPath; the workflow then checks that
+   both files carry a valid signature.
+
+The uninstaller that the installer writes is not signed separately.
+

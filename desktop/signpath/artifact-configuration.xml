@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SignPath artifact configuration for the Windows app (paste into SignPath:
+  Project -> Artifact configurations). GitHub hands artifacts over as a zip;
+  every .exe in it gets an Authenticode signature. Used for both steps:
+  the app's exe, then the installer built around it.
+-->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <pe-file path="*.exe" max-matches="unbounded">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>

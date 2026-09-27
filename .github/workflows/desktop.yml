@@ -3,6 +3,11 @@ name: Windows app
 # Builds the Windows app (desktop/, Tauri) from the React frontend built with
 # REACT_APP_TARGET=desktop. Runs when the app or the frontend changes; tags
 # desktop-v* also publish the installer as a GitHub release.
+#
+# Code signing (SignPath Foundation, see desktop/README.md -> Code signing)
+# runs on pushes when the repository variable SIGNPATH_ORGANIZATION_ID is set;
+# otherwise the installer is built unsigned. The app's exe is signed first,
+# then packed into the installer, which is signed as well.
 
 on:
   push:
@@ -25,6 +30,10 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+    env:
+      # Sign only builds of this repository's own pushes (not pull requests)
+      # and only once SignPath is set up.
+      SIGN: ${{ github.event_name != 'pull_request' && vars.SIGNPATH_ORGANIZATION_ID != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -67,9 +76,72 @@ jobs:
         working-directory: desktop
         run: npx --yes @tauri-apps/cli@^2 icon ../frontend/public/icon-512.png --output src-tauri/icons
 
+      - name: Build the app
+        working-directory: desktop
+        run: npx --yes @tauri-apps/cli@^2 build --ci --no-bundle
+
+      # ---- signing the app's exe (only when SignPath is set up)
+      - name: Upload the app's exe for signing
+        id: unsigned-exe
+        if: env.SIGN == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-app-exe
+          path: desktop/src-tauri/target/release/project-manager-desktop.exe
+          retention-days: 1
+
+      - name: Sign the app's exe
+        if: env.SIGN == 'true'
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'project-manager' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG || 'release-signing' }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG || 'initial' }}
+          github-artifact-id: ${{ steps.unsigned-exe.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: desktop/src-tauri/target/release
+
       - name: Build the installer
         working-directory: desktop
-        run: npx --yes @tauri-apps/cli@^2 build --ci
+        run: npx --yes @tauri-apps/cli@^2 bundle --ci
+
+      # ---- signing the installer
+      - name: Upload the installer for signing
+        id: unsigned-installer
+        if: env.SIGN == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-installer
+          path: desktop/src-tauri/target/release/bundle/nsis/*.exe
+          retention-days: 1
+
+      - name: Sign the installer
+        if: env.SIGN == 'true'
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'project-manager' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG || 'release-signing' }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG || 'initial' }}
+          github-artifact-id: ${{ steps.unsigned-installer.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: desktop/src-tauri/target/release/bundle/nsis
+
+      - name: Check the signatures
+        if: env.SIGN == 'true'
+        shell: pwsh
+        run: |
+          $files = @(Get-Item desktop/src-tauri/target/release/project-manager-desktop.exe) + @(Get-ChildItem desktop/src-tauri/target/release/bundle/nsis/*.exe)
+          foreach ($f in $files) {
+            $sig = Get-AuthenticodeSignature $f.FullName
+            "{0}: {1} ({2})" -f $f.Name, $sig.Status, $sig.SignerCertificate.Subject
+            if ($sig.Status -ne 'Valid') { throw "$($f.Name) is not signed" }
+          }
 
       - uses: actions/upload-artifact@v4
         with:
