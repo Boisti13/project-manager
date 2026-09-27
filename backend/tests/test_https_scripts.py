@@ -70,7 +70,7 @@ def test_nginx_site_picks_https_when_ready(tmp_path):
     https = run("nginx-site.sh", tls, **env)
     tls_path = str(tls).replace("\\", "/")
     assert "listen 443 ssl" in https and f"ssl_certificate {tls_path}/server.crt;" in https
-    assert "return 301 https://" in https and "root /srv/pm/frontend/build;" in https
+    assert "return 302 https://" in https and "root /srv/pm/frontend/build;" in https
     assert f"alias {tls_path}/ca.crt;" in https
 
     (conf / "https").unlink()

@@ -7,6 +7,9 @@ All notable changes, newest first. Versions follow [semantic versioning](README.
 ### Changed
 - **HTTPS is opt-in**: new installs and updates serve plain HTTP unless `/etc/project-manager/https` exists (`install.sh --https`, `PM_HTTPS=1` for the Proxmox helper, or the commands in [DEPLOYMENT.md → HTTPS](DEPLOYMENT.md#https)). Plain HTTP is fine on a private network or behind a VPN such as ZeroTier; HTTPS with the local CA from v1.29.0 is still one command away. The old `no-https` marker isn't needed any more.
 
+### Fixed
+- The HTTP → HTTPS redirect is now temporary (302) instead of permanent (301). Browsers remember permanent redirects, so after HTTPS was switched off again they kept sending some requests to `https://` and failed (*Failed to load data: Failed to fetch*). If you see that after turning HTTPS off, clear the browser's cached files once.
+
 ## v1.30.0 — 2026-09-27
 
 ### Added
