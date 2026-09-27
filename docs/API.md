@@ -103,6 +103,7 @@ api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via
 | `/notifications/`, `/notifications/read` | the current user's notifications |
 | `/users/` | users (admins: `/users/admin/all`, create, change) |
 | `/transfer/export`, `/transfer/import` | project export/import (JSON) |
+| `/sync/?since=…` | everything visible, or what changed since a cursor — for offline clients |
 | `/deletions/?since=…` | what was deleted (tasks, comments, projects, labels), for clients that keep a copy |
 | `/settings/`, `/system/…` | instance settings, version/updates, backups (admins) |
 
@@ -130,5 +131,53 @@ it later:
   categories that went with a project. Remember the newest `deleted_at` you
   saw and ask for everything after it next time.
 
-A full "changes since" endpoint and conflict handling for edits made
-offline are the next step; until then, the last write wins.
+### Syncing: `GET /api/v1/sync/`
+
+- **Without parameters**: a full snapshot of everything the user can see —
+  `tasks` (flat; `parent_task_id` links subtasks), `projects` (with
+  categories), `labels`, `comments`, `users` (id, name, active) — and a
+  **`cursor`**.
+- **With `?since=<cursor>`**: only what changed after that cursor (plus
+  `deletions`), and a new `cursor`. Store it and pass it next time. The
+  server looks a few seconds further back than the cursor so nothing
+  committed during a sync is missed; you may get an object twice — just
+  overwrite your copy by `id`/`uid`.
+- **`ids`** (always present): the ids of all tasks, projects and labels the
+  user can see *right now*. Drop local copies of anything not listed —
+  that covers deletions and losing access to a private project. Getting
+  access to a private project sends its project and tasks as changed.
+- Comments come along when they're new or edited, and all comments of every
+  task in the response.
+
+A client loop:
+
+1. First start: `GET /sync/` → store everything and the cursor.
+2. Offline edits: queue them locally (creates with a client-chosen `uid`).
+3. Back online: send the queue in order (creates, then updates, then
+   deletes; retries are safe thanks to the `uid`), then
+   `GET /sync/?since=<cursor>` → apply changes, drop what's not in `ids`,
+   store the new cursor.
+
+### Conflicts: last write wins per field, or `expected`
+
+`PUT /tasks/{id}` only changes the fields you send, so two people editing
+*different* fields of a task never overwrite each other. For the *same*
+field the later write wins — unless the client sends **`expected`**: the
+values its edit was based on, e.g.
+
+```json
+{"priority": 3, "expected": {"priority": 1}}
+```
+
+If any of those fields has a different value on the server by now, nothing
+is saved and the answer is **409**:
+
+```json
+{"detail": {"message": "Changed on the server since; nothing was saved",
+            "conflicts": {"priority": {"expected": 1, "current": 2}},
+            "task": { … the current task … }}}
+```
+
+The client can then show both versions, or resend without `expected` to
+overwrite on purpose. Deadlines are compared as dates, label and dependency
+lists regardless of order. The task history records every change either way.

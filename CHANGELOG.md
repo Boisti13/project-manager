@@ -2,6 +2,17 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.31.0 — 2026-09-27
+
+### Added
+- **Sync endpoint** `GET /api/v1/sync/` for clients that keep their own copy (a future offline Windows app): without parameters a full snapshot of everything the user can see (flat tasks, projects, labels, comments, users) and a **cursor**; with `?since=<cursor>` only what changed since, plus deletions. Always includes the **ids** of everything currently visible, so clients drop what was deleted or became invisible; getting access to a private project sends its tasks along. A small overlap window makes sure nothing committed during a sync is missed.
+- **Conflict detection**: `PUT /tasks/{id}` accepts **`expected`** — the values an offline edit was based on; if one of those fields changed on the server meanwhile, nothing is saved and the answer is **409** with the conflicting fields and the current task. Without it, updates stay *last write wins per field* (only the fields sent change).
+- [docs/API.md](docs/API.md) → *Syncing* and *Conflicts* describe the client loop.
+
+### Under the hood
+- `backend/app/routers/sync.py`; changing a private project's members or privacy marks the project and its tasks as changed.
+- 3 new backend tests.
+
 ## v1.30.1 — 2026-09-27
 
 ### Changed

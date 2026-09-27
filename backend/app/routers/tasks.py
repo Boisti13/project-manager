@@ -151,11 +151,49 @@ def list_tasks(project_id: int = None, parent_id: int = None, current_user: User
 def get_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return access.require_task(db, current_user, task_id)
 
+EXPECTABLE = set(schemas.TaskUpdate.model_fields) - {"expected"}
+
+
+def _comparable(field, value):
+    if value is None:
+        return None
+    if field in ("label_ids", "blocked_by_ids"):
+        return sorted(int(v) for v in value)
+    if field == "deadline":
+        text = value.isoformat() if hasattr(value, "isoformat") else str(value)
+        return text[:10]  # deadlines are dates
+    if field == "status":
+        return getattr(value, "value", value)
+    return value
+
+
+def check_expected(db_task: Task, expected: dict):
+    """409 if a field the client based its edit on has changed since."""
+    unknown = set(expected) - EXPECTABLE
+    if unknown:
+        raise HTTPException(status_code=422, detail=f"Unknown fields in expected: {sorted(unknown)}")
+    current = schemas.SyncTask.model_validate(db_task).model_dump(mode="json")
+    conflicts = {
+        field: {"expected": value, "current": current[field]}
+        for field, value in expected.items()
+        if _comparable(field, value) != _comparable(field, current[field])
+    }
+    if conflicts:
+        raise HTTPException(status_code=409, detail={
+            "message": "Changed on the server since; nothing was saved",
+            "conflicts": conflicts,
+            "task": current,
+        })
+
+
 @router.put("/{task_id}", response_model=schemas.Task)
 def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     db_task = access.require_task(db, current_user, task_id)
 
     update_data = task_update.model_dump(exclude_unset=True)
+    expected = update_data.pop("expected", None)
+    if expected:
+        check_expected(db_task, expected)
     before = activity.snapshot(db_task)
     label_ids = update_data.pop("label_ids", None)
     if label_ids is not None:

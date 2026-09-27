@@ -3,7 +3,8 @@ from collections import Counter
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import Project, User
+from app.models import Project, Task, User
+from app.timeutil import utcnow
 from app import access, schemas, tombstones
 from app.auth import get_current_user
 
@@ -46,6 +47,7 @@ def apply_access(db: Session, project: Project, user: User, is_private, member_i
         project.is_private = False
         project.members = []
         return
+    before = (bool(project.is_private), {u.id for u in project.members})
     if is_private is not None:
         project.is_private = is_private
     if member_ids is not None:
@@ -55,6 +57,13 @@ def apply_access(db: Session, project: Project, user: User, is_private, member_i
         project.members = users
     if project.is_private and (creating or not user.is_admin) and user not in project.members:
         project.members = [*project.members, user]
+    if not creating and before != (bool(project.is_private), {u.id for u in project.members}):
+        # Who can see it changed: send the project and its tasks to syncing
+        # clients again, so people who just got access receive them.
+        project.updated_at = utcnow()
+        for p in [project, *db.query(Project).filter(Project.parent_id == project.id)]:
+            p.updated_at = utcnow()
+            tombstones.touch_tasks(db, (tid for (tid,) in db.query(Task.id).filter(Task.project_id == p.id)))
 
 
 @router.post("/", response_model=schemas.Project)

@@ -196,6 +196,10 @@ class TaskUpdate(BaseModel):
     recurrence_interval: Optional[int] = Field(default=None, ge=1, le=365)
     label_ids: Optional[List[int]] = None
     blocked_by_ids: Optional[List[int]] = None
+    # Optional compare-and-set for offline clients: the values the edit was
+    # based on. If one of these fields has changed on the server since, the
+    # update is refused with 409 and the current task (see docs/API.md).
+    expected: Optional[dict] = None
 
 class Task(TaskBase):
     id: int
@@ -239,3 +243,40 @@ class Comment(BaseModel):
     body: str
     created_at: datetime
     edited_at: Optional[datetime] = None
+
+
+# Sync (routers/sync.py)
+class SyncTask(TaskBase):
+    """A task as in /tasks/, but flat (no nested subtasks)."""
+    id: int
+    uid: str
+    completed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+class SyncUser(BaseModel):
+    id: int
+    username: str
+    is_active: bool
+
+class SyncIds(BaseModel):
+    """Everything the user can currently see: drop local copies of anything
+    not listed (deleted, or no longer visible)."""
+    tasks: List[int]
+    projects: List[int]
+    labels: List[int]
+
+class SyncResponse(BaseModel):
+    cursor: str  # pass as ?since= next time
+    full: bool
+    tasks: List[SyncTask]
+    projects: List[Project]
+    labels: List[Label]
+    comments: List[Comment]
+    users: List[SyncUser]
+    deletions: List["DeletionEntry"]
+    ids: SyncIds
+
+SyncResponse.model_rebuild()
