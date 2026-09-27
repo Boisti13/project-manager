@@ -27,5 +27,7 @@ test('describes activity entries', () => {
   assert.strictEqual(d('recurrence', null, 'week:1'), 'made it repeat weekly');
   assert.strictEqual(d('recurrence', null, 'day:3'), 'made it repeat every 3 days');
   assert.strictEqual(d('recurrence', 'day:3', null), 'stopped repeating it');
+  assert.strictEqual(d('recurrence', null, 'week:1;days=0,3'), 'made it repeat every Mon, Thu');
+  assert.strictEqual(d('recurrence', null, 'day:3;from=completion'), 'made it repeat 3 days after completion');
   assert.strictEqual(d('next_created', null, '2026-11-01'), 'created the next occurrence (due <2026-11-01>)');
 });

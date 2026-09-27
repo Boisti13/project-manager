@@ -122,6 +122,14 @@ class Label(BaseModel):
 
 # Task schemas
 RecurrenceUnit = Literal["day", "week", "month", "year"]
+RecurrenceMonthly = Literal["day", "last_day", "last_workday", "first_workday", "weekday", "last_weekday"]
+RecurrenceFrom = Literal["schedule", "completion"]
+
+
+def _check_weekdays(days):
+    if days is not None and any(d < 0 or d > 6 for d in days):
+        raise ValueError("weekdays are 0 (Monday) to 6 (Sunday)")
+    return days
 
 class TaskBase(BaseModel):
     title: str
@@ -135,8 +143,16 @@ class TaskBase(BaseModel):
     assignee_id: Optional[int] = None
     recurrence_unit: Optional[RecurrenceUnit] = None
     recurrence_interval: Optional[int] = Field(default=None, ge=1, le=365)
+    recurrence_weekdays: Optional[List[int]] = None  # weeks only; 0 = Monday
+    recurrence_monthly: Optional[RecurrenceMonthly] = None  # months/years only
+    recurrence_from: Optional[RecurrenceFrom] = None
     label_ids: List[int] = []
     blocked_by_ids: List[int] = []
+
+    @field_validator("recurrence_weekdays")
+    @classmethod
+    def _weekdays(cls, v):
+        return _check_weekdays(v)
 
 class TaskCreate(TaskBase):
     # Client-chosen uid (offline apps): sending the same uid again returns
@@ -194,8 +210,16 @@ class TaskUpdate(BaseModel):
     assignee_id: Optional[int] = None
     recurrence_unit: Optional[RecurrenceUnit] = None
     recurrence_interval: Optional[int] = Field(default=None, ge=1, le=365)
+    recurrence_weekdays: Optional[List[int]] = None  # weeks only; 0 = Monday
+    recurrence_monthly: Optional[RecurrenceMonthly] = None  # months/years only
+    recurrence_from: Optional[RecurrenceFrom] = None
     label_ids: Optional[List[int]] = None
     blocked_by_ids: Optional[List[int]] = None
+
+    @field_validator("recurrence_weekdays")
+    @classmethod
+    def _weekdays(cls, v):
+        return _check_weekdays(v)
     # Optional compare-and-set for offline clients: the values the edit was
     # based on. If one of these fields has changed on the server since, the
     # update is refused with 409 and the current task (see docs/API.md).

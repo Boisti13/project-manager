@@ -177,8 +177,8 @@ function TaskItem({
             </span>
           )}
           {task.recurrence_unit && (
-            <span className="task-repeat" title={describeRecurrence(task.recurrence_unit, task.recurrence_interval)}>
-              ↻ {shortRecurrence(task.recurrence_unit, task.recurrence_interval)}
+            <span className="task-repeat" title={describeRecurrence(task.recurrence_unit, task.recurrence_interval, task)}>
+              ↻ {shortRecurrence(task.recurrence_unit, task.recurrence_interval, task)}
             </span>
           )}
           {task.deadline && (

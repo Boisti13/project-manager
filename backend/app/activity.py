@@ -15,7 +15,17 @@ def _status(task: Task):
 
 
 def _recurrence(task: Task):
-    return f"{task.recurrence_unit}:{task.recurrence_interval or 1}" if task.recurrence_unit else None
+    """'week:1', plus ';days=0,3', ';monthly=last_day', ';from=completion'."""
+    if not task.recurrence_unit:
+        return None
+    text = f"{task.recurrence_unit}:{task.recurrence_interval or 1}"
+    if task.recurrence_days:
+        text += f";days={task.recurrence_days}"
+    if task.recurrence_monthly:
+        text += f";monthly={task.recurrence_monthly}"
+    if task.recurrence_from:
+        text += f";from={task.recurrence_from}"
+    return text
 
 
 def snapshot(task: Task) -> dict:

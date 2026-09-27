@@ -9,9 +9,16 @@ export function formatDay(iso) {
   return m ? new Date(+m[1], m[2] - 1, +m[3]).toLocaleDateString(locale()) : iso || '';
 }
 
+// "week:1;days=0,3;monthly=last_day;from=completion" (backend/app/activity.py)
 function repeatText(value) {
-  const [unit, n] = (value || '').split(':');
-  return recurrenceHow(unit, parseInt(n, 10) || 1);
+  const [head, ...parts] = (value || '').split(';');
+  const [unit, n] = head.split(':');
+  const opts = Object.fromEntries(parts.map((p) => p.split('=')));
+  return recurrenceHow(unit, parseInt(n, 10) || 1, {
+    recurrence_weekdays: opts.days ? opts.days.split(',').map(Number) : null,
+    recurrence_monthly: opts.monthly || null,
+    recurrence_from: opts.from || null,
+  });
 }
 
 /** What happened, without the actor: "changed status from To Do to Done". */

@@ -88,7 +88,7 @@ function TaskBoard({
             </span>
           )}
           {task.recurrence_unit && (
-            <span className="task-repeat">↻ {shortRecurrence(task.recurrence_unit, task.recurrence_interval)}</span>
+            <span className="task-repeat">↻ {shortRecurrence(task.recurrence_unit, task.recurrence_interval, task)}</span>
           )}
           {progress.total > 0 && (
             <span className="board-chip" title={t('Subtasks done')}>

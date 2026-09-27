@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from app.recurrence import add_interval, next_deadline
+from app.recurrence import Rule, add_interval, next_deadline
 from app.timeutil import utcnow
 
 
@@ -39,9 +39,9 @@ def test_add_interval(start, unit, n, expected):
 def test_next_deadline_skips_ahead_past_today():
     now = datetime(2026, 9, 26, 15, 0)
     # weekly task due 3 weeks ago: next is the first slot not before today
-    assert next_deadline(datetime(2026, 9, 5), "week", 1, now) == datetime(2026, 9, 26)
+    assert next_deadline(datetime(2026, 9, 5), Rule("week", 1), now) == datetime(2026, 9, 26)
     # no deadline: counted from today
-    assert next_deadline(None, "day", 3, now) == datetime(2026, 9, 29)
+    assert next_deadline(None, Rule("day", 3), now) == datetime(2026, 9, 29)
 
 
 def test_ticking_creates_the_next_occurrence(client, admin, alice):

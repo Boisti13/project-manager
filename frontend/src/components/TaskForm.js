@@ -5,6 +5,7 @@ import { parseBulk, countNested } from '../bulkParse';
 import '../styles/TaskForm.css';
 import { t, tn } from '../i18n';
 import { STATUSES, statusName } from '../names';
+import { WORKDAYS, weekdayName, weekdayOf, ordinal } from '../recurrence';
 
 const bulkPlaceholder = () =>
   t(
@@ -90,6 +91,9 @@ function TaskForm({
     parent_task_id: parentTask ? parentTask.id : null,
     recurrence_unit: null,
     recurrence_interval: 1,
+    recurrence_weekdays: [],
+    recurrence_monthly: 'day',
+    recurrence_from: 'schedule',
     label_ids: [],
     blocked_by_ids: [],
   });
@@ -106,12 +110,45 @@ function TaskForm({
         assignee_id: task.assignee_id || null,
         recurrence_unit: task.recurrence_unit || null,
         recurrence_interval: task.recurrence_interval || 1,
+        recurrence_weekdays: task.recurrence_weekdays || [],
+        recurrence_monthly: task.recurrence_monthly || 'day',
+        recurrence_from: task.recurrence_from || 'schedule',
         parent_task_id: task.parent_task_id || null,
         label_ids: task.label_ids || [],
         blocked_by_ids: task.blocked_by_ids || [],
       });
     }
   }, [task]);
+
+  const deadlineWeekday = weekdayOf(formData.deadline);
+
+  // "Every workday" is a shortcut for weekly on Mon–Fri.
+  const repeatChoice =
+    formData.recurrence_unit === 'week' &&
+    formData.recurrence_interval === 1 &&
+    formData.recurrence_weekdays.length === 5 &&
+    WORKDAYS.every((d) => formData.recurrence_weekdays.includes(d))
+      ? 'workdays'
+      : formData.recurrence_unit || '';
+
+  const setRepeatChoice = (value) =>
+    setFormData((prev) =>
+      value === 'workdays'
+        ? { ...prev, recurrence_unit: 'week', recurrence_interval: 1, recurrence_weekdays: [...WORKDAYS] }
+        : {
+            ...prev,
+            recurrence_unit: value || null,
+            recurrence_weekdays: repeatChoice === 'workdays' ? [] : prev.recurrence_weekdays,
+          }
+    );
+
+  const toggleWeekday = (d) =>
+    setFormData((prev) => ({
+      ...prev,
+      recurrence_weekdays: prev.recurrence_weekdays.includes(d)
+        ? prev.recurrence_weekdays.filter((x) => x !== d)
+        : [...prev.recurrence_weekdays, d].sort(),
+    }));
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -148,6 +185,10 @@ function TaskForm({
       ...formData,
       deadline,
       recurrence_interval: formData.recurrence_unit ? formData.recurrence_interval : null,
+      recurrence_weekdays:
+        formData.recurrence_unit === 'week' && formData.recurrence_weekdays.length ? formData.recurrence_weekdays : null,
+      recurrence_monthly: ['month', 'year'].includes(formData.recurrence_unit) ? formData.recurrence_monthly : null,
+      recurrence_from: formData.recurrence_unit ? formData.recurrence_from : null,
     });
   };
 
@@ -317,19 +358,15 @@ function TaskForm({
         <div className="form-group">
           <label htmlFor="repeat-unit">{t('Repeat')}</label>
           <div className="repeat-row">
-            <select
-              id="repeat-unit"
-              name="recurrence_unit"
-              value={formData.recurrence_unit || ''}
-              onChange={handleChange}
-            >
+            <select id="repeat-unit" value={repeatChoice} onChange={(e) => setRepeatChoice(e.target.value)}>
               <option value="">{t("Doesn't repeat")}</option>
               <option value="day">{t('Every day')}</option>
+              <option value="workdays">{t('Every workday (Mon–Fri)')}</option>
               <option value="week">{t('Every week')}</option>
               <option value="month">{t('Every month')}</option>
               <option value="year">{t('Every year')}</option>
             </select>
-            {formData.recurrence_unit && (
+            {formData.recurrence_unit && repeatChoice !== 'workdays' && (
               <label className="repeat-interval">
                 {t('every')}
                 <input
@@ -345,9 +382,68 @@ function TaskForm({
               </label>
             )}
           </div>
+          {formData.recurrence_unit === 'week' && repeatChoice !== 'workdays' && (
+            <div className="repeat-days" role="group" aria-label={t('On these days')}>
+              {[0, 1, 2, 3, 4, 5, 6].map((d) => (
+                <button
+                  type="button"
+                  key={d}
+                  className={formData.recurrence_weekdays.includes(d) ? 'on' : ''}
+                  aria-pressed={formData.recurrence_weekdays.includes(d)}
+                  onClick={() => toggleWeekday(d)}
+                >
+                  {weekdayName(d)}
+                </button>
+              ))}
+              {formData.recurrence_weekdays.length === 0 && (
+                <small className="repeat-hint">{t('No day picked: the same weekday as the deadline.')}</small>
+              )}
+            </div>
+          )}
+          {['month', 'year'].includes(formData.recurrence_unit) && (
+            <label className="repeat-option">
+              {t('On')}
+              <select name="recurrence_monthly" value={formData.recurrence_monthly} onChange={handleChange}>
+                <option value="day">
+                  {formData.deadline
+                    ? t('day {day} of the month', { day: parseInt(formData.deadline.slice(8, 10), 10) })
+                    : t('the same day of the month')}
+                </option>
+                <option value="last_day">{t('the last day of the month')}</option>
+                <option value="last_workday">{t('the last workday of the month')}</option>
+                <option value="first_workday">{t('the first workday of the month')}</option>
+                <option value="weekday">
+                  {deadlineWeekday
+                    ? deadlineWeekday.nth >= 5
+                      ? t('the last {weekday}', { weekday: weekdayName(deadlineWeekday.weekday, 'long') })
+                      : t('the {nth} {weekday}', {
+                          nth: ordinal(deadlineWeekday.nth),
+                          weekday: weekdayName(deadlineWeekday.weekday, 'long'),
+                        })
+                    : t('the same weekday as the deadline (e.g. 2nd Tuesday)')}
+                </option>
+                <option value="last_weekday">
+                  {deadlineWeekday
+                    ? t('the last {weekday}', { weekday: weekdayName(deadlineWeekday.weekday, 'long') })
+                    : t('the last such weekday of the month')}
+                </option>
+              </select>
+            </label>
+          )}
+          {formData.recurrence_unit && (
+            <label className="repeat-option">
+              {t('Next date')}
+              <select name="recurrence_from" value={formData.recurrence_from} onChange={handleChange}>
+                <option value="schedule">{t('follows the schedule (from the deadline)')}</option>
+                <option value="completion">{t('counts from when it was ticked off')}</option>
+              </select>
+            </label>
+          )}
           {formData.recurrence_unit && (
             <small className="repeat-hint">
-              {formData.deadline
+              {formData.recurrence_from === 'completion'
+                ? t('Ticking it off creates the next one, counted from that day; subtasks come along as a fresh checklist.')
+                : formData.deadline
                 ? t('Ticking it off creates the next one with the deadline moved forward; subtasks come along as a fresh checklist.')
                 : t('Ticking it off creates the next one, due one interval after today; subtasks come along as a fresh checklist.')}
             </small>

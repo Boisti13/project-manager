@@ -2,6 +2,19 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.32.0 — 2026-09-27
+
+### Added
+- **Better repeat rules** in the task form (*Repeat*):
+  - **Every workday (Mon–Fri)** as a choice of its own, and **weekday buttons** for weekly repeats: *every Mon + Thu*, *every 2 weeks on Friday*.
+  - For monthly and yearly repeats, **On**: the same day (as before), **the last day**, **the last workday**, **the first workday**, **the same weekday** as the deadline (*the 2nd Tuesday*; a 5th weekday becomes the last one in shorter months) or **the last such weekday** (*the last Friday*).
+  - **Next date**: *follows the schedule* (as before) or **counts from when it was ticked off** (*3 days after completion*).
+  - Badges and tooltips say it (*↻ Mon, Thu*, *↻ last workday*, *↻ 3 d after done*), in English and German; the task history, export/import and the API carry the new settings.
+
+### Under the hood
+- Migration `0014`: `tasks.recurrence_weekdays`, `recurrence_monthly`, `recurrence_from`; `backend/app/recurrence.py` computes dates with a `Rule`.
+- 18 new backend tests (date cases checked against the calendar), frontend tests for the new texts.
+
 ## v1.31.0 — 2026-09-27
 
 ### Added

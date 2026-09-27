@@ -17,7 +17,7 @@ from app.version import APP_VERSION
 from app.models import Label, Project, Task, TaskComment, TaskStatus, User
 from app.routers.labels import next_label_color
 from app.routers.projects import next_color
-from app.routers.tasks import sync_completed_at
+from app.routers.tasks import normalize_recurrence, sync_completed_at
 
 router = APIRouter()
 
@@ -43,6 +43,9 @@ class TaskData(BaseModel):
     completed_at: Optional[datetime] = None
     recurrence_unit: Optional[Literal["day", "week", "month", "year"]] = None
     recurrence_interval: Optional[int] = Field(default=None, ge=1, le=365)
+    recurrence_weekdays: Optional[List[int]] = None
+    recurrence_monthly: Optional[Literal["day", "last_day", "last_workday", "first_workday", "weekday", "last_weekday"]] = None
+    recurrence_from: Optional[Literal["schedule", "completion"]] = None
     labels: List[str] = []  # by name; matched (or created) on import
     comments: List[CommentData] = []
     subtasks: List["TaskData"] = []
@@ -97,6 +100,9 @@ def _task_tree(task: Task, children: dict) -> dict:
         "completed_at": task.completed_at.isoformat() if task.completed_at else None,
         "recurrence_unit": task.recurrence_unit,
         "recurrence_interval": task.recurrence_interval,
+        "recurrence_weekdays": task.recurrence_weekdays,
+        "recurrence_monthly": task.recurrence_monthly,
+        "recurrence_from": task.recurrence_from,
         "labels": [l.name for l in task.labels],
         "comments": [
             {
@@ -215,8 +221,11 @@ def import_projects(data: ExportFile, current_user: User = Depends(get_current_u
                 completed_at=item.completed_at, project_id=project_id, parent_task_id=parent_id,
                 recurrence_unit=item.recurrence_unit,
                 recurrence_interval=(item.recurrence_interval or 1) if item.recurrence_unit else None,
+                recurrence_weekdays=[d for d in (item.recurrence_weekdays or []) if 0 <= d <= 6] or None,
+                recurrence_monthly=item.recurrence_monthly, recurrence_from=item.recurrence_from,
                 labels=list({id(l): l for l in (label(n) for n in item.labels if n.strip())}.values()),
             )
+            normalize_recurrence(task)
             sync_completed_at(task)
             db.add(task)
             db.flush()

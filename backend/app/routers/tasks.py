@@ -13,12 +13,22 @@ router = APIRouter()
 
 
 def normalize_recurrence(task: Task):
-    """A unit without an interval means "every 1"; no unit means no repeat."""
+    """A unit without an interval means "every 1"; no unit means no repeat.
+    Refinements only where they apply; defaults are stored as None."""
     if task.recurrence_unit:
         task.recurrence_interval = task.recurrence_interval or 1
+        if task.recurrence_unit != "week":
+            task.recurrence_weekdays = None
+        if task.recurrence_unit not in ("month", "year") or task.recurrence_monthly == "day":
+            task.recurrence_monthly = None
+        if task.recurrence_from == "schedule":
+            task.recurrence_from = None
     else:
         task.recurrence_unit = None
         task.recurrence_interval = None
+        task.recurrence_weekdays = None
+        task.recurrence_monthly = None
+        task.recurrence_from = None
 
 
 def record_spawn(db: Session, task: Task, actor: User):
