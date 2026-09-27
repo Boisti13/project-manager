@@ -12,10 +12,10 @@ import MyDay, { START_KEY } from './components/MyDay';
 import { detectLanguage, getLanguage, setLanguage, t } from './i18n';
 import { IS_DESKTOP } from './desktop/platform';
 import ConnectScreen from './components/desktop/ConnectScreen';
+import './App.css';
 
 // The Windows app loads its pages from files, where only #/… addresses work.
 const Router = IS_DESKTOP ? HashRouter : BrowserRouter;
-import './App.css';
 
 const REPO_URL = 'https://github.com/Boisti13/project-manager';
 
