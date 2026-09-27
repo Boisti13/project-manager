@@ -2,6 +2,19 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.28.0 — 2026-09-27
+
+### Added
+- **Personal API tokens** (Settings → **API tokens**): create a token for a script or another app (name, expiry: never / 30 / 90 days / 1 year), shown once with a copy button; the list shows prefix, created, last used and expiry; **Revoke** takes effect immediately. Send it as `Authorization: Bearer pm_…`.
+  - A token acts as its user (same projects, same admin rights), but can't manage tokens or change the password — that needs a password login.
+  - Only a SHA-256 hash is stored; deactivating a user blocks their tokens at once.
+- **Versioned API**: every endpoint is also available under **`/api/v1/…`** — the stable prefix for other clients (the unversioned `/api/…` paths stay for the web app).
+- **API documentation**: interactive docs at **`/api/docs`** (Swagger UI) and `/api/redoc`, the spec at `/api/openapi.json`; a guide with curl/Python examples in [docs/API.md](docs/API.md).
+
+### Under the hood
+- Migration `0012`: `api_tokens`; `backend/app/routers/tokens.py`; `auth.get_session_user` for password-login-only endpoints.
+- 5 new backend tests (129 in total).
+
 ## v1.27.0 — 2026-09-26
 
 ### Added

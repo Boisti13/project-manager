@@ -194,6 +194,23 @@ class TaskComment(Base):
     author = relationship("User")
 
 
+class ApiToken(Base):
+    """Personal API token (app/auth.py): for scripts and other apps. Only
+    the SHA-256 hash is stored; the token is shown once when created."""
+    __tablename__ = "api_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    token_hash = Column(String(64), nullable=False, unique=True)
+    prefix = Column(String(12), nullable=False)  # "pm_ab12cd34", to recognise it in the list
+    created_at = Column(DateTime, default=utcnow)
+    last_used_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=True)
+
+    user = relationship("User")
+
+
 class AppSetting(Base):
     """Instance-wide settings as key/value strings (see routers/settings.py)."""
     __tablename__ = "app_settings"

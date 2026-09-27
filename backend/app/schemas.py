@@ -39,6 +39,23 @@ class UserAdminUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_admin: Optional[bool] = None
 
+class ApiTokenCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    expires_in_days: Optional[int] = Field(default=None, ge=1, le=3650)  # None: never
+
+class ApiTokenInfo(BaseModel):
+    id: int
+    name: str
+    prefix: str
+    created_at: datetime
+    last_used_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ApiTokenCreated(ApiTokenInfo):
+    token: str  # shown once
+
 class Preferences(BaseModel):
     language: Optional[Literal["en", "de"]] = None  # None: follow the browser
 

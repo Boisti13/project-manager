@@ -236,3 +236,83 @@
   width: 16px;
   height: 16px;
 }
+
+/* Settings → API tokens */
+.token-created {
+  margin: 0 0 12px 0;
+  padding: 10px 12px;
+  border-radius: 4px;
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+  font-size: 13px;
+}
+
+.token-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.token-value code {
+  flex: 1 1 260px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.token-list {
+  list-style: none;
+  margin: 0 0 12px 0;
+  padding: 0;
+}
+
+.token-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.token-list li.expired .token-name {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.token-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.token-name code {
+  font-weight: normal;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.token-meta {
+  flex: 1 1 260px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.archive-form input.token-name-input {
+  width: 220px;
+}
+
+.token-form select {
+  padding: 6px 8px;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}

@@ -6,6 +6,7 @@ import ArchiveSettings from './ArchiveSettings';
 import AccountSettings from './AccountSettings';
 import BackupSettings from './BackupSettings';
 import LabelSettings from './LabelSettings';
+import ApiTokenSettings from './ApiTokenSettings';
 import '../styles/Settings.css';
 import { t } from '../i18n';
 
@@ -87,6 +88,8 @@ function Settings() {
       </div>
 
       <AccountSettings />
+
+      <ApiTokenSettings />
 
       <ArchiveSettings />
 

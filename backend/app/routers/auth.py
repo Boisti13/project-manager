@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 from app import schemas
-from app.auth import verify_password, get_password_hash, create_access_token, get_current_user
+from app.auth import verify_password, get_password_hash, create_access_token, get_current_user, get_session_user
 from app.routers.settings import read_settings
 
 router = APIRouter()
@@ -80,7 +80,7 @@ def update_preferences(data: schemas.Preferences, current_user: User = Depends(g
 
 
 @router.post("/change-password")
-def change_password(data: schemas.PasswordChange, current_user: User = Depends(get_current_user),
+def change_password(data: schemas.PasswordChange, current_user: User = Depends(get_session_user),
                     db: Session = Depends(get_db)):
     if not verify_password(data.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Current password is wrong")
