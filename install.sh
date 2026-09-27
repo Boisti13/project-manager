@@ -16,6 +16,11 @@
 #   -r, --repo URL      git repository to clone                (PM_REPO)
 #   -R, --restore FILE  load a backup (.dump from Settings -> Backup & export)
 #                       into this install, replacing its data   (PM_RESTORE)
+#       --no-https      serve plain HTTP only (no local CA)     (PM_HTTPS=0)
+#
+# HTTPS is on by default, with a certificate from a local CA created on this
+# machine (scripts/setup-https.sh); import http://<server>/ca.crt on your
+# devices once. See DEPLOYMENT.md -> HTTPS.
 set -euo pipefail
 
 REPO="${PM_REPO:-https://github.com/Boisti13/project-manager.git}"
@@ -23,6 +28,7 @@ BRANCH="${PM_BRANCH:-main}"
 INSTALL_DIR="${PM_DIR:-/opt/project-manager}"
 ASSUME_YES="${PM_YES:-0}"
 RESTORE="${PM_RESTORE:-}"
+HTTPS="${PM_HTTPS:-1}"
 NODE_MAJOR=20
 
 while [[ $# -gt 0 ]]; do
@@ -32,6 +38,7 @@ while [[ $# -gt 0 ]]; do
     -d|--dir) INSTALL_DIR="$2"; shift ;;
     -r|--repo) REPO="$2"; shift ;;
     -R|--restore) RESTORE="$2"; shift ;;
+    --no-https) HTTPS=0 ;;
     -h|--help) echo "Usage: install.sh [-y] [-b branch] [-d dir] [-r repo] [-R backup.dump]  (see the header of install.sh)"; exit 0 ;;
     *) echo "Unknown option: $1 (see --help)" >&2; exit 1 ;;
   esac
@@ -80,7 +87,7 @@ fi
 say "Installing system packages"
 apt-get update -qq
 apt-get install -y -qq ca-certificates curl gnupg git openssl \
-  python3 python3-venv python3-pip postgresql nginx supervisor cron >/dev/null
+  python3 python3-venv python3-pip postgresql nginx supervisor cron openssl >/dev/null
 
 node_major() { node -v 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/' || echo 0; }
 if [[ "$(node_major)" -lt 18 ]]; then
@@ -214,9 +221,18 @@ EOF
 chmod 644 /etc/cron.d/project-manager
 systemctl enable --now cron >/dev/null 2>&1 || true
 
+mkdir -p /etc/project-manager
+if [[ "$HTTPS" == 0 ]]; then
+  touch /etc/project-manager/no-https
+elif [[ -e /etc/project-manager/no-https ]]; then
+  echo "HTTPS stays off (/etc/project-manager/no-https exists)"
+else
+  say "Setting up HTTPS (local certificate authority)"
+  bash scripts/setup-https.sh || echo "HTTPS setup failed; serving plain HTTP for now"
+fi
+
 say "Configuring Nginx"
-sed "s#/opt/project-manager/frontend/build#$INSTALL_DIR/frontend/build#" deploy/nginx.conf \
-  > /etc/nginx/sites-available/project-manager
+PM_APP_DIR="$INSTALL_DIR" bash scripts/nginx-site.sh > /etc/nginx/sites-available/project-manager
 ln -sf /etc/nginx/sites-available/project-manager /etc/nginx/sites-enabled/project-manager
 rm -f /etc/nginx/sites-enabled/default
 nginx -t -q || die "nginx config test failed"
@@ -235,7 +251,15 @@ IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 echo
 echo "Done. Project Manager v$(cat VERSION) is running."
 echo
-echo "  http://${IP:-<this-host>}/"
+if grep -q "listen 443" /etc/nginx/sites-available/project-manager; then
+  echo "  https://${IP:-<this-host>}/"
+  echo
+  echo "HTTPS uses a certificate from a CA created on this machine. To get rid of"
+  echo "the browser warning, import it once on each device (see DEPLOYMENT.md):"
+  echo "  http://${IP:-<this-host>}/ca.crt"
+else
+  echo "  http://${IP:-<this-host>}/"
+fi
 echo
 if [[ -n "$RESTORE" ]]; then
   echo "Log in with an account from the restored backup."

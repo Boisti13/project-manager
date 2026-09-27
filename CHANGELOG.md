@@ -2,6 +2,20 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.29.0 — 2026-09-27
+
+### Added
+- **HTTPS with a local certificate authority.** [`scripts/setup-https.sh`](scripts/setup-https.sh) creates a CA on the server (once, 10 years) and a server certificate for its IP addresses, hostname, `<hostname>.local` and `localhost`, re-issued automatically when it's due within 30 days or the IP changes (the CA stays, so devices never re-import it).
+  - Nginx serves the app on **port 443**; port 80 redirects to HTTPS and hands out the CA certificate at **`/ca.crt`** (plus the health check for local scripts).
+  - Import the CA once per device to get rid of the browser warning — step-by-step for Windows, macOS, Android and iOS in [DEPLOYMENT.md → HTTPS](DEPLOYMENT.md#https).
+  - **Settings → About** shows the connection (🔒 HTTPS / ⚠ HTTP) with a download link for the CA certificate.
+  - `install.sh` sets it up (`--no-https` to skip), and **the next update turns it on for existing installs**; `touch /etc/project-manager/no-https` keeps plain HTTP.
+- The Proxmox helper script prints the `https://` address and the CA link.
+
+### Under the hood
+- `deploy/nginx-https.conf` next to the HTTP-only `deploy/nginx.conf`; `scripts/nginx-site.sh` prints the right one for install and updates. Both send `X-Forwarded-Proto`.
+- 3 new tests for the certificate script and config selection.
+
 ## v1.28.0 — 2026-09-27
 
 ### Added

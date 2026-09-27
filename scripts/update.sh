@@ -81,12 +81,21 @@ rm -rf frontend/build.old
 mv frontend/build.new frontend/build || fail "could not swap in the new build"
 rm -rf frontend/build.old
 
+step "Checking the HTTPS certificate"
+# Creates the local CA on the first run, renews the server certificate when
+# it's due or the IP changed (scripts/setup-https.sh). Off: no-https file.
+if [ -e /etc/project-manager/no-https ]; then
+  echo "HTTPS is turned off (/etc/project-manager/no-https)"
+elif [ -f /etc/nginx/sites-available/project-manager ]; then
+  bash scripts/setup-https.sh || echo "HTTPS setup failed; keeping plain HTTP"
+fi
+
 step "Syncing Nginx config"
-# Keep the live site config in step with deploy/nginx.conf; roll back if the
-# new one doesn't pass nginx -t.
+# Keep the live site config in step with deploy/nginx*.conf (see
+# scripts/nginx-site.sh); roll back if the new one doesn't pass nginx -t.
 SITE=/etc/nginx/sites-available/project-manager
 if [ -f "$SITE" ]; then
-  NEW="$(sed "s#/opt/project-manager/frontend/build#$APP_DIR/frontend/build#" deploy/nginx.conf)"
+  NEW="$(PM_APP_DIR="$APP_DIR" bash scripts/nginx-site.sh)"
   if [ "$NEW" != "$(cat "$SITE")" ]; then
     cp "$SITE" "$SITE.bak"
     printf '%s\n' "$NEW" > "$SITE"

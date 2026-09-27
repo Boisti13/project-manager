@@ -77,6 +77,21 @@ function Settings() {
             <span className="info-value">Project Manager{version ? ` v${version}` : ''}</span>
           </div>
           <div className="info-row">
+            <span className="info-label">{t('Connection')}</span>
+            <span className="info-value">
+              {window.location.protocol === 'https:' ? (
+                <>
+                  {t('🔒 HTTPS (encrypted)')} ·{' '}
+                  <a href="/ca.crt" download="project-manager-ca.crt">
+                    {t('CA certificate')}
+                  </a>
+                </>
+              ) : (
+                t('⚠ HTTP (not encrypted)')
+              )}
+            </span>
+          </div>
+          <div className="info-row">
             <span className="info-label">{t('Stack')}</span>
             <span className="info-value">FastAPI + React + PostgreSQL</span>
           </div>

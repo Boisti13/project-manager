@@ -9,7 +9,7 @@
 | PostgreSQL 14 | systemd, native package |
 | FastAPI backend | Supervisor (`project-manager-backend`), Uvicorn on 127.0.0.1:8000, Python venv, settings from `backend/.env` |
 | React frontend | Static production build in `frontend/build/`, served by Nginx — no Node process at runtime |
-| Nginx | :80 — `/api/*` → backend, everything else → `frontend/build/` ([`deploy/nginx.conf`](deploy/nginx.conf)) |
+| Nginx | :443 (HTTPS, local CA) — `/api/*` → backend, everything else → `frontend/build/` ([`deploy/nginx-https.conf`](deploy/nginx-https.conf)); :80 redirects to HTTPS and serves the CA certificate at `/ca.crt` |
 | Backups | `/var/backups/project-manager/`, nightly at 03:15 via `/etc/cron.d/project-manager` and before every update; newest 3 of each kind kept (see [Backups & Export](#backups--export)) |
 
 **Production runs `main`.** Ongoing work happens on `dev`, which can be tried on the live instance via Settings → Updates → *Switch to dev*; merge to `main`, tag a release (see [README.md](README.md#versioning)) and switch back when ready to ship.
@@ -61,6 +61,27 @@ The schema is managed by Alembic (`backend/alembic/`). The app no longer creates
   Always read the generated file — autogenerate misses things like enum value changes and renames. Use short sequential revision IDs (`--rev-id 0002`) to keep the history readable.
 - **Check models and DB agree**: `venv/bin/alembic check`
 - **Current revision**: `venv/bin/alembic current`
+
+## HTTPS
+
+The app is served over **HTTPS with a certificate from a local certificate authority** that [`scripts/setup-https.sh`](scripts/setup-https.sh) creates on the server (files in `/etc/project-manager/tls/`). `install.sh` and every update run it: the CA is made once (valid 10 years), the server certificate (valid ~2 years, for the server's IP addresses, its hostname, `<hostname>.local` and `localhost`) is re-issued automatically when it's due within 30 days or the IP changes. Plain HTTP (port 80) only serves the CA certificate and redirects everything else to HTTPS.
+
+### Trusting the certificate on your devices (once per device)
+
+Download the CA certificate — `http://<server>/ca.crt`, or **Settings → About → CA certificate** — and install it as a *trusted root*:
+
+- **Windows**: open the file → *Install Certificate…* → *Local Machine* (or *Current User*) → *Place all certificates in the following store* → **Trusted Root Certification Authorities** → Finish. Restart the browser. (Chrome and Edge use the Windows store; Firefox: *Settings → Privacy & Security → Certificates → View Certificates → Authorities → Import*, tick *Trust this CA to identify websites*.)
+- **macOS**: open the file (Keychain Access) → add to *System* → double-click it → *Trust* → *When using this certificate: Always Trust*.
+- **Android**: *Settings → Security → Encryption & credentials → Install a certificate → CA certificate* → choose the file.
+- **iPhone / iPad**: open `http://<server>/ca.crt` in Safari → *Allow* → *Settings → General → VPN & Device Management* → install the profile → then *Settings → General → About → Certificate Trust Settings* → enable it.
+
+Until a device trusts it, the browser shows a warning you can click through. The CA only vouches for this server: its key never leaves `/etc/project-manager/tls/ca.key` (readable by root only).
+
+### Other names, turning it off
+
+- **Extra names** (e.g. a DNS entry `pm.lan` in your router): `cd /opt/project-manager && PM_TLS_NAMES="pm.lan" scripts/setup-https.sh && systemctl reload nginx`. The names are remembered (`/etc/project-manager/tls/names`), so later updates keep them; `PM_TLS_NAMES=""` removes them again.
+- **Plain HTTP only**: `touch /etc/project-manager/no-https`, then re-run `scripts/nginx-site.sh > /etc/nginx/sites-available/project-manager && systemctl reload nginx` (or install with `--no-https`). Delete the file to turn HTTPS back on (the next update does the rest).
+- **Behind another reverse proxy** that terminates TLS: turn HTTPS off here and let the proxy forward to port 80; the app sends `X-Forwarded-Proto` through.
 
 ## Backups & Export
 

@@ -163,12 +163,15 @@ pct exec "$CTID" -- bash -c "
 trap - ERR
 
 IP=$(pct exec "$CTID" -- hostname -I | awk '{print $1}')
-pct set "$CTID" --description "$APP — http://$IP/
+pct set "$CTID" --description "$APP — https://$IP/ (CA certificate: http://$IP/ca.crt)
 https://github.com/Boisti13/project-manager" >/dev/null
 echo
 ok "$APP is running in container $CTID"
 echo
-echo "    http://$IP/"
+echo "    https://$IP/"
+echo
+echo "To avoid the browser warning, import the container's CA certificate once"
+echo "on each device: http://$IP/ca.crt (see DEPLOYMENT.md -> HTTPS)."
 echo
 if [[ -n "$PM_RESTORE_FILE" ]]; then
   echo "Log in with an account from the restored backup."
