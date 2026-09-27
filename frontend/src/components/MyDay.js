@@ -12,6 +12,7 @@ import '../styles/MyDay.css';
 import { t, locale } from '../i18n';
 import { priorityName } from '../names';
 import { notificationExcerpt } from './NotificationBell';
+import { useSyncRefresh } from '../desktop/useSyncRefresh';
 
 export const START_KEY = 'pm.startWithMyDay';
 const UNASSIGNED_KEY = 'pm.myDayUnassigned';
@@ -65,6 +66,7 @@ function MyDay() {
   useEffect(() => {
     load();
   }, [load]);
+  useSyncRefresh(load);
 
   const projectIndex = useMemo(() => buildProjectIndex(data?.projects || []), [data]);
   const labelIndex = useMemo(() => buildLabelIndex(data?.labels || []), [data]);

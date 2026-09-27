@@ -33,6 +33,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Assigned to me**: One click next to the search shows only your tasks, with a count of your open ones
 - **Dark Mode**: Toggle in the nav, persisted per browser, defaults to OS preference
 - **REST API & tokens**: Everything the app does is available as a documented REST API under `/api/v1` (interactive docs at `/api/docs`), for scripts and future apps. Personal **API tokens** (Settings → API tokens; optional expiry, revocable, stored hashed) act as their user but can't manage tokens or change the password — see [docs/API.md](docs/API.md). Groundwork for offline clients: UUIDs you can choose when creating (safe retries), reliable `updated_at`, a list of deletions, and **`/api/v1/sync`** (full snapshot or changes since a cursor) with optional conflict detection (`expected`) — the basis for an offline Windows app
+- **Windows app (in development)**: the same interface in its own window, with a local copy of your data — keeps working offline and syncs when the server is reachable again; see [desktop/README.md](desktop/README.md)
 - **In-app Updates**: Settings shows the running version/branch/commit; anyone can check a branch for updates, admins can update or switch branches (backup, pull, migrate, rebuild the frontend, sync the Nginx config, restart) with a live log; only one update runs at a time, also when one was started by hand
 - **Backups & Restore**: Automatic database backup **every night** (can be turned off) and before every update; *Back up now*, download, delete, upload and one-click **restore** (with automatic safety backup and rollback) in Settings for admins; keeps the newest N of each kind — nightly / other (default 3). Move a whole instance to a new server by restoring a backup there — also straight from the Proxmox helper script
 - **Export & Import**: Export a project (with categories, tasks, subtasks) or everything as JSON and import it into another account or installation; CSV export of all tasks for Excel — see [DEPLOYMENT.md](DEPLOYMENT.md#backups--export)
@@ -157,6 +158,8 @@ npm test                  # taskFilters (search/filter/sort/archive), projects (
 project-manager/
 ├── VERSION                  # Single source of truth for the app version
 ├── .github/workflows/ci.yml # Tests, build and shellcheck on every push
+├── .github/workflows/desktop.yml # Windows app: tests, build, installer
+├── desktop/                 # Windows app (Tauri shell; offline layer in frontend/src/desktop)
 ├── backend/
 │   ├── app/                 # FastAPI application (routers/, models.py, schemas.py, access.py = who sees what, ...)
 │   ├── alembic/versions/    # Database migrations

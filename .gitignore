@@ -64,3 +64,8 @@ frontend/build.old/
 
 # pytest
 .pytest_cache/
+
+# Windows app (desktop/): build output and generated files
+desktop/src-tauri/target/
+desktop/src-tauri/gen/
+desktop/src-tauri/icons/

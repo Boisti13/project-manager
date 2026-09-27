@@ -7,6 +7,8 @@ import AccountSettings from './AccountSettings';
 import BackupSettings from './BackupSettings';
 import LabelSettings from './LabelSettings';
 import ApiTokenSettings from './ApiTokenSettings';
+import DesktopSettings from './desktop/DesktopSettings';
+import { IS_DESKTOP } from '../desktop/platform';
 import '../styles/Settings.css';
 import { t } from '../i18n';
 
@@ -33,7 +35,7 @@ function Settings() {
     };
     loadStats();
 
-    fetch('/api/health')
+    authFetch('/api/health')
       .then((r) => r.json())
       .then((d) => setVersion(d.version))
       .catch(() => setVersion(null));
@@ -102,9 +104,12 @@ function Settings() {
         </div>
       </div>
 
+      {IS_DESKTOP && <DesktopSettings />}
+
       <AccountSettings />
 
-      <ApiTokenSettings />
+      {/* Managing tokens needs a password login; the Windows app uses a token itself. */}
+      {!IS_DESKTOP && <ApiTokenSettings />}
 
       <ArchiveSettings />
 
