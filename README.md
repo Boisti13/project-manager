@@ -35,7 +35,7 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **In-app Updates**: Settings shows the running version/branch/commit; anyone can check a branch for updates, admins can update or switch branches (backup, pull, migrate, rebuild the frontend, sync the Nginx config, restart) with a live log; only one update runs at a time, also when one was started by hand
 - **Backups & Restore**: Automatic database backup **every night** (can be turned off) and before every update; *Back up now*, download, delete, upload and one-click **restore** (with automatic safety backup and rollback) in Settings for admins; keeps the newest N of each kind — nightly / other (default 3). Move a whole instance to a new server by restoring a backup there — also straight from the Proxmox helper script
 - **Export & Import**: Export a project (with categories, tasks, subtasks) or everything as JSON and import it into another account or installation; CSV export of all tasks for Excel — see [DEPLOYMENT.md](DEPLOYMENT.md#backups--export)
-- **HTTPS**: Served over HTTPS with a certificate from a local CA created on the server (renewed automatically); import the CA once per device from `http://<server>/ca.crt` to get rid of the browser warning — see [DEPLOYMENT.md](DEPLOYMENT.md#https)
+- **HTTPS (optional)**: Plain HTTP by default (private network / VPN); one command turns on HTTPS with a certificate from a local CA created on the server (renewed automatically), imported once per device from `http://<server>/ca.crt` — see [DEPLOYMENT.md](DEPLOYMENT.md#https)
 - **Self-Hosted**: One-command install on Proxmox VE (creates the LXC for you) or into any Debian/Ubuntu LXC/VM, no Docker
 
 ## Screenshots

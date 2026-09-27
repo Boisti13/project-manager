@@ -5,8 +5,8 @@
 #
 #   scripts/nginx-site.sh > /etc/nginx/sites-available/project-manager
 #
-# Used by install.sh and scripts/update.sh. HTTPS is on unless
-# $PM_CONF_DIR/no-https exists (PM_CONF_DIR defaults to /etc/project-manager).
+# Used by install.sh and scripts/update.sh. HTTPS is opt-in: on while
+# $PM_CONF_DIR/https exists (PM_CONF_DIR defaults to /etc/project-manager).
 set -euo pipefail
 
 SRC_DIR="$(cd "$(dirname "$0")/.." && pwd)"   # templates come from this checkout
@@ -14,7 +14,7 @@ APP_DIR="${PM_APP_DIR:-$SRC_DIR}"              # paths in the config point here
 CONF_DIR="${PM_CONF_DIR:-/etc/project-manager}"
 TLS_DIR="${PM_TLS_DIR:-$CONF_DIR/tls}"
 
-if [[ ! -e "$CONF_DIR/no-https" && -s "$TLS_DIR/server.crt" && -s "$TLS_DIR/server.key" ]]; then
+if [[ -e "$CONF_DIR/https" && -s "$TLS_DIR/server.crt" && -s "$TLS_DIR/server.key" ]]; then
   template="$SRC_DIR/deploy/nginx-https.conf"
 else
   template="$SRC_DIR/deploy/nginx.conf"

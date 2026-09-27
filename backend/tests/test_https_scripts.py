@@ -64,13 +64,16 @@ def test_nginx_site_picks_https_when_ready(tmp_path):
     assert "listen 443" not in plain and "root /srv/pm/frontend/build;" in plain  # no certificate yet
 
     run("setup-https.sh", tls, PM_TLS_IPS="127.0.0.1")
+    # certificates alone don't turn it on: HTTPS is opt-in
+    assert "listen 443" not in run("nginx-site.sh", tls, **env)
+    (conf / "https").touch()
     https = run("nginx-site.sh", tls, **env)
     tls_path = str(tls).replace("\\", "/")
     assert "listen 443 ssl" in https and f"ssl_certificate {tls_path}/server.crt;" in https
     assert "return 301 https://" in https and "root /srv/pm/frontend/build;" in https
     assert f"alias {tls_path}/ca.crt;" in https
 
-    (conf / "no-https").touch()
+    (conf / "https").unlink()
     assert "listen 443" not in run("nginx-site.sh", tls, **env)
 
 

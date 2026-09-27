@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.30.1 — 2026-09-27
+
+### Changed
+- **HTTPS is opt-in**: new installs and updates serve plain HTTP unless `/etc/project-manager/https` exists (`install.sh --https`, `PM_HTTPS=1` for the Proxmox helper, or the commands in [DEPLOYMENT.md → HTTPS](DEPLOYMENT.md#https)). Plain HTTP is fine on a private network or behind a VPN such as ZeroTier; HTTPS with the local CA from v1.29.0 is still one command away. The old `no-https` marker isn't needed any more.
+
 ## v1.30.0 — 2026-09-27
 
 ### Added

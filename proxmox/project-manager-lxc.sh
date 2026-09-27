@@ -21,6 +21,7 @@
 #   CT_VLAN         VLAN tag                           (none)
 #   CT_PASSWORD     root password                      (none; use `pct enter`)
 #   PM_BRANCH       branch to install                  (main)
+#   PM_HTTPS        1: HTTPS with a local CA           (0: plain HTTP)
 #   PM_RESTORE_FILE backup (.dump) on this host to load into the new
 #                   container, e.g. one downloaded from Settings (none)
 set -euo pipefail
@@ -58,6 +59,7 @@ CT_VLAN="${CT_VLAN:-}"
 CT_PASSWORD="${CT_PASSWORD:-}"
 PM_BRANCH="${PM_BRANCH:-main}"
 PM_RESTORE_FILE="${PM_RESTORE_FILE:-}"
+PM_HTTPS="${PM_HTTPS:-0}"
 
 # ---- settings dialog -------------------------------------------------------
 if [[ "${UNATTENDED:-0}" != 1 && -t 0 ]] && command -v whiptail >/dev/null; then
@@ -158,21 +160,30 @@ pct exec "$CTID" -- bash -c "
   export DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
   apt-get update -qq && apt-get install -y -qq curl ca-certificates >/dev/null
   curl -fsSL '$RAW_BASE/$PM_BRANCH/install.sh' -o /root/project-manager-install.sh
-  bash /root/project-manager-install.sh --yes --branch '$PM_BRANCH' $RESTORE_ARG
+  PM_HTTPS='$PM_HTTPS' bash /root/project-manager-install.sh --yes --branch '$PM_BRANCH' $RESTORE_ARG
 "
 trap - ERR
 
 IP=$(pct exec "$CTID" -- hostname -I | awk '{print $1}')
-pct set "$CTID" --description "$APP — https://$IP/ (CA certificate: http://$IP/ca.crt)
+if [[ "$PM_HTTPS" == 1 ]]; then
+  URL="https://$IP/"
+  NOTE=" (CA certificate: http://$IP/ca.crt)"
+else
+  URL="http://$IP/"
+  NOTE=""
+fi
+pct set "$CTID" --description "$APP — $URL$NOTE
 https://github.com/Boisti13/project-manager" >/dev/null
 echo
 ok "$APP is running in container $CTID"
 echo
-echo "    https://$IP/"
+echo "    $URL"
 echo
-echo "To avoid the browser warning, import the container's CA certificate once"
-echo "on each device: http://$IP/ca.crt (see DEPLOYMENT.md -> HTTPS)."
-echo
+if [[ "$PM_HTTPS" == 1 ]]; then
+  echo "To avoid the browser warning, import the container's CA certificate once"
+  echo "on each device: http://$IP/ca.crt (see DEPLOYMENT.md -> HTTPS)."
+  echo
+fi
 if [[ -n "$PM_RESTORE_FILE" ]]; then
   echo "Log in with an account from the restored backup."
 else

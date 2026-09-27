@@ -9,7 +9,7 @@
 | PostgreSQL 14 | systemd, native package |
 | FastAPI backend | Supervisor (`project-manager-backend`), Uvicorn on 127.0.0.1:8000, Python venv, settings from `backend/.env` |
 | React frontend | Static production build in `frontend/build/`, served by Nginx — no Node process at runtime |
-| Nginx | :80 — `/api/*` → backend, everything else → `frontend/build/` ([`deploy/nginx.conf`](deploy/nginx.conf)). HTTPS is turned off here (`/etc/project-manager/no-https`): a private network, reached remotely over ZeroTier, which encrypts the traffic itself. New installs get HTTPS by default — see [HTTPS](#https) |
+| Nginx | :80 — `/api/*` → backend, everything else → `frontend/build/` ([`deploy/nginx.conf`](deploy/nginx.conf)). Plain HTTP (the default): a private network, reached remotely over ZeroTier, which encrypts the traffic itself — see [HTTPS](#https) |
 | Backups | `/var/backups/project-manager/`, nightly at 03:15 via `/etc/cron.d/project-manager` and before every update; newest 3 of each kind kept (see [Backups & Export](#backups--export)) |
 
 **Production runs `main`.** Ongoing work happens on `dev`, which can be tried on the live instance via Settings → Updates → *Switch to dev*; merge to `main`, tag a release (see [README.md](README.md#versioning)) and switch back when ready to ship.
@@ -64,7 +64,18 @@ The schema is managed by Alembic (`backend/alembic/`). The app no longer creates
 
 ## HTTPS
 
-The app is served over **HTTPS with a certificate from a local certificate authority** that [`scripts/setup-https.sh`](scripts/setup-https.sh) creates on the server (files in `/etc/project-manager/tls/`). `install.sh` and every update run it: the CA is made once (valid 10 years), the server certificate (valid ~2 years, for the server's IP addresses, its hostname, `<hostname>.local` and `localhost`) is re-issued automatically when it's due within 30 days or the IP changes. Plain HTTP (port 80) only serves the CA certificate and redirects everything else to HTTPS.
+**Off by default**: the app is served over plain HTTP, which is fine on a private network or when it's reached over a VPN that encrypts the traffic itself (ZeroTier, WireGuard, Tailscale). Turn HTTPS on when other people share the network, or for features browsers only allow over HTTPS (an installable app with offline mode):
+
+```bash
+cd /opt/project-manager
+touch /etc/project-manager/https
+bash scripts/setup-https.sh
+bash scripts/nginx-site.sh > /etc/nginx/sites-available/project-manager && nginx -t && systemctl reload nginx
+```
+
+(or install with `install.sh --https`, or `PM_HTTPS=1` for the Proxmox helper). `rm /etc/project-manager/https` and the last command turn it off again; the certificates stay for later.
+
+When on, the app is served over **HTTPS with a certificate from a local certificate authority** that [`scripts/setup-https.sh`](scripts/setup-https.sh) creates on the server (files in `/etc/project-manager/tls/`). Every update runs it again: the CA is made once (valid 10 years), the server certificate (valid ~2 years, for the server's IP addresses, its hostname, `<hostname>.local` and `localhost`) is re-issued automatically when it's due within 30 days or the IP changes. Plain HTTP (port 80) only serves the CA certificate and redirects everything else to HTTPS.
 
 ### Trusting the certificate on your devices (once per device)
 
@@ -77,11 +88,10 @@ Download the CA certificate — `http://<server>/ca.crt`, or **Settings → Abou
 
 Until a device trusts it, the browser shows a warning you can click through. Command-line tools: `curl --cacert ca.crt …` (Windows `curl.exe` also needs `--ssl-no-revoke`, since a private CA offers no revocation check). The CA only vouches for this server: its key never leaves `/etc/project-manager/tls/ca.key` (readable by root only).
 
-### Other names, turning it off
+### Other names, reverse proxies
 
 - **Extra names** (e.g. a DNS entry `pm.lan` in your router): `cd /opt/project-manager && PM_TLS_NAMES="pm.lan" scripts/setup-https.sh && systemctl reload nginx`. The names are remembered (`/etc/project-manager/tls/names`), so later updates keep them; `PM_TLS_NAMES=""` removes them again.
-- **Plain HTTP only**: `touch /etc/project-manager/no-https`, then re-run `scripts/nginx-site.sh > /etc/nginx/sites-available/project-manager && systemctl reload nginx` (or install with `--no-https`). Delete the file to turn HTTPS back on (the next update does the rest).
-- **Behind another reverse proxy** that terminates TLS: turn HTTPS off here and let the proxy forward to port 80; the app sends `X-Forwarded-Proto` through.
+- **Behind another reverse proxy** that terminates TLS: leave HTTPS off here and let the proxy forward to port 80; the app sends `X-Forwarded-Proto` through.
 
 ## Backups & Export
 

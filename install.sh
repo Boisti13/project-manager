@@ -16,11 +16,13 @@
 #   -r, --repo URL      git repository to clone                (PM_REPO)
 #   -R, --restore FILE  load a backup (.dump from Settings -> Backup & export)
 #                       into this install, replacing its data   (PM_RESTORE)
-#       --no-https      serve plain HTTP only (no local CA)     (PM_HTTPS=0)
+#       --https         serve HTTPS with a local CA              (PM_HTTPS=1)
+#       --no-https      back to plain HTTP                       (PM_HTTPS=0)
 #
-# HTTPS is on by default, with a certificate from a local CA created on this
-# machine (scripts/setup-https.sh); import http://<server>/ca.crt on your
-# devices once. See DEPLOYMENT.md -> HTTPS.
+# Plain HTTP by default (fine on a private network or over a VPN such as
+# ZeroTier). With --https, a CA is created on this machine
+# (scripts/setup-https.sh); import http://<server>/ca.crt on your devices
+# once. See DEPLOYMENT.md -> HTTPS.
 set -euo pipefail
 
 REPO="${PM_REPO:-https://github.com/Boisti13/project-manager.git}"
@@ -28,7 +30,7 @@ BRANCH="${PM_BRANCH:-main}"
 INSTALL_DIR="${PM_DIR:-/opt/project-manager}"
 ASSUME_YES="${PM_YES:-0}"
 RESTORE="${PM_RESTORE:-}"
-HTTPS="${PM_HTTPS:-1}"
+HTTPS="${PM_HTTPS:-}"   # 1: turn on, 0: turn off, empty: keep as it is (off on new installs)
 NODE_MAJOR=20
 
 while [[ $# -gt 0 ]]; do
@@ -38,6 +40,7 @@ while [[ $# -gt 0 ]]; do
     -d|--dir) INSTALL_DIR="$2"; shift ;;
     -r|--repo) REPO="$2"; shift ;;
     -R|--restore) RESTORE="$2"; shift ;;
+    --https) HTTPS=1 ;;
     --no-https) HTTPS=0 ;;
     -h|--help) echo "Usage: install.sh [-y] [-b branch] [-d dir] [-r repo] [-R backup.dump]  (see the header of install.sh)"; exit 0 ;;
     *) echo "Unknown option: $1 (see --help)" >&2; exit 1 ;;
@@ -221,12 +224,15 @@ EOF
 chmod 644 /etc/cron.d/project-manager
 systemctl enable --now cron >/dev/null 2>&1 || true
 
+# HTTPS is opt-in: on while /etc/project-manager/https exists (a re-run of
+# this script keeps whatever was chosen before, unless --https is given).
 mkdir -p /etc/project-manager
-if [[ "$HTTPS" == 0 ]]; then
-  touch /etc/project-manager/no-https
-elif [[ -e /etc/project-manager/no-https ]]; then
-  echo "HTTPS stays off (/etc/project-manager/no-https exists)"
-else
+if [[ "$HTTPS" == 1 ]]; then
+  touch /etc/project-manager/https
+elif [[ "$HTTPS" == 0 ]]; then
+  rm -f /etc/project-manager/https
+fi
+if [[ -e /etc/project-manager/https ]]; then
   say "Setting up HTTPS (local certificate authority)"
   bash scripts/setup-https.sh || echo "HTTPS setup failed; serving plain HTTP for now"
 fi

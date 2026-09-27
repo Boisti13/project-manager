@@ -10,8 +10,8 @@
 # only re-issued when it's missing, expires within 30 days, or the names/IPs
 # changed; the CA stays, so devices never need to import it again.
 #
-# Run by install.sh and scripts/update.sh unless HTTPS is turned off
-# (touch /etc/project-manager/no-https).
+# Run by install.sh and scripts/update.sh when HTTPS is turned on
+# (/etc/project-manager/https exists; off by default).
 #
 #   PM_TLS_DIR    where the files live         (/etc/project-manager/tls)
 #   PM_TLS_NAMES  extra DNS names, space-separated (e.g. "pm.lan pm.example.com");

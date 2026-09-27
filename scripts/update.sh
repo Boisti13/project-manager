@@ -82,12 +82,12 @@ mv frontend/build.new frontend/build || fail "could not swap in the new build"
 rm -rf frontend/build.old
 
 step "Checking the HTTPS certificate"
-# Creates the local CA on the first run, renews the server certificate when
-# it's due or the IP changed (scripts/setup-https.sh). Off: no-https file.
-if [ -e /etc/project-manager/no-https ]; then
-  echo "HTTPS is turned off (/etc/project-manager/no-https)"
-elif [ -f /etc/nginx/sites-available/project-manager ]; then
+# Only when HTTPS is turned on (/etc/project-manager/https): renews the server
+# certificate when it's due or the IP changed (scripts/setup-https.sh).
+if [ -e /etc/project-manager/https ]; then
   bash scripts/setup-https.sh || echo "HTTPS setup failed; keeping plain HTTP"
+else
+  echo "HTTPS is off (plain HTTP; see DEPLOYMENT.md -> HTTPS to turn it on)"
 fi
 
 step "Syncing Nginx config"
