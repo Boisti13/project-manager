@@ -57,6 +57,28 @@
   background-color: #ff7043;
 }
 
+.sync-update {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.desktop-update {
+  margin: 12px 0;
+}
+
+.desktop-update p {
+  margin: 0 0 8px;
+}
+
+.desktop-update-notes {
+  white-space: pre-wrap;
+  font-size: 0.9em;
+  max-height: 12em;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  opacity: 0.85;
+}
+
 .sync-conflicts {
   margin: 12px 0;
   padding: 10px 12px;

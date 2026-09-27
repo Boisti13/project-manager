@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { engine } from '../../desktop';
+import { checkForUpdate, subscribeUpdates, updateStatus } from '../../desktop/updater';
 import { timeAgo } from '../TaskComments';
 import { t, tn } from '../../i18n';
 import '../../styles/Desktop.css';
@@ -16,6 +17,18 @@ function SyncStatus() {
   useEffect(() => {
     const timer = setInterval(() => setS(engine.status()), 30000);
     return () => clearInterval(timer);
+  }, []);
+
+  // New app versions: look on start and every six hours.
+  const [u, setU] = useState(updateStatus());
+  useEffect(() => {
+    const off = subscribeUpdates(setU);
+    checkForUpdate();
+    const timer = setInterval(checkForUpdate, 6 * 60 * 60 * 1000);
+    return () => {
+      off();
+      clearInterval(timer);
+    };
   }, []);
 
   const problems = s.conflicts.length;
@@ -51,6 +64,11 @@ function SyncStatus() {
       {problems > 0 && (
         <button type="button" className="sync-pill sync-bad" onClick={() => navigate('/settings')}>
           ⚠ {tn(problems, 'one change not saved', '{n} changes not saved')}
+        </button>
+      )}
+      {u.available && (
+        <button type="button" className="sync-pill sync-update" onClick={() => navigate('/settings')}>
+          ⬆ {t('Update {version}', { version: u.available.version })}
         </button>
       )}
     </span>

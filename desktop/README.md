@@ -25,6 +25,12 @@ with a local copy of your data.
 3. Work as usual. The **status in the top bar** shows whether the app is
    online, how many changes are waiting, and when it last synced; click it to
    sync now.
+4. **Updates** (from v0.2.0): the app looks for a new version when it starts
+   and every six hours. When there is one, the top bar shows *⬆ Update
+   x.y.z*; *Settings → Windows app → Install and restart* downloads it,
+   installs it and restarts the app. Changes still waiting to be sent are kept.
+   *Check for updates* looks right away. (v0.1.0 has no updater: install
+   v0.2.0 once by hand.)
 
 ### Offline
 
@@ -49,7 +55,7 @@ with a local copy of your data.
 
 - `desktop/src-tauri/` — the [Tauri](https://tauri.app) shell: a native
   window with the system's WebView2 showing the React frontend. No
-  server-side code; no Rust commands so far.
+  server-side code; the only plugin is the updater.
 - `frontend/src/desktop/` — the offline layer, active only in builds with
   `REACT_APP_TARGET=desktop`:
   - `store.js` — the local copy (IndexedDB in the app's WebView profile),
@@ -57,7 +63,8 @@ with a local copy of your data.
     (items created offline get temporary negative ids and a UUID),
   - `sync.js` — sends the queue (with `expected` values, so concurrent edits
     become conflicts instead of overwrites), then `GET /api/v1/sync/?since=…`,
-  - `index.js` — `desktopFetch()`, connecting and disconnecting.
+  - `index.js` — `desktopFetch()`, connecting and disconnecting,
+  - `updater.js` — checking for and installing new versions (see *Updates*).
 - The server needs **v1.31.0 or newer** (sync endpoint); the app checks when
   connecting. See [docs/API.md](../docs/API.md) → *Keeping a copy*.
 
@@ -79,4 +86,26 @@ standard on Windows 10/11).
 Releases: bump the version in `src-tauri/tauri.conf.json`,
 `src-tauri/Cargo.toml` and `frontend/src/desktop/platform.js` (a test checks
 they match), add a section to [CHANGELOG.md](CHANGELOG.md), and push a tag
-`desktop-vX.Y.Z` — the workflow attaches the installer to a GitHub release.
+`desktop-vX.Y.Z` — the workflow attaches the installer to a GitHub release
+and updates the update feed, so installed apps offer it.
+
+## Updates
+
+The app uses the [Tauri updater](https://v2.tauri.app/plugin/updater/). It
+reads `latest.json` from the GitHub release **`desktop-updates`** (a fixed
+release that only holds that file; the workflow replaces it on every
+`desktop-v*` tag). The file names the newest version, its release notes (the
+CHANGELOG section), the installer's download URL and its **update signature**.
+The app installs only installers whose signature matches the public key built
+into it (`plugins.updater.pubkey` in `tauri.conf.json`). The installer runs
+in passive mode: it shows progress, needs no clicks and restarts the app.
+
+Signing updates is free and unrelated to Windows code signing. The key pair
+is a minisign key; the private key and its password are stored as the
+repository secrets **`TAURI_SIGNING_PRIVATE_KEY`** and
+**`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`**. Builds without them (e.g. pull
+requests from forks) skip the update signature; a release without it fails.
+
+**Keep a backup of the private key and its password** (e.g. in a password
+manager). Without them no update can be signed that installed apps accept —
+they would have to reinstall a version with a new key by hand.
