@@ -3,6 +3,11 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.5.1 — 2026-09-28
+
+### Changed
+- **Categories stand out more** in the task list: a light band in the project's color, larger bold name (server v1.42.1 interface).
+
 ## v0.5.0 — 2026-09-28
 
 ### Added

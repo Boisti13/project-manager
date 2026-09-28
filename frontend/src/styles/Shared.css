@@ -70,8 +70,11 @@
 }
 
 .shared-section .category-name {
-  margin: 0 0 6px;
-  font-size: 13px;
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--project-color);
+  border-radius: 6px;
+  background-color: color-mix(in srgb, var(--project-color) 10%, transparent);
 }
 
 .shared-section-desc {

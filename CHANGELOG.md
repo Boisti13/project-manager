@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.42.1 — 2026-09-28
+
+### Changed
+- **Categories stand out more** on the Tasks page: each category header is a light band in its project's color with a colored bar on the left, and the name is larger and bold (14px capitals — between a task title and the project name, never larger than the project). Categories on the Projects page and the shared page use the same, larger name.
+
 ## v1.42.0 — 2026-09-28
 
 ### Added

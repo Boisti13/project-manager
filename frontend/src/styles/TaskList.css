@@ -273,9 +273,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 0 6px 2px;
-  margin-bottom: 6px;
-  border-bottom: 1px dashed var(--color-border);
+  padding: 6px 8px 6px 10px;
+  margin-bottom: 8px;
+  border-left: 3px solid var(--project-color);
+  border-radius: 6px;
+  /* a light band in the project's color, so categories stand out between the tasks */
+  background-color: color-mix(in srgb, var(--project-color) 10%, transparent);
 }
 
 .category-toggle {
@@ -296,10 +299,11 @@
 }
 
 .category-name {
-  font-size: 13px;
-  font-weight: 600;
+  /* capitals at 14px: between a task title (15px) and the project name (16px) */
+  font-size: 14px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: var(--project-color);
 }
 
