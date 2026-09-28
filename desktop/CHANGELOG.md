@@ -3,6 +3,12 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.2.3 — 2026-09-28
+
+### Changed
+- **Priority is picked by name** — Low / Medium / High / Critical instead of a number (server v1.36.0 interface).
+- **Delete buttons show a trash can** instead of ✕ (server v1.36.1 interface).
+
 ## v0.2.2 — 2026-09-28
 
 ### Changed
