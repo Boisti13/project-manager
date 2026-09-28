@@ -161,7 +161,7 @@ cd frontend
 npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, views (board/calendar), labels, dependencies, myday, exportCsv, bulkParse, recurrence, activity, i18n
 ```
 
-**Browser tests** — the real app (backend + production build) in Chromium, with Playwright: logging in, creating and editing tasks inline, estimates, deleting and ticking off with Undo (incl. repeating tasks), keyboard shortcuts, search, saved filters, changing several tasks at once (incl. all-or-nothing), templates, My day, the weekly review, German, and the phone layout:
+**Browser tests** — the real app (backend + production build) in Chromium, with Playwright: logging in, creating and editing tasks inline, estimates, deleting and ticking off with Undo (incl. repeating tasks), keyboard shortcuts, search, saved filters, changing several tasks at once (incl. all-or-nothing), templates, the board and calendar (moving cards, dropping on another day), Move up and drag-and-drop reordering, links to a task, My day, the weekly review, German, and the phone layout:
 
 ```bash
 cd frontend && npm run build && cd ..
@@ -193,6 +193,8 @@ project-manager/
 │   ├── public/              # index.html, web app manifest, app icons
 │   └── src/
 │       ├── components/      # React components (TaskList, Settings, UpdatePanel, ...)
+│       │   └── tasklist/    # Parts of the Tasks page: data, filter bar, groups, select mode, Undo, shortcuts
+│       ├── taskOps.js       # Subtrees, changes to several tasks, reordering (pure, tested)
 │       ├── taskFilters.js   # Pure search/filter/sort/archive logic for the task tree
 │       ├── exportCsv.js     # CSV export of all tasks
 │       ├── i18n.js          # t()/tn(), language detection; texts in locales/de.js

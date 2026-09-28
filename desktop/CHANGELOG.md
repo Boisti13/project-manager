@@ -3,6 +3,11 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.2.7 — 2026-09-28
+
+### Fixed
+- **Shift+click in select mode** picks the whole range between two tasks (server v1.39.1 interface).
+
 ## v0.2.6 — 2026-09-28
 
 ### Added

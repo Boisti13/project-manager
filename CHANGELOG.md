@@ -9,6 +9,7 @@ All notable changes, newest first. Versions follow [semantic versioning](README.
 
 ### Under the hood
 - **Browser tests** (`e2e/`, Playwright + Chromium): the real app with its production build — logging in, creating and editing tasks, estimates, Undo, keyboard shortcuts, search, saved filters, changing several tasks at once, templates, My day, the weekly review, German and the phone layout. They run in CI on every push (they found the Shift+click bug on their first run); screenshots of failures are kept.
+- **The Tasks page split up**: `TaskList.js` went from about 1,450 to 700 lines. Its parts are in `components/tasklist/` — loading the data, the filter bar, the project/category groups, select mode, delete with Undo, saved filters, keyboard shortcuts and their help — and the logic without React in `taskOps.js` (subtrees, changes to several tasks, reordering) with its own tests. No change in behavior: the browser tests pass unchanged before and after.
 
 ## v1.39.0 — 2026-09-28
 

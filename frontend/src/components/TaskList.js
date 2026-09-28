@@ -4,28 +4,28 @@ import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
 import TaskBoard from './TaskBoard';
 import TaskCalendar from './TaskCalendar';
+import UndoToast from './UndoToast';
+import BulkEditBar from './BulkEditBar';
+import FilterBar from './tasklist/FilterBar';
+import TaskGroups from './tasklist/TaskGroups';
+import KeyboardHelp from './tasklist/KeyboardHelp';
+import { sendJson } from './tasklist/taskApi';
+import { useTaskData, useOptionalList } from './tasklist/useTaskData';
+import { useUndoableDelete } from './tasklist/useUndoableDelete';
+import { useSelection } from './tasklist/useSelection';
+import { useSavedFilters } from './tasklist/useSavedFilters';
+import { useTaskShortcuts } from './tasklist/useTaskShortcuts';
 import { flattenVisible } from '../views';
 import { buildLabelIndex } from '../labels';
 import { buildDependencyIndex } from '../dependencies';
-import LabelChips from './LabelChips';
 import { authFetch, useAuth } from '../context/AuthContext';
-import {
-  DEFAULT_FILTERS,
-  buildTaskTree,
-  filtersFromParams,
-  filtersToParams,
-  hasActiveFilters,
-} from '../taskFilters';
-import { buildProjectIndex, groupTasksByProject, groupTaskCount } from '../projects';
+import { DEFAULT_FILTERS, buildTaskTree, filtersFromParams, filtersToParams, hasActiveFilters } from '../taskFilters';
+import { buildProjectIndex, groupTasksByProject } from '../projects';
+import { childIndex, remainingMinutes } from '../estimate';
+import { bulkChanges, siblingsOf, reorderUpdates } from '../taskOps';
 import '../styles/TaskList.css';
 import '../styles/TaskViews.css';
 import { t, tn } from '../i18n';
-import { STATUSES, statusName } from '../names';
-import { useSyncRefresh } from '../desktop/useSyncRefresh';
-import { childIndex, remainingMinutes, totalRemaining, formatEstimate } from '../estimate';
-import TrashIcon from './TrashIcon';
-import UndoToast, { UNDO_MS } from './UndoToast';
-import BulkEditBar from './BulkEditBar';
 
 const VIEWS = [
   { id: 'list', label: () => t('☰ List') },
@@ -35,33 +35,6 @@ const VIEWS = [
 
 const COLLAPSED_KEY = 'pm.collapsedGroups';
 
-// Keyboard shortcuts on the Tasks page (shown with "?").
-const SHORTCUTS = () => [
-  ['n', t('New task')],
-  ['/', t('Search')],
-  ['j / k', t('Next / previous task')],
-  ['e', t('Edit')],
-  ['x', t('Mark done / not done')],
-  ['a', t('Add subtask')],
-  ['c', t('Comments & history')],
-  ['o', t('Open / close subtasks')],
-  ['Space', t('Select it, to change several at once')],
-  ['Del', t('Delete (the selected ones, when selecting)')],
-  ['Esc', t('Clear the selection')],
-  ['Ctrl+Enter', t('Save the form')],
-  ['?', t('Show / hide this list')],
-];
-
-// Same filters, whatever the order of the parameters.
-const sameQuery = (a, b) => {
-  const norm = (q) => {
-    const p = new URLSearchParams(q);
-    p.sort();
-    return p.toString();
-  };
-  return norm(a) === norm(b);
-};
-
 function loadCollapsedGroups() {
   try {
     return new Set(JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '[]'));
@@ -70,50 +43,57 @@ function loadCollapsedGroups() {
   }
 }
 
+// Adds or removes `id` in a Set held in state.
+const toggleIn = (setter, id) =>
+  setter((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  });
+
+// The Tasks page: list, board and calendar views of the filtered task tree,
+// with the task form, select mode, Undo and keyboard shortcuts. The parts
+// live in ./tasklist/ and ../taskOps.js.
 function TaskList() {
   const { currentUser } = useAuth();
-  const [tasks, setTasks] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [labels, setLabels] = useState([]);
-  const [archiveAfterDays, setArchiveAfterDays] = useState(null);
-  // Expanded "Completed (n)" rows; collapsed by default, not persisted.
-  const [openCompleted, setOpenCompleted] = useState(new Set());
-  // Set from a notification link (?task=ID&comments=1).
-  const [focusCommentsId, setFocusCommentsId] = useState(null);
-  // Phones only: the filter selects are folded away behind a button.
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  // Tasks whose comments match the search text (searched server-side).
-  const [commentMatchIds, setCommentMatchIds] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const filters = useMemo(() => filtersFromParams(searchParams), [searchParams]);
+  const filtering = hasActiveFilters(filters);
+  const listView = filters.view !== 'board' && filters.view !== 'calendar';
+
+  // A delete waiting out its Undo time (useUndoableDelete); its tasks stay hidden on reload.
+  const pendingDelete = useRef(null);
+  const { tasks, setTasks, projects, users, labels, setLabels, archiveAfterDays, loading, error, setError, loadData } =
+    useTaskData(pendingDelete);
+  const [templates, reloadTemplates] = useOptionalList('/api/v1/templates/');
+  // The bar at the bottom: { key, message, onUndo? }.
+  const [undo, setUndo] = useState(null);
+  const deleteTasks = useUndoableDelete({ pendingDelete, setTasks, reload: loadData, setError, setUndo });
+  const selection = useSelection({ view: filters.view, tasks, filters });
+
+  // The task form: new (optionally in a project / below a parent) or edit.
   const [showForm, setShowForm] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [parentTaskForNew, setParentTaskForNew] = useState(null);
   const [projectForNew, setProjectForNew] = useState(null);
+
+  // What's open: project/category sections (remembered), subtasks, Completed rows.
   const [collapsedGroups, setCollapsedGroups] = useState(loadCollapsedGroups);
   const [expandedIds, setExpandedIds] = useState(new Set());
   // Rows the user collapsed even though a filter match auto-expanded them.
   const [collapsedIds, setCollapsedIds] = useState(new Set());
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const searchRef = useRef(null);
+  // Expanded "Completed (n)" rows; collapsed by default, not persisted.
+  const [openCompleted, setOpenCompleted] = useState(new Set());
+  // Set from a notification link (?task=ID&comments=1).
+  const [focusCommentsId, setFocusCommentsId] = useState(null);
+  // Tasks whose comments match the search text (searched server-side).
+  const [commentMatchIds, setCommentMatchIds] = useState(null);
   // Keyboard: the row picked with j/k, and the shortcut list.
   const [keyboardId, setKeyboardId] = useState(null);
   const [showKeys, setShowKeys] = useState(false);
-  const [savedFilters, setSavedFilters] = useState([]);
-  const [templates, setTemplates] = useState([]);
-  // The bar at the bottom: { key, message, onUndo? }.
-  const [undo, setUndo] = useState(null);
-  // A delete waiting out its undo time: { taskIds, ids, timer }.
-  const pendingDelete = useRef(null);
-  // Select mode: tasks picked to change together.
-  const [selectMode, setSelectMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState(new Set());
-  const selectAnchor = useRef(null);
-
-  const filters = useMemo(() => filtersFromParams(searchParams), [searchParams]);
-  const filtering = hasActiveFilters(filters);
+  const searchRef = useRef(null);
 
   const setFilter = (key, value) => {
     setSearchParams(filtersToParams({ ...filters, [key]: value }), { replace: true });
@@ -124,6 +104,8 @@ function TaskList() {
     setSearchParams(filtersToParams({ ...DEFAULT_FILTERS, sort: filters.sort, view: filters.view }), { replace: true });
     setCollapsedIds(new Set());
   };
+
+  const saved = useSavedFilters({ filters, setSearchParams, setError, onApplied: () => setCollapsedIds(new Set()) });
 
   useEffect(() => {
     const q = filters.q.trim();
@@ -146,129 +128,18 @@ function TaskList() {
     };
   }, [filters.q]);
 
-  // Keyboard shortcuts (unless typing somewhere); see onShortcut below.
-  const shortcutRef = useRef(null);
-  useEffect(() => {
-    const onKey = (e) => shortcutRef.current?.(e);
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  // ---- the form
 
-  // Saved filters: optional extra, so a failure (e.g. the Windows app offline)
-  // just leaves the list empty.
-  const loadSavedFilters = useCallback(async () => {
-    try {
-      const res = await authFetch('/api/v1/saved-filters/');
-      if (res.ok) setSavedFilters(await res.json());
-    } catch {
-      // not shown
-    }
-  }, []);
-  useEffect(() => {
-    loadSavedFilters();
-  }, [loadSavedFilters]);
-
-  const loadTemplates = useCallback(async () => {
-    try {
-      const res = await authFetch('/api/v1/templates/');
-      if (res.ok) setTemplates(await res.json());
-    } catch {
-      // "From template" just isn't offered
-    }
-  }, []);
-  useEffect(() => {
-    loadTemplates();
-  }, [loadTemplates]);
-
-  // Deletes wait UNDO_MS for "Undo"; leaving the page sends them right away.
-  const sendDelete = async (p) => {
-    try {
-      for (const id of p.taskIds) {
-        const response = await authFetch(`/api/tasks/${id}`, { method: 'DELETE', keepalive: true });
-        if (!response.ok && response.status !== 404) throw new Error(await parseApiError(response));
-      }
-    } catch (err) {
-      setError(t('Failed to delete task: {error}', { error: err.message }));
-      loadData(true);
-    }
-  };
-  const flushDelete = () => {
-    const p = pendingDelete.current;
-    if (!p) return;
-    clearTimeout(p.timer);
-    pendingDelete.current = null;
-    sendDelete(p);
-  };
-  const flushRef = useRef(flushDelete);
-  flushRef.current = flushDelete;
-  useEffect(() => {
-    const flush = () => flushRef.current();
-    window.addEventListener('pagehide', flush);
-    return () => {
-      window.removeEventListener('pagehide', flush);
-      flush();
-    };
-  }, []);
-
-  // Load once when the page opens.
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  // Windows app: show what a background sync brought in.
-  useSyncRefresh(() => loadData(true));
-
-  const parseApiError = async (response) => {
-    try {
-      const data = await response.json();
-      if (Array.isArray(data.detail)) {
-        return data.detail.map((d) => `${d.loc[d.loc.length - 1]}: ${d.msg}`).join(', ');
-      }
-      return data.detail || `HTTP ${response.status}`;
-    } catch {
-      return `HTTP ${response.status}`;
-    }
-  };
-
-  const fetchJson = async (url, options) => {
-    const response = await authFetch(url, options);
-    if (!response.ok) throw new Error(await parseApiError(response));
-    return response.json();
-  };
-
-  // quiet: refresh in the background (Windows app sync) without the loading screen
-  const loadData = async (quiet = false) => {
-    try {
-      if (!quiet) setLoading(true);
-      const [tasksRes, projectsRes, usersRes, settingsRes, labelsRes] = await Promise.all([
-        fetchJson('/api/tasks/'),
-        fetchJson('/api/projects/'),
-        fetchJson('/api/users/'),
-        fetchJson('/api/settings/'),
-        fetchJson('/api/labels/'),
-      ]);
-      setLabels(labelsRes);
-      const pending = pendingDelete.current;
-      setTasks(pending ? tasksRes.filter((x) => !pending.ids.has(x.id)) : tasksRes);
-      setProjects(projectsRes);
-      setUsers(usersRes);
-      setArchiveAfterDays(settingsRes.archive_after_days);
-      setError(null);
-    } catch (err) {
-      setError(t('Failed to load data: {error}', { error: err.message }));
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  const closeForm = () => {
+    setShowForm(false);
+    setSelectedTask(null);
+    setParentTaskForNew(null);
+    setProjectForNew(null);
   };
 
   const handleCreateTask = async (formData) => {
     try {
-      await fetchJson('/api/tasks/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      await sendJson('/api/tasks/', 'POST', formData);
       if (formData.parent_task_id) {
         setExpandedIds((prev) => new Set(prev).add(formData.parent_task_id));
       }
@@ -283,11 +154,7 @@ function TaskList() {
   // "Several (one per line)": one request, all tasks or none.
   const handleBulkCreate = async (payload) => {
     try {
-      const res = await fetchJson('/api/tasks/bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const res = await sendJson('/api/tasks/bulk', 'POST', payload);
       // Show the new tree: expand the parent and every new task with subtasks.
       const created = new Set(res.ids);
       const hasKids = new Set();
@@ -305,9 +172,7 @@ function TaskList() {
         hasKids.forEach((id) => created.has(id) && next.add(id));
         return next;
       });
-      setShowForm(false);
-      setParentTaskForNew(null);
-      setProjectForNew(null);
+      closeForm();
       await loadData();
     } catch (err) {
       setError(t('Failed to create tasks: {error}', { error: err.message }));
@@ -316,11 +181,7 @@ function TaskList() {
 
   const handleUpdateTask = async (formData) => {
     try {
-      await fetchJson(`/api/tasks/${selectedTask.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      await sendJson(`/api/tasks/${selectedTask.id}`, 'PUT', formData);
       setSelectedTask(null);
       setShowForm(false);
       await loadData();
@@ -329,133 +190,160 @@ function TaskList() {
     }
   };
 
-  // Gone from the list right away; really deleted when the undo time is up.
-  const deleteTasks = (pickedIds, onRestored = null) => {
-    const byId = new Map(tasks.map((x) => [x.id, x]));
-    const picked = new Set(pickedIds.filter((id) => byId.has(id)));
-    if (picked.size === 0) return;
-    flushDelete();
-    // Only the top ones are sent; their subtasks go with them.
-    const underPicked = (x) => {
-      for (let p = byId.get(x.parent_task_id); p; p = byId.get(p.parent_task_id)) if (picked.has(p.id)) return true;
-      return false;
-    };
-    const top = [...picked].map((id) => byId.get(id)).filter((x) => !underPicked(x));
-    const ids = new Set(picked);
-    let grew = true;
-    while (grew) {
-      grew = false;
-      for (const x of tasks) {
-        if (x.parent_task_id != null && ids.has(x.parent_task_id) && !ids.has(x.id)) {
-          ids.add(x.id);
-          grew = true;
-        }
-      }
+  const handleTemplateCreate = async (templateId, payload) => {
+    try {
+      const res = await sendJson(`/api/v1/templates/${templateId}/use`, 'POST', payload);
+      setExpandedIds((prev) => {
+        const next = new Set(prev);
+        if (payload.parent_task_id) next.add(payload.parent_task_id);
+        if (res.ids.length > 1) next.add(res.ids[0]);
+        return next;
+      });
+      closeForm();
+      await loadData();
+    } catch (err) {
+      setError(t('Failed to create tasks: {error}', { error: err.message }));
     }
-    setTasks((ts) => ts.filter((x) => !ids.has(x.id)));
-    const p = { taskIds: top.map((x) => x.id), ids };
-    p.timer = setTimeout(() => {
-      if (pendingDelete.current === p) {
-        pendingDelete.current = null;
-        sendDelete(p);
-      }
-    }, UNDO_MS + 300);
-    pendingDelete.current = p;
-    const subtasks = ids.size - top.length;
+  };
+
+  const handleSaveTemplate = async (task) => {
+    const name = window.prompt(t('Save “{title}” with its subtasks as a template named:', { title: task.title }), task.title);
+    if (!name || !name.trim()) return;
+    try {
+      await sendJson('/api/v1/templates/', 'POST', { name: name.trim(), task_id: task.id });
+      await reloadTemplates();
+      setUndo({ key: Date.now(), message: t('Saved as template “{name}”', { name: name.trim() }) });
+    } catch (err) {
+      setError(t('Failed to save the template: {error}', { error: err.message }));
+    }
+  };
+
+  const handleEditTask = (task) => {
+    setSelectedTask(task);
+    setParentTaskForNew(null);
+    setShowForm(true);
+  };
+
+  const handleAddSubtask = (task) => {
+    setSelectedTask(null);
+    setParentTaskForNew(task);
+    setShowForm(true);
+  };
+
+  const openNewTask = (projectId = null) => {
+    setSelectedTask(null);
+    setParentTaskForNew(null);
+    setProjectForNew(projectId);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // ---- changes from the rows, board and calendar
+
+  // "Undo" after ticking a task off: back to the status it had.
+  const offerUndoDone = (task) =>
     setUndo({
       key: Date.now(),
-      message:
-        (top.length === 1
-          ? t('Deleted “{title}”', { title: top[0].title })
-          : tn(top.length, 'Deleted one task', 'Deleted {n} tasks')) +
-        (subtasks ? ' ' + tn(subtasks, '(and one subtask)', '(and {n} subtasks)') : ''),
-      onUndo: () => {
-        if (pendingDelete.current === p) {
-          clearTimeout(p.timer);
-          pendingDelete.current = null;
+      message: t('Marked “{title}” done', { title: task.title }),
+      onUndo: async () => {
+        try {
+          await sendJson(`/api/tasks/${task.id}`, 'PUT', { status: task.status });
+        } catch (err) {
+          setError(t('Failed to update task: {error}', { error: err.message }));
         }
-        loadData(true).then(() => onRestored?.());
+        await loadData(true);
       },
     });
-  };
 
-  const handleDeleteTask = (taskId) => deleteTasks([taskId]);
-
-  // ---- select mode
-  const shownIds = () => [...document.querySelectorAll('.task-list .task-item')].map((r) => parseInt(r.id.slice(5), 10));
-
-  const toggleSelect = (id, range = false) => {
-    // Read now: the updater below runs later, after the anchor has moved on.
-    const order = shownIds();
-    const a = order.indexOf(selectAnchor.current);
-    const b = order.indexOf(id);
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (range && a !== -1 && b !== -1) {
-        order.slice(Math.min(a, b), Math.max(a, b) + 1).forEach((x) => next.add(x));
-      } else if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-    selectAnchor.current = id;
-  };
-
-  const exitSelect = () => {
-    setSelectMode(false);
-    setSelectedIds(new Set());
-    selectAnchor.current = null;
-  };
-
-  // One change for every selected task (per task only where it changes
-  // something), with Undo putting back what each had.
-  const applyBulk = async ({ field, value }) => {
-    const num = (v) => (v === 'none' ? null : parseInt(v, 10));
-    const changeFor = (task) => {
-      const labelIds = task.label_ids || [];
-      switch (field) {
-        case 'status':
-          return { status: value };
-        case 'priority':
-          return { priority: parseInt(value, 10) };
-        case 'project_id':
-          return { project_id: num(value) };
-        case 'assignee_id':
-          return { assignee_id: num(value) };
-        case 'deadline':
-          return { deadline: value ? `${value}T00:00:00` : null };
-        case 'add_label':
-          return labelIds.includes(num(value)) ? null : { label_ids: [...labelIds, num(value)] };
-        case 'remove_label':
-          return labelIds.includes(num(value)) ? { label_ids: labelIds.filter((x) => x !== num(value)) } : null;
-        default:
-          return null;
-      }
-    };
-    const updates = [];
-    const before = [];
-    for (const task of tasks.filter((x) => selectedIds.has(x.id))) {
-      const change = changeFor(task);
-      if (!change) continue;
-      const old = {};
-      let differs = false;
-      for (const [key, v] of Object.entries(change)) {
-        old[key] = key === 'label_ids' ? task.label_ids || [] : task[key] ?? null;
-        if (JSON.stringify(old[key]) !== JSON.stringify(v)) differs = true;
-      }
-      if (!differs) continue;
-      updates.push({ id: task.id, ...change });
-      before.push({ id: task.id, ...old });
+  // Changes the row right away and rolls back if the request fails.
+  const changeOptimistically = async (task, fields, failureText) => {
+    const previous = tasks;
+    setTasks((ts) => ts.map((x) => (x.id === task.id ? { ...x, ...fields } : x)));
+    try {
+      await sendJson(`/api/tasks/${task.id}`, 'PUT', fields);
+      return true;
+    } catch (err) {
+      setTasks(previous);
+      setError(failureText(err.message));
+      return false;
     }
+  };
+
+  const updateFailed = (error) => t('Failed to update task: {error}', { error });
+
+  // Checkbox: done <-> todo.
+  const handleToggleDone = async (task) => {
+    const status = task.status === 'done' ? 'todo' : 'done';
+    if (!(await changeOptimistically(task, { status }, updateFailed))) return;
+    if (status === 'done') offerUndoDone(task);
+    // A repeating task just created its next occurrence on the server.
+    if (status === 'done' && task.recurrence_unit) await loadData();
+  };
+
+  // Board: move a card to another column.
+  const handleSetStatus = async (task, status) => {
+    if (!(await changeOptimistically(task, { status }, updateFailed))) return;
+    if (status === 'done' && task.status !== 'done') offerUndoDone(task);
+    // Reload for completed_at (Done column order) and repeating tasks.
+    if (status === 'done' || task.status === 'done') await loadData();
+  };
+
+  // Calendar: drop a task on another day.
+  const handleReschedule = (task, day) =>
+    changeOptimistically(task, { deadline: `${day}T00:00:00` }, (error) =>
+      t('Failed to move the deadline: {error}', { error })
+    );
+
+  const handleDeleteTask = (taskId) => deleteTasks(tasks, [taskId]);
+
+  const handleReorder = async (draggedId, targetId) => {
+    const updates = reorderUpdates(tasks, draggedId, targetId);
+    if (updates.length === 0) return;
+    try {
+      await Promise.all(updates.map((u) => sendJson(`/api/tasks/${u.id}`, 'PUT', { order: u.order })));
+      await loadData();
+    } catch (err) {
+      setError(t('Failed to reorder tasks: {error}', { error: err.message }));
+    }
+  };
+
+  const getMoveState = (task) => {
+    const reorderable = filters.sort === 'manual';
+    if (!reorderable) return { up: false, down: false, reorderable };
+    const sibs = siblingsOf(tasks, task);
+    const i = sibs.findIndex((x) => x.id === task.id);
+    return { up: i > 0, down: i >= 0 && i < sibs.length - 1, reorderable };
+  };
+
+  const handleMove = (task, dir) => {
+    const sibs = siblingsOf(tasks, task);
+    const target = sibs[sibs.findIndex((x) => x.id === task.id) + dir];
+    if (target) handleReorder(task.id, target.id);
+  };
+
+  const handleMoveTo = async (task, projectId) => {
+    if ((task.project_id ?? null) === projectId) return;
+    try {
+      await sendJson(`/api/tasks/${task.id}`, 'PUT', { project_id: projectId });
+      await loadData();
+      navigate(`/?task=${task.id}`, { replace: true });
+    } catch (err) {
+      setError(t('Failed to move task: {error}', { error: err.message }));
+    }
+  };
+
+  const handleCommentCount = (taskId, n) =>
+    setTasks((ts) => ts.map((x) => (x.id === taskId && x.comment_count !== n ? { ...x, comment_count: n } : x)));
+
+  // ---- select mode: one change for all selected tasks, with Undo per task
+
+  const applyBulk = async (change) => {
+    const { updates, before } = bulkChanges(tasks, selection.ids, change);
     if (updates.length === 0) {
       setUndo({ key: Date.now(), message: t('Nothing to change — they’re all like that already.') });
       return;
     }
-    const send = (list) =>
-      fetchJson('/api/v1/tasks/bulk-update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ updates: list }),
-      });
+    const send = (list) => sendJson('/api/v1/tasks/bulk-update', 'POST', { updates: list });
     try {
       await send(updates);
       await loadData(true);
@@ -470,7 +358,7 @@ function TaskList() {
           }
           await loadData(true);
           // Back in view (e.g. un-done): selected again.
-          setSelectedIds((prev) => new Set([...prev, ...updates.map((u) => u.id)]));
+          selection.setIds((prev) => new Set([...prev, ...updates.map((u) => u.id)]));
         },
       });
     } catch (err) {
@@ -479,201 +367,18 @@ function TaskList() {
   };
 
   const deleteSelected = () => {
-    const picked = [...selectedIds];
-    deleteTasks(picked, () => setSelectedIds(new Set(picked)));
-    setSelectedIds(new Set());
+    const picked = [...selection.ids];
+    deleteTasks(tasks, picked, () => selection.setIds(new Set(picked)));
+    selection.clear();
   };
 
-  // "Undo" after ticking a task off: back to the status it had.
-  const offerUndoDone = (task) =>
-    setUndo({
-      key: Date.now(),
-      message: t('Marked “{title}” done', { title: task.title }),
-      onUndo: async () => {
-        try {
-          await fetchJson(`/api/tasks/${task.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: task.status }),
-          });
-        } catch (err) {
-          setError(t('Failed to update task: {error}', { error: err.message }));
-        }
-        await loadData(true);
-      },
-    });
+  // ---- views
 
-  const handleSaveTemplate = async (task) => {
-    const name = window.prompt(t('Save “{title}” with its subtasks as a template named:', { title: task.title }), task.title);
-    if (!name || !name.trim()) return;
-    try {
-      await fetchJson('/api/v1/templates/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), task_id: task.id }),
-      });
-      await loadTemplates();
-      setUndo({ key: Date.now(), message: t('Saved as template “{name}”', { name: name.trim() }) });
-    } catch (err) {
-      setError(t('Failed to save the template: {error}', { error: err.message }));
-    }
-  };
-
-  const handleTemplateCreate = async (templateId, payload) => {
-    try {
-      const res = await fetchJson(`/api/v1/templates/${templateId}/use`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      setExpandedIds((prev) => {
-        const next = new Set(prev);
-        if (payload.parent_task_id) next.add(payload.parent_task_id);
-        if (res.ids.length > 1) next.add(res.ids[0]);
-        return next;
-      });
-      setShowForm(false);
-      setParentTaskForNew(null);
-      setProjectForNew(null);
-      await loadData();
-    } catch (err) {
-      setError(t('Failed to create tasks: {error}', { error: err.message }));
-    }
-  };
-
-  // Checkbox: done <-> todo. Updates the row immediately and rolls back if
-  // the request fails.
-  const handleToggleDone = async (task) => {
-    const status = task.status === 'done' ? 'todo' : 'done';
-    const previous = tasks;
-    setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status } : t)));
-    try {
-      await fetchJson(`/api/tasks/${task.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (status === 'done') offerUndoDone(task);
-      // A repeating task just created its next occurrence on the server.
-      if (status === 'done' && task.recurrence_unit) await loadData();
-    } catch (err) {
-      setTasks(previous);
-      setError(t('Failed to update task: {error}', { error: err.message }));
-    }
-  };
-
-  // Board: move a card to another column.
-  const handleSetStatus = async (task, status) => {
-    const previous = tasks;
-    setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status } : t)));
-    try {
-      await fetchJson(`/api/tasks/${task.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (status === 'done' && task.status !== 'done') offerUndoDone(task);
-      // Reload for completed_at (Done column order) and repeating tasks.
-      if (status === 'done' || task.status === 'done') await loadData();
-    } catch (err) {
-      setTasks(previous);
-      setError(t('Failed to update task: {error}', { error: err.message }));
-    }
-  };
-
-  // Calendar: drop a task on another day.
-  const handleReschedule = async (task, day) => {
-    const previous = tasks;
-    const deadline = `${day}T00:00:00`;
-    setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, deadline } : t)));
-    try {
-      await fetchJson(`/api/tasks/${task.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deadline }),
-      });
-    } catch (err) {
-      setTasks(previous);
-      setError(t('Failed to move the deadline: {error}', { error: err.message }));
-    }
-  };
+  const setView = (view) => setSearchParams(filtersToParams({ ...filters, view }), { replace: true });
 
   // Board/Calendar: show a task in the list (same filters).
   const openInList = (task) =>
     setSearchParams({ ...filtersToParams({ ...filters, view: 'list' }), task: String(task.id) }, { replace: true });
-
-  const setView = (view) => setSearchParams(filtersToParams({ ...filters, view }), { replace: true });
-
-  // Siblings a task can swap places with: same parent; for top-level tasks
-  // also the same project and the same open/completed section.
-  const siblingsOf = (task) =>
-    tasks
-      .filter(
-        (t) =>
-          t.parent_task_id === task.parent_task_id &&
-          (task.parent_task_id != null ||
-            (t.project_id === task.project_id && (t.status === 'done') === (task.status === 'done')))
-      )
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.id - b.id);
-
-  const getMoveState = (task) => {
-    const reorderable = filters.sort === 'manual';
-    if (!reorderable) return { up: false, down: false, reorderable };
-    const sibs = siblingsOf(task);
-    const i = sibs.findIndex((t) => t.id === task.id);
-    return { up: i > 0, down: i >= 0 && i < sibs.length - 1, reorderable };
-  };
-
-  const handleMove = (task, dir) => {
-    const sibs = siblingsOf(task);
-    const target = sibs[sibs.findIndex((t) => t.id === task.id) + dir];
-    if (target) handleReorder(task.id, target.id);
-  };
-
-  const handleMoveTo = async (task, projectId) => {
-    if ((task.project_id ?? null) === projectId) return;
-    try {
-      await fetchJson(`/api/tasks/${task.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project_id: projectId }),
-      });
-      await loadData();
-      navigate(`/?task=${task.id}`, { replace: true });
-    } catch (err) {
-      setError(t('Failed to move task: {error}', { error: err.message }));
-    }
-  };
-
-  const handleCommentCount = (taskId, n) =>
-    setTasks((ts) => ts.map((t) => (t.id === taskId && t.comment_count !== n ? { ...t, comment_count: n } : t)));
-
-  const handleEditTask = (task) => {
-    setSelectedTask(task);
-    setParentTaskForNew(null);
-    setShowForm(true);
-  };
-
-  const handleAddSubtask = (task) => {
-    setSelectedTask(null);
-    setParentTaskForNew(task);
-    setShowForm(true);
-  };
-
-  const handleFormCancel = () => {
-    setShowForm(false);
-    setSelectedTask(null);
-    setParentTaskForNew(null);
-    setProjectForNew(null);
-  };
-
-  const openNewTask = (projectId = null) => {
-    setSelectedTask(null);
-    setParentTaskForNew(null);
-    setProjectForNew(projectId);
-    setShowForm(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   const toggleGroup = (key) =>
     setCollapsedGroups((prev) => {
@@ -688,59 +393,6 @@ function TaskList() {
       return next;
     });
 
-  const handleReorder = async (draggedId, targetId) => {
-    const dragged = tasks.find((t) => t.id === draggedId);
-    const target = tasks.find((t) => t.id === targetId);
-    if (!dragged || !target) return;
-    if (dragged.parent_task_id !== target.parent_task_id) return; // only reorder siblings
-    if (dragged.parent_task_id === null && dragged.project_id !== target.project_id) return; // ...within one project
-
-    const siblings = tasks
-      .filter((t) => t.parent_task_id === dragged.parent_task_id)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.id - b.id);
-
-    const fromIndex = siblings.findIndex((t) => t.id === draggedId);
-    const toIndex = siblings.findIndex((t) => t.id === targetId);
-    if (fromIndex === -1 || toIndex === -1) return;
-
-    const reordered = [...siblings];
-    const [moved] = reordered.splice(fromIndex, 1);
-    reordered.splice(toIndex, 0, moved);
-
-    const updates = reordered
-      .map((t, idx) => ({ id: t.id, order: idx }))
-      .filter((u) => siblings.find((s) => s.id === u.id).order !== u.order);
-
-    if (updates.length === 0) return;
-
-    try {
-      await Promise.all(
-        updates.map((u) =>
-          fetchJson(`/api/tasks/${u.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ order: u.order }),
-          })
-        )
-      );
-      await loadData();
-    } catch (err) {
-      setError(t('Failed to reorder tasks: {error}', { error: err.message }));
-    }
-  };
-
-  useEffect(() => {
-    if (filters.view === 'board' || filters.view === 'calendar') exitSelect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.view]);
-  useEffect(() => {
-    if (!selectMode) return;
-    setSelectedIds((prev) => {
-      const next = new Set([...prev].filter((id) => document.getElementById(`task-${id}`)));
-      return next.size === prev.size ? prev : next;
-    });
-  }, [tasks, filters, selectMode]);
-
   const projectIndex = useMemo(() => buildProjectIndex(projects), [projects]);
   // Estimates add up over all subtasks, also the ones a filter hides.
   const allChildrenOf = useMemo(() => childIndex(tasks), [tasks]);
@@ -750,7 +402,7 @@ function TaskList() {
   const filterByLabel = (label) => setFilter('label', String(label.id));
 
   const myOpenCount = useMemo(
-    () => tasks.filter((t) => t.assignee_id === currentUser?.id && t.status !== 'done').length,
+    () => tasks.filter((x) => x.assignee_id === currentUser?.id && x.status !== 'done').length,
     [tasks, currentUser]
   );
 
@@ -759,7 +411,7 @@ function TaskList() {
   const focusTaskId = searchParams.get('task');
   useEffect(() => {
     if (!focusTaskId || loading || tasks.length === 0) return;
-    const byId = new Map(tasks.map((t) => [t.id, t]));
+    const byId = new Map(tasks.map((x) => [x.id, x]));
     const target = byId.get(parseInt(focusTaskId, 10));
     const withComments = searchParams.get('comments') === '1';
     const next = new URLSearchParams(searchParams);
@@ -821,136 +473,41 @@ function TaskList() {
     [tree.roots, projectIndex, filtering]
   );
 
-  const toggleIn = (setter, taskId) =>
-    setter((prev) => {
-      const next = new Set(prev);
-      if (next.has(taskId)) next.delete(taskId);
-      else next.add(taskId);
-      return next;
-    });
-
   const isExpanded = (taskId) =>
     tree.autoExpandIds.has(taskId) ? !collapsedIds.has(taskId) : expandedIds.has(taskId);
 
   const handleToggleExpand = (taskId) =>
     toggleIn(tree.autoExpandIds.has(taskId) ? setCollapsedIds : setExpandedIds, taskId);
 
-  // ---- saved filters
-  const currentQuery = new URLSearchParams(filtersToParams(filters)).toString();
-  const activeSaved = savedFilters.find((f) => sameQuery(f.query, currentQuery));
-
-  const saveFilter = async () => {
-    const name = window.prompt(t('Save these filters as:'), activeSaved?.name || '');
-    if (!name || !name.trim()) return;
-    try {
-      await fetchJson('/api/v1/saved-filters/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), query: currentQuery }),
-      });
-      await loadSavedFilters();
-    } catch (err) {
-      setError(t('Failed to save the filter: {error}', { error: err.message }));
-    }
-  };
-
-  const applySaved = (f) => {
-    setSearchParams(new URLSearchParams(f.query), { replace: true });
-    setCollapsedIds(new Set());
-  };
-
-  const deleteSaved = async (f) => {
-    if (!window.confirm(t('Delete the saved filter “{name}”?', { name: f.name }))) return;
-    try {
-      const res = await authFetch(`/api/v1/saved-filters/${f.id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(await parseApiError(res));
-      await loadSavedFilters();
-    } catch (err) {
-      setError(t('Failed to delete the filter: {error}', { error: err.message }));
-    }
-  };
-
-  // ---- keyboard shortcuts (the window listener calls the latest version)
-  shortcutRef.current = (e) => {
-    if (e.ctrlKey || e.metaKey || e.altKey || loading) return;
-    const el = document.activeElement;
-    const tag = el?.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return;
-    if (e.key === '?') {
-      setShowKeys((v) => !v);
-      return;
-    }
-    if (e.key === 'Escape') {
-      if (showKeys) setShowKeys(false);
-      else if (selectMode) exitSelect();
-      else setKeyboardId(null);
-      return;
-    }
-    if (showKeys) return;
-    if (e.key === '/') {
-      e.preventDefault();
-      searchRef.current?.focus();
-      return;
-    }
-    if (e.key === 'n') {
-      e.preventDefault();
-      openNewTask(filters.project ? parseInt(filters.project, 10) : null);
-      return;
-    }
-    if (filters.view === 'board' || filters.view === 'calendar') return;
-
-    // Rows in the order they're shown (subtasks after their parent).
-    const ids = [...document.querySelectorAll('.task-list .task-item')].map((r) => parseInt(r.id.slice(5), 10));
-    if (e.key === 'j' || e.key === 'k') {
-      if (!ids.length) return;
-      e.preventDefault();
-      const i = ids.indexOf(keyboardId);
-      const step = e.key === 'j' ? 1 : -1;
-      const next = i === -1 ? (step > 0 ? 0 : ids.length - 1) : Math.min(ids.length - 1, Math.max(0, i + step));
-      setKeyboardId(ids[next]);
-      document.getElementById(`task-${ids[next]}`)?.querySelector('.task-header')?.scrollIntoView({ block: 'nearest' });
-      return;
-    }
-    if (e.key === 'Delete' && selectMode && selectedIds.size) {
-      deleteSelected();
-      return;
-    }
-    const task = ids.includes(keyboardId) ? tasks.find((x) => x.id === keyboardId) : null;
-    if (!task) return;
-    const click = (selector) =>
-      document.getElementById(`task-${task.id}`)?.querySelector(`:scope > .task-header ${selector}`)?.click();
-    if (e.key === 'e') {
-      e.preventDefault();
-      handleEditTask(task);
-    } else if (e.key === 'a') {
-      e.preventDefault();
-      handleAddSubtask(task);
-    } else if (e.key === 'x') {
-      handleToggleDone(task);
-    } else if (e.key === 'c') {
-      click('.comment-btn');
-    } else if (e.key === 'o') {
-      click('.expand-btn');
-    } else if (e.key === ' ') {
-      e.preventDefault();
-      setSelectMode(true);
-      toggleSelect(task.id, e.shiftKey);
-    } else if (e.key === 'Delete') {
-      handleDeleteTask(task.id);
-    }
-  };
+  useTaskShortcuts({
+    enabled: !loading,
+    listView,
+    keyboardId,
+    setKeyboardId,
+    showKeys,
+    setShowKeys,
+    selection,
+    deleteSelected,
+    tasks,
+    focusSearch: () => searchRef.current?.focus(),
+    newTask: () => openNewTask(filters.project ? parseInt(filters.project, 10) : null),
+    edit: handleEditTask,
+    addSubtask: handleAddSubtask,
+    toggleDone: handleToggleDone,
+    deleteTask: handleDeleteTask,
+  });
 
   if (loading) return <div className="container"><p>{t('Loading tasks…')}</p></div>;
 
   const visibleRoots = tree.roots;
   const canDrag = filters.sort === 'manual';
+  // Filtering by status "done" or searching opens the Completed rows, so
+  // results are never hidden behind them.
+  const completedAutoOpen = filters.status === 'done' || filters.q.trim() !== '';
 
   // Edit / Add subtask from a row: the form opens right below that task (list
   // view). New tasks, and edits started from the board, use the top.
-  const inlineTargetId =
-    showForm && filters.view !== 'board' && filters.view !== 'calendar'
-      ? selectedTask?.id ?? parentTaskForNew?.id ?? null
-      : null;
+  const inlineTargetId = showForm && listView ? selectedTask?.id ?? parentTaskForNew?.id ?? null : null;
 
   const taskForm = showForm && (
     <TaskForm
@@ -967,7 +524,7 @@ function TaskList() {
       onBulkSubmit={handleBulkCreate}
       templates={templates}
       onTemplateSubmit={handleTemplateCreate}
-      onCancel={handleFormCancel}
+      onCancel={closeForm}
     />
   );
   const inlineForm = inlineTargetId != null ? { taskId: inlineTargetId, element: taskForm } : null;
@@ -987,7 +544,7 @@ function TaskList() {
       childrenOf={tree.childrenOf}
       matchedIds={tree.matchedIds}
       searchText={filters.q}
-      canDrag={canDrag && !inlineForm && !selectMode}
+      canDrag={canDrag && !inlineForm && !selection.active}
       progressOf={tree.progressOf}
       focusCommentsId={focusCommentsId}
       projectIndex={projectIndex}
@@ -1001,42 +558,9 @@ function TaskList() {
       remainingOf={remainingOf}
       keyboardId={keyboardId}
       onSaveTemplate={handleSaveTemplate}
-      selection={selectMode ? { ids: selectedIds, toggle: toggleSelect } : null}
+      selection={selection.active ? { ids: selection.ids, toggle: selection.toggle } : null}
     />
   );
-
-  // Open work estimated in a section (tasks shown there, with their subtasks).
-  const estimateBadge = (roots) => {
-    const minutes = totalRemaining(roots, allChildrenOf);
-    return minutes > 0 ? (
-      <span className="estimate-total" title={t('Open work, estimated')}>
-        ⏱ {formatEstimate(minutes)}
-      </span>
-    ) : null;
-  };
-
-  // Filtering by status "done" or searching opens the Completed rows, so
-  // results are never hidden behind them.
-  const completedAutoOpen = filters.status === 'done' || filters.q.trim() !== '';
-
-  const renderCompleted = (key, list) => {
-    if (list.length === 0) return null;
-    const open = completedAutoOpen || openCompleted.has(key);
-    return (
-      <div className="completed-group">
-        <button
-          className="completed-toggle"
-          onClick={() => toggleIn(setOpenCompleted, key)}
-          aria-expanded={open}
-          disabled={completedAutoOpen}
-        >
-          <span className="project-group-caret">{open ? '▼' : '▶'}</span>
-          {t('✓ Completed ({n})', { n: list.length })}
-        </button>
-        {open && <div className="completed-list">{list.map(renderTask)}</div>}
-      </div>
-    );
-  };
 
   return (
     <div className="container">
@@ -1073,189 +597,20 @@ function TaskList() {
 
       {showForm && !inlineForm && <div className="form-container">{taskForm}</div>}
 
-      <div className="filters">
-        <div className="filter-search">
-          <button
-            className={`mine-toggle ${filters.assignee === 'me' ? 'active' : ''}`}
-            onClick={() => setFilter('assignee', filters.assignee === 'me' ? '' : 'me')}
-            aria-pressed={filters.assignee === 'me'}
-            title={t('Show only tasks assigned to you')}
-          >
-            {t('Assigned to me')}
-            {myOpenCount > 0 && <span className="mine-count">{myOpenCount}</span>}
-          </button>
-          {filters.view !== 'board' && filters.view !== 'calendar' && (
-            <button
-              className={`mine-toggle ${selectMode ? 'active' : ''}`}
-              onClick={() => (selectMode ? exitSelect() : setSelectMode(true))}
-              aria-pressed={selectMode}
-              title={t('Pick several tasks and change them together')}
-            >
-              {t('☑ Select')}
-            </button>
-          )}
-          <input
-            ref={searchRef}
-            type="search"
-            placeholder={t('Search tasks…  ( / )')}
-            value={filters.q}
-            onChange={(e) => setFilter('q', e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                setFilter('q', '');
-                e.target.blur();
-              }
-            }}
-            aria-label={t('Search tasks')}
-          />
-        </div>
-
-        {(savedFilters.length > 0 || (currentQuery && !activeSaved)) && (
-          <div className="saved-filters" aria-label={t('Saved filters')}>
-            {savedFilters.map((f) => {
-              const active = f === activeSaved;
-              return (
-                <span key={f.id} className={`saved-filter ${active ? 'active' : ''}`}>
-                  <button className="saved-filter-apply" onClick={() => applySaved(f)} aria-pressed={active}>
-                    ★ {f.name}
-                  </button>
-                  {active && (
-                    <button
-                      className="saved-filter-delete"
-                      onClick={() => deleteSaved(f)}
-                      title={t('Delete saved filter')}
-                      aria-label={t('Delete saved filter')}
-                    >
-                      <TrashIcon size={13} />
-                    </button>
-                  )}
-                </span>
-              );
-            })}
-            {currentQuery && !activeSaved && (
-              <button className="saved-filter-save" onClick={saveFilter} title={t('Keep these filters, search and sort under a name')}>
-                ☆ {t('Save filter')}
-              </button>
-            )}
-          </div>
-        )}
-
-        <button
-          className="btn btn-secondary btn-small filters-toggle"
-          onClick={() => setFiltersOpen((o) => !o)}
-          aria-expanded={filtersOpen}
-        >
-          {filtersOpen ? '▲' : '▼'} {t('Filters & sort')}
-          {filters.status !== 'all' ||
-          filters.project ||
-          filters.assignee ||
-          filters.due ||
-          filters.label ||
-          filters.sort !== 'manual'
-            ? ' •'
-            : ''}
-        </button>
-
-        <div className={`filter-row ${filtersOpen ? 'open' : ''}`}>
-          <div className="filter-group">
-            <label htmlFor="f-status">{t('Status')}</label>
-            <select id="f-status" value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
-              <option value="all">{t('All')}</option>
-              <option value="open">{t('Not done')}</option>
-              {STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {statusName(s)}
-                </option>
-              ))}
-              <option value="waiting">{t('⏳ Waiting for other tasks')}</option>
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label htmlFor="f-project">{t('Project')}</label>
-            <select id="f-project" value={filters.project} onChange={(e) => setFilter('project', e.target.value)}>
-              <option value="">{t('All')}</option>
-              {projectIndex.topLevel.map((p) => [
-                <option key={p.id} value={String(p.id)}>
-                  {p.name}
-                </option>,
-                ...projectIndex.categoriesOf(p.id).map((c) => (
-                  <option key={c.id} value={String(c.id)}>
-                    {'\u00a0\u00a0\u00a0└ '}
-                    {c.name}
-                  </option>
-                )),
-              ])}
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label htmlFor="f-assignee">{t('Assignee')}</label>
-            <select id="f-assignee" value={filters.assignee} onChange={(e) => setFilter('assignee', e.target.value)}>
-              <option value="">{t('Anyone')}</option>
-              <option value="me">{t('Me')}</option>
-              <option value="none">{t('Unassigned')}</option>
-              {users
-                .filter((u) => u.id !== currentUser?.id)
-                .map((u) => (
-                  <option key={u.id} value={String(u.id)}>
-                    {u.username}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          {labels.length > 0 && (
-            <div className="filter-group">
-              <label htmlFor="f-label">{t('Label')}</label>
-              <select id="f-label" value={filters.label} onChange={(e) => setFilter('label', e.target.value)}>
-                <option value="">{t('Any')}</option>
-                {labelIndex.list.map((l) => (
-                  <option key={l.id} value={String(l.id)}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div className="filter-group">
-            <label htmlFor="f-due">{t('Deadline')}</label>
-            <select id="f-due" value={filters.due} onChange={(e) => setFilter('due', e.target.value)}>
-              <option value="">{t('Any')}</option>
-              <option value="overdue">{t('Overdue')}</option>
-              <option value="week">{t('Due in 7 days')}</option>
-              <option value="none">{t('No deadline')}</option>
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label htmlFor="f-sort">{t('Sort')}</label>
-            <select id="f-sort" value={filters.sort} onChange={(e) => setFilter('sort', e.target.value)}>
-              <option value="manual">{t('Manual order')}</option>
-              <option value="deadline">{t('Deadline')}</option>
-              <option value="priority">{t('Priority')}</option>
-              <option value="created">{t('Newest first')}</option>
-              <option value="title">{t('Title')}</option>
-            </select>
-          </div>
-
-          {filtering && (
-            <button className="btn btn-secondary btn-small filter-clear" onClick={clearFilters}>
-              {t('Clear filters')}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {filters.label && labelIndex.byId.has(parseInt(filters.label, 10)) && (
-        <p className="archive-note label-filter-note">
-          {t('Label:')} <LabelChips labels={[labelIndex.byId.get(parseInt(filters.label, 10))]} />{' '}
-          <button className="link-btn" onClick={() => setFilter('label', '')}>
-            {t('Show all')}
-          </button>
-        </p>
-      )}
+      <FilterBar
+        filters={filters}
+        setFilter={setFilter}
+        clearFilters={clearFilters}
+        filtering={filtering}
+        searchRef={searchRef}
+        myOpenCount={myOpenCount}
+        selection={selection}
+        saved={saved}
+        projectIndex={projectIndex}
+        labelIndex={labelIndex}
+        users={users}
+        currentUser={currentUser}
+      />
 
       {tree.archivedCount > 0 && (
         <p className="archive-note">
@@ -1299,158 +654,43 @@ function TaskList() {
         />
       )}
 
-      {filters.view !== 'board' && filters.view !== 'calendar' && (
-      <>
-      {selectMode && (
-        <BulkEditBar
-          count={selectedIds.size}
-          onSelectAll={() => setSelectedIds(new Set(shownIds()))}
-          onClear={() => setSelectedIds(new Set())}
-          onExit={exitSelect}
-          onApply={applyBulk}
-          onDelete={deleteSelected}
-          projectIndex={projectIndex}
-          users={users}
-          labels={labelIndex.list}
-        />
-      )}
-      <div className={`task-list ${selectMode ? 'selecting' : ''}`}>
-        {visibleRoots.length === 0 && filtering ? (
-          <p className="no-tasks">
-            {t('No tasks match these filters.')}{' '}
-            <button className="link-btn" onClick={clearFilters}>
-              {t('Clear filters')}
-            </button>
-          </p>
-        ) : groups.length === 0 ? (
-          <p className="no-tasks">{t('No tasks or projects yet.')}</p>
-        ) : (
-          groups.map((group) => {
-            // Filters auto-open sections so results are never hidden.
-            const collapsed = !filtering && collapsedGroups.has(group.key);
-            return (
-              <section
-                key={group.key}
-                className={`project-group ${collapsed ? 'collapsed' : ''}`}
-                style={{ '--project-color': group.color }}
-              >
-                <header className="project-group-header">
-                  <button
-                    className="project-group-toggle"
-                    onClick={() => toggleGroup(group.key)}
-                    aria-expanded={!collapsed}
-                    disabled={filtering}
-                  >
-                    <span className="project-group-caret">{collapsed ? '▶' : '▼'}</span>
-                    <span className="project-swatch" />
-                    <span className="project-group-name">{group.project ? group.project.name : t('No project')}</span>
-                    {group.project?.is_private && (
-                      <span className="private-lock" title={t('Private project: only members and admins see it')}>
-                        🔒
-                      </span>
-                    )}
-                    <span className="project-group-count">{groupTaskCount(group)}</span>
-                    {estimateBadge([...group.tasks, ...group.categories.flatMap((c) => c.tasks)])}
-                  </button>
-                  <button
-                    className="task-action-btn"
-                    title={group.project ? t('New task in {name}', { name: group.project.name }) : t('New task without project')}
-                    onClick={() => openNewTask(group.project ? group.project.id : null)}
-                  >
-                    +
-                  </button>
-                </header>
-
-                {!collapsed && (
-                  <div className="project-group-body">
-                    {group.tasks.map(renderTask)}
-                    {renderCompleted(`${group.key}-done`, group.completed)}
-                    {group.categories.map((cat) => {
-                      const catCollapsed = !filtering && collapsedGroups.has(cat.key);
-                      return (
-                      <div className={`category-group ${catCollapsed ? 'collapsed' : ''}`} key={cat.key}>
-                        <div className="category-header">
-                          <button
-                            className="category-toggle"
-                            onClick={() => toggleGroup(cat.key)}
-                            aria-expanded={!catCollapsed}
-                            disabled={filtering}
-                          >
-                            <span className="project-group-caret">{catCollapsed ? '▶' : '▼'}</span>
-                            <span className="category-name">{cat.project.name}</span>
-                            <span className="project-group-count">{cat.tasks.length}</span>
-                            {estimateBadge(cat.tasks)}
-                          </button>
-                          <button
-                            className="task-action-btn"
-                            title={t('New task in {name}', { name: `${group.project.name} / ${cat.project.name}` })}
-                            onClick={() => openNewTask(cat.project.id)}
-                          >
-                            +
-                          </button>
-                        </div>
-                        {!catCollapsed && (
-                          <>
-                            {cat.tasks.length === 0 ? (
-                              <p className="category-empty">{cat.completed.length ? t('All done ✓') : t('No tasks')}</p>
-                            ) : (
-                              cat.tasks.map(renderTask)
-                            )}
-                            {renderCompleted(`${cat.key}-done`, cat.completed)}
-                          </>
-                        )}
-                      </div>
-                      );
-                    })}
-                    {group.tasks.length === 0 && group.categories.length === 0 && group.completed.length === 0 && (
-                      <p className="category-empty">{t('No tasks')}</p>
-                    )}
-                  </div>
-                )}
-              </section>
-            );
-          })
-        )}
-      </div>
-      </>
+      {listView && (
+        <>
+          {selection.active && (
+            <BulkEditBar
+              count={selection.ids.size}
+              onSelectAll={selection.selectAll}
+              onClear={selection.clear}
+              onExit={selection.exit}
+              onApply={applyBulk}
+              onDelete={deleteSelected}
+              projectIndex={projectIndex}
+              users={users}
+              labels={labelIndex.list}
+            />
+          )}
+          <div className={`task-list ${selection.active ? 'selecting' : ''}`}>
+            <TaskGroups
+              groups={groups}
+              filtering={filtering}
+              noResults={visibleRoots.length === 0 && filtering}
+              clearFilters={clearFilters}
+              collapsedGroups={collapsedGroups}
+              toggleGroup={toggleGroup}
+              openCompleted={openCompleted}
+              toggleCompleted={(key) => toggleIn(setOpenCompleted, key)}
+              completedAutoOpen={completedAutoOpen}
+              allChildrenOf={allChildrenOf}
+              openNewTask={openNewTask}
+              renderTask={renderTask}
+            />
+          </div>
+        </>
       )}
 
-      <p className="kbd-hint">
-        <button className="link-btn" onClick={() => setShowKeys(true)}>
-          {t('Keyboard shortcuts')}
-        </button>{' '}
-        <kbd>?</kbd>
-      </p>
+      <KeyboardHelp open={showKeys} setOpen={setShowKeys} />
 
       <UndoToast key={undo?.key} undo={undo} onClose={() => setUndo(null)} />
-
-      {showKeys && (
-        <div className="kbd-help-backdrop" onClick={() => setShowKeys(false)}>
-          <div
-            className="kbd-help"
-            role="dialog"
-            aria-modal="true"
-            aria-label={t('Keyboard shortcuts')}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2>{t('Keyboard shortcuts')}</h2>
-            <dl>
-              {SHORTCUTS().map(([key, what]) => (
-                <React.Fragment key={key}>
-                  <dt>
-                    <kbd>{key}</kbd>
-                  </dt>
-                  <dd>{what}</dd>
-                </React.Fragment>
-              ))}
-            </dl>
-            <p className="kbd-help-note">{t('j / k pick a task in the list; the other keys act on it.')}</p>
-            <button className="btn btn-secondary btn-small" onClick={() => setShowKeys(false)} autoFocus>
-              {t('Close')}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
