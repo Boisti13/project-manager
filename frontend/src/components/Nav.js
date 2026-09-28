@@ -45,6 +45,10 @@ function Nav() {
           <span className="nav-icon" aria-hidden="true">▦</span>
           <span className="nav-label">{t('Projects')}</span>
         </NavLink>
+        <NavLink to="/review" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+          <span className="nav-icon" aria-hidden="true">◷</span>
+          <span className="nav-label">{t('Review')}</span>
+        </NavLink>
         <NavLink to="/settings" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
           <span className="nav-icon" aria-hidden="true">⚙</span>
           <span className="nav-label">{t('Settings')}</span>

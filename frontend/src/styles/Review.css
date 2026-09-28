@@ -1,0 +1,123 @@
+/* Weekly review (components/WeeklyReview.js); lists and counters reuse MyDay.css. */
+
+.review-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.review-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.review-week {
+  display: flex;
+  gap: 6px;
+}
+
+.review .myday-count:hover {
+  background-color: var(--color-surface);
+}
+
+.review-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.review-table th,
+.review-table td {
+  padding: 7px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--color-border-light);
+  white-space: nowrap;
+}
+
+.review-table th:first-child,
+.review-table td:first-child {
+  text-align: left;
+  white-space: normal;
+}
+
+.review-table th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.review-table tfoot td {
+  font-weight: 600;
+  border-bottom: none;
+}
+
+.review-overdue {
+  color: var(--color-error-text);
+  font-weight: 600;
+}
+
+.review-project {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.review-swatch {
+  flex-shrink: 0;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--project-color);
+}
+
+.review-task .myday-main {
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  /* My day hides its header button on phones; the review keeps Copy / Print. */
+  .myday.review .task-list-header .btn {
+    display: inline-flex;
+  }
+
+  .review .task-list-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .review-table th,
+  .review-table td {
+    padding: 6px 4px;
+    font-size: 13px;
+  }
+
+  .review-table th {
+    white-space: normal;
+    font-size: 11px;
+  }
+}
+
+/* Printing: just the review. */
+@media print {
+  .app-nav,
+  .App-header,
+  .App-footer,
+  .no-print,
+  .undo-toast {
+    display: none !important;
+  }
+
+  .review .myday-section,
+  .review .myday-count {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+
+  .review .myday-title {
+    color: #000;
+  }
+}

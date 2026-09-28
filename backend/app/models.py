@@ -277,6 +277,21 @@ class SavedFilter(Base):
     created_at = Column(DateTime, default=utcnow)
 
 
+class TaskTemplate(Base):
+    """A task with its subtasks, saved to be created again (routers/templates.py).
+    Shared by everyone. data: JSON tree {title, description, priority,
+    estimate_minutes, label_ids, subtasks: [...]}."""
+    __tablename__ = "task_templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False, unique=True)
+    data = Column(Text, nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    created_by = relationship("User")
+
+
 class AppSetting(Base):
     """Instance-wide settings as key/value strings (see routers/settings.py)."""
     __tablename__ = "app_settings"

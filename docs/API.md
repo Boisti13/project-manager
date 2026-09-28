@@ -104,6 +104,7 @@ api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via
 | `/tasks/{id}/comments`, `/comments/{id}`, `/comments/search` | comments |
 | `/projects/`, `/projects/{id}` | projects and categories (`parent_id`), `is_private`, `member_ids` |
 | `/labels/` | labels |
+| `/templates/`, `/templates/{id}`, `/templates/{id}/use` | task templates (shared): save a task with its subtasks (`name`, `task_id`), list them (with the `tree`), delete (who saved it, or an admin), and create the tasks (`title`, `project_id`, `parent_task_id`, `deadline`, `assignee_id`; returns their `ids`, the top one first) |
 | `/saved-filters/`, `/saved-filters/{id}` | the current user's saved task-list filters: `name` and `query` (the Tasks page URL query, e.g. `assignee=me&sort=deadline`); saving under an existing name replaces it |
 | `/notifications/`, `/notifications/read` | the current user's notifications |
 | `/users/` | users (admins: `/users/admin/all`, create, change) |

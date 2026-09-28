@@ -42,6 +42,7 @@ function TaskItem({
   dependencyIndex = null,
   inlineForm = null, // { taskId, element }: the edit / add-subtask form, shown below that task
   remainingOf = null, // (task) -> open minutes estimated for it and its subtasks
+  onSaveTemplate = null,
   keyboardId = null, // row picked with j/k
   indent = 0,
 }) {
@@ -241,6 +242,7 @@ function TaskItem({
               onDelete={onDelete}
               onMove={onMove}
               onMoveTo={onMoveTo}
+              onSaveTemplate={onSaveTemplate}
             />
           )}
         </div>
@@ -301,6 +303,7 @@ function TaskItem({
               dependencyIndex={dependencyIndex}
               inlineForm={inlineForm}
               remainingOf={remainingOf}
+              onSaveTemplate={onSaveTemplate}
               keyboardId={keyboardId}
               indent={indent + 1}
             />

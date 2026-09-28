@@ -29,6 +29,11 @@ function unitWord(unit, n) {
   }
 }
 
+// A template's tree in the shape BulkPreview shows.
+function templatePreview(node, title) {
+  return { title: (title || '').trim() || node.title, children: node.subtasks.map((s) => templatePreview(s)) };
+}
+
 function BulkPreview({ items }) {
   return (
     <ul className="bulk-preview-list">
@@ -75,10 +80,15 @@ function TaskForm({
   allTasks = [],
   onSubmit,
   onBulkSubmit,
+  templates = [],
+  onTemplateSubmit = null,
   onCancel,
 }) {
-  // 'single' | 'bulk'; bulk only when creating, not editing.
+  // 'single' | 'bulk' | 'template'; the last two only when creating, not editing.
   const [mode, setMode] = useState('single');
+  const [templateId, setTemplateId] = useState(null);
+  const [templateTitle, setTemplateTitle] = useState('');
+  const template = templates.find((x) => x.id === templateId) || templates[0] || null;
   const [bulkText, setBulkText] = useState('');
   const bulk = useMemo(() => parseBulk(bulkText), [bulkText]);
   // Typed text ("1h 30m"); parsed to minutes on submit.
@@ -172,6 +182,17 @@ function TaskForm({
   const handleSubmit = (e) => {
     e.preventDefault();
     const deadline = formData.deadline ? formData.deadline : null;
+    if (mode === 'template') {
+      if (!template) return;
+      onTemplateSubmit(template.id, {
+        title: templateTitle.trim() || null,
+        project_id: formData.project_id,
+        parent_task_id: formData.parent_task_id,
+        deadline,
+        assignee_id: formData.assignee_id,
+      });
+      return;
+    }
     if (mode === 'bulk') {
       if (bulk.count === 0) return;
       onBulkSubmit({
@@ -227,6 +248,8 @@ function TaskForm({
         <button type="submit" className="btn btn-primary" disabled={mode === 'bulk' && bulk.count === 0}>
           {task
             ? t('Update Task')
+            : mode === 'template' && template
+            ? tn(template.task_count, 'Create one task', 'Create {n} tasks')
             : mode === 'bulk'
             ? bulk.count
               ? tn(bulk.count, 'Create one task', 'Create {n} tasks')
@@ -264,10 +287,58 @@ function TaskForm({
           >
             {t('Several (one per line)')}
           </button>
+          {onTemplateSubmit && templates.length > 0 && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'template'}
+              className={mode === 'template' ? 'active' : ''}
+              onClick={() => setMode('template')}
+            >
+              {t('From template')}
+            </button>
+          )}
         </div>
       )}
 
-      {mode === 'single' ? (
+      {mode === 'template' && template ? (
+        <div className="bulk-entry">
+          <div className="template-fields">
+            <div className="form-group">
+              <label htmlFor="template-pick">{t('Template')}</label>
+              <select
+                id="template-pick"
+                value={template.id}
+                onChange={(e) => setTemplateId(parseInt(e.target.value, 10))}
+                autoFocus
+              >
+                {templates.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label htmlFor="template-title">{t('Title')}</label>
+              <input
+                id="template-title"
+                type="text"
+                value={templateTitle}
+                onChange={(e) => setTemplateTitle(e.target.value)}
+                placeholder={template.tree.title}
+              />
+              <small className="bulk-hint">
+                {t('Empty: the template’s own title. Everything is created as To Do; project, deadline and assignee below apply.')}
+              </small>
+            </div>
+          </div>
+          <div className="bulk-preview" aria-live="polite">
+            <div className="bulk-preview-head">{tn(template.task_count, 'one task', '{n} tasks')}</div>
+            <BulkPreview items={[templatePreview(template.tree, templateTitle)]} />
+          </div>
+        </div>
+      ) : mode === 'single' ? (
         <>
           <div className="form-group">
             <label>{t('Title *')}</label>
@@ -328,6 +399,7 @@ function TaskForm({
         </div>
       )}
 
+      {mode !== 'template' && (
       <div className={`form-row ${mode !== 'bulk' ? 'form-row-3' : ''}`}>
         <div className="form-group">
           <label>{t('Status')}</label>
@@ -376,6 +448,7 @@ function TaskForm({
           </div>
         )}
       </div>
+      )}
 
       <div className="form-row">
         <div className="form-group">
@@ -513,15 +586,17 @@ function TaskForm({
         </div>
       )}
 
-      <div className="form-group">
-        <label>{t('Labels')}</label>
-        <LabelPicker
-          labels={labels}
-          value={formData.label_ids}
-          onChange={(ids) => setFormData((prev) => ({ ...prev, label_ids: ids }))}
-          onCreated={onLabelCreated}
-        />
-      </div>
+      {mode !== 'template' && (
+        <div className="form-group">
+          <label>{t('Labels')}</label>
+          <LabelPicker
+            labels={labels}
+            value={formData.label_ids}
+            onChange={(ids) => setFormData((prev) => ({ ...prev, label_ids: ids }))}
+            onCreated={onLabelCreated}
+          />
+        </div>
+      )}
 
       {mode === 'single' && (
         <div className="form-group">

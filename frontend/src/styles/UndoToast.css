@@ -1,0 +1,71 @@
+.undo-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 10px 10px 16px;
+  border-radius: 8px;
+  background-color: #323232;
+  color: #fff;
+  font-size: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  animation: undo-in 0.15s ease-out;
+}
+
+.undo-message {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.undo-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #90caf9;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.undo-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.undo-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+}
+
+.undo-close:hover {
+  color: #fff;
+}
+
+@keyframes undo-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+}
+
+/* Phones: above the bottom tab bar. */
+@media (max-width: 600px) {
+  .undo-toast {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+}

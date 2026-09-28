@@ -3,6 +3,13 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.2.5 — 2026-09-28
+
+### Added
+- **Weekly review** page (◷ *Review*) — works offline too (server v1.38.0 interface).
+- **Undo** after deleting a task or ticking one off, instead of "Are you sure?".
+- **Task templates**: *Save as template…* in the ⋯ menu and *From template* in the task form (need the connection to the server and server v1.38.0).
+
 ## v0.2.4 — 2026-09-28
 
 ### Added

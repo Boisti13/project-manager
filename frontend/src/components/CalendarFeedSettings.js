@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { authFetch } from '../context/AuthContext';
 import { t } from '../i18n';
+import { copyText } from '../clipboard';
 
 // Settings → Calendar feed: a private .ics link calendar apps subscribe to.
 function CalendarFeedSettings() {
@@ -19,12 +20,7 @@ function CalendarFeedSettings() {
   const url = path ? `${window.location.origin}${path}${scope === 'all' ? '?scope=all' : ''}` : '';
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-    } catch {
-      setCopied(false); // select it by hand (clipboard needs HTTPS or localhost)
-    }
+    setCopied(await copyText(url)); // false: select it by hand
   };
 
   const reset = async () => {

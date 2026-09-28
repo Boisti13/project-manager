@@ -6,7 +6,7 @@ import TrashIcon from './TrashIcon';
 // "⋯" menu on a task row: add subtask, edit, move to another project/category,
 // move up/down (manual order), delete. On phones it replaces the row's
 // individual buttons.
-function TaskMenu({ task, projectIndex, moveState, onAddSubtask, onEdit, onDelete, onMove, onMoveTo }) {
+function TaskMenu({ task, projectIndex, moveState, onAddSubtask, onEdit, onDelete, onMove, onMoveTo, onSaveTemplate }) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState('main'); // 'main' | 'move'
   const ref = useRef(null);
@@ -75,6 +75,11 @@ function TaskMenu({ task, projectIndex, moveState, onAddSubtask, onEdit, onDelet
           >
             <span className="tm-icon">↓</span> {t('Move down')}
           </button>
+          {onSaveTemplate && (
+            <button role="menuitem" onClick={run(() => onSaveTemplate(task))}>
+              <span className="tm-icon">⧉</span> {t('Save as template…')}
+            </button>
+          )}
           <button role="menuitem" className="tm-danger" onClick={run(() => onDelete(task.id))}>
             <span className="tm-icon"><TrashIcon size={14} /></span> {t('Delete')}
           </button>

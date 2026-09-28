@@ -13,6 +13,7 @@ import { detectLanguage, getLanguage, setLanguage, t } from './i18n';
 import { IS_DESKTOP } from './desktop/platform';
 import ConnectScreen from './components/desktop/ConnectScreen';
 import './App.css';
+import WeeklyReview from './components/WeeklyReview';
 
 // The Windows app loads its pages from files, where only #/… addresses work.
 const Router = IS_DESKTOP ? HashRouter : BrowserRouter;
@@ -82,6 +83,14 @@ function AppShell() {
             element={
               <ProtectedRoute>
                 <ProjectList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/review"
+            element={
+              <ProtectedRoute>
+                <WeeklyReview />
               </ProtectedRoute>
             }
           />

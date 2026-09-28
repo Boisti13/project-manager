@@ -238,6 +238,8 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
     db_task.updated_at = utcnow()
     if db_task.status == TaskStatus.DONE and not was_done:
         dependencies.notify_unblocked(db, db_task, current_user)
+    if was_done and db_task.status != TaskStatus.DONE:
+        recurrence.take_back_next(db, db_task, current_user)
     record_spawn(db, db_task, current_user)
 
     db.commit()

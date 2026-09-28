@@ -12,6 +12,7 @@ import DesktopSettings from './desktop/DesktopSettings';
 import { IS_DESKTOP } from '../desktop/platform';
 import '../styles/Settings.css';
 import { t } from '../i18n';
+import TemplateSettings from './TemplateSettings';
 
 function Settings() {
   const { currentUser } = useAuth();
@@ -117,6 +118,8 @@ function Settings() {
       <ArchiveSettings />
 
       <LabelSettings />
+
+      <TemplateSettings />
 
       <BackupSettings />
 

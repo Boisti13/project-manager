@@ -75,6 +75,37 @@ class SavedFilter(SavedFilterCreate):
 
     model_config = ConfigDict(from_attributes=True)
 
+class TemplateNode(BaseModel):
+    title: str
+    description: Optional[str] = None
+    priority: int = 0
+    estimate_minutes: Optional[int] = None
+    label_ids: List[int] = []
+    subtasks: List["TemplateNode"] = []
+
+TemplateNode.model_rebuild()
+
+class TemplateCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    task_id: int  # saved with its subtasks
+
+class Template(BaseModel):
+    id: int
+    name: str
+    created_by: Optional[str] = None
+    created_by_id: Optional[int] = None
+    created_at: Optional[datetime] = None
+    task_count: int
+    tree: TemplateNode
+
+class TemplateUse(BaseModel):
+    """Where and how to create the tasks; the rest comes from the template."""
+    title: Optional[str] = Field(default=None, max_length=500)  # instead of the template's own title
+    project_id: Optional[int] = None
+    parent_task_id: Optional[int] = None
+    deadline: Optional[datetime] = None  # for the top task
+    assignee_id: Optional[int] = None  # for all of them
+
 class Token(BaseModel):
     access_token: str
     token_type: str

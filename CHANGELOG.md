@@ -2,6 +2,27 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.38.0 — 2026-09-28
+
+### Added
+- **Weekly review** (◷ *Review* in the menu): pick a week (‹ *This week* ›) and see
+  - how many tasks got **done** and how many are **new**, what's **overdue** and what's **due the week after**, each as a list (titles open the task);
+  - **open work per project**: done this week, open, overdue and estimated hours, with a total;
+  - *Everyone* or *Only mine*; **Copy as text** gives a plain-text summary for a status mail, **Print** prints just the review.
+- **Task templates**: ⋯ → **Save as template…** saves a task with its subtasks under a name. In the task form, **From template** creates it again: pick the template, optionally a new title, and the project, deadline and assignee for this round (also as subtasks of a task). Titles, descriptions, priorities, estimates and labels come along; everything starts as *To Do*. Templates are shared by everyone; Settings → **Task templates** lists them, and the one who saved one (or an admin) can delete it.
+- **Undo** instead of "Are you sure?":
+  - Deleting a task shows *Deleted “…” (and n subtasks) · Undo* for a few seconds; the task is only really deleted when that time is up (or right away when you leave the page).
+  - Ticking a task off — checkbox, board, **x** key, My day — shows *Marked “…” done · Undo*, which puts it back to the status it had.
+  - Reopening a completed repeating task (Undo, or unticking it) now takes back the next occurrence it created, if nobody has worked on that one yet (no changes, comments or ticked subtasks); ticking it again creates a fresh one.
+
+### Fixed
+- *Copy* for the calendar feed link now also works on servers without HTTPS.
+- Saved-filter chips and keyboard hints used a text color that doesn't exist (fell back to the default by luck).
+
+### Under the hood
+- Migration `0017`: table `task_templates`; `routers/templates.py` (`/api/v1/templates/`), `recurrence.take_back_next`; `frontend/src/review.js`, `clipboard.js`, `components/WeeklyReview.js`, `UndoToast.js`, `TemplateSettings.js`.
+- 4 new backend tests, 2 new frontend tests.
+
 ## v1.37.0 — 2026-09-28
 
 ### Added

@@ -144,6 +144,38 @@ def _copy_subtasks(db: Session, source: Task, target: Task, shift: timedelta):
         _copy_subtasks(db, sub, copy, shift)
 
 
+def _untouched(db: Session, task: Task) -> bool:
+    """Created as the next occurrence and not worked on since: still To Do,
+    no comments, no history beyond being created (also for its subtasks)."""
+    from app.models import TaskActivity, TaskComment
+    ids, stack = [], [task]
+    while stack:
+        t = stack.pop()
+        if t.status != TaskStatus.TODO and t is task:
+            return False
+        ids.append(t.id)
+        stack.extend(t.subtasks)
+    if db.query(TaskComment.id).filter(TaskComment.task_id.in_(ids)).first():
+        return False
+    other = db.query(TaskActivity.id).filter(
+        TaskActivity.task_id.in_(ids), TaskActivity.kind.notin_(("created", "repeat_of"))
+    ).first()
+    return other is None
+
+
+def take_back_next(db: Session, task: Task, actor) -> None:
+    """`task` was reopened: remove the occurrence its completion created, if
+    it's untouched (ticked by mistake, or undone), so ticking it again
+    creates a fresh one. An occurrence someone worked on stays."""
+    from app import tombstones
+    nxt = db.get(Task, task.recurrence_next_id) if task.recurrence_next_id else None
+    if nxt is None or not _untouched(db, nxt):
+        return
+    tombstones.task_deleted(db, nxt, actor)
+    task.recurrence_next_id = None
+    db.delete(nxt)
+
+
 def spawn_next(db: Session, task: Task):
     """Create the next occurrence of a repeating task that was just completed.
     Returns the new task, or None (not repeating / already created)."""

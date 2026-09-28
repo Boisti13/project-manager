@@ -24,6 +24,7 @@ import { STATUSES, statusName } from '../names';
 import { useSyncRefresh } from '../desktop/useSyncRefresh';
 import { childIndex, remainingMinutes, totalRemaining, formatEstimate } from '../estimate';
 import TrashIcon from './TrashIcon';
+import UndoToast, { UNDO_MS } from './UndoToast';
 
 const VIEWS = [
   { id: 'list', label: () => t('☰ List') },
@@ -99,6 +100,11 @@ function TaskList() {
   const [keyboardId, setKeyboardId] = useState(null);
   const [showKeys, setShowKeys] = useState(false);
   const [savedFilters, setSavedFilters] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  // The bar at the bottom: { key, message, onUndo? }.
+  const [undo, setUndo] = useState(null);
+  // A delete waiting out its undo time: { taskId, ids, timer }.
+  const pendingDelete = useRef(null);
 
   const filters = useMemo(() => filtersFromParams(searchParams), [searchParams]);
   const filtering = hasActiveFilters(filters);
@@ -156,6 +162,46 @@ function TaskList() {
     loadSavedFilters();
   }, [loadSavedFilters]);
 
+  const loadTemplates = useCallback(async () => {
+    try {
+      const res = await authFetch('/api/v1/templates/');
+      if (res.ok) setTemplates(await res.json());
+    } catch {
+      // "From template" just isn't offered
+    }
+  }, []);
+  useEffect(() => {
+    loadTemplates();
+  }, [loadTemplates]);
+
+  // Deletes wait UNDO_MS for "Undo"; leaving the page sends them right away.
+  const sendDelete = async (p) => {
+    try {
+      const response = await authFetch(`/api/tasks/${p.taskId}`, { method: 'DELETE', keepalive: true });
+      if (!response.ok && response.status !== 404) throw new Error(await parseApiError(response));
+    } catch (err) {
+      setError(t('Failed to delete task: {error}', { error: err.message }));
+      loadData(true);
+    }
+  };
+  const flushDelete = () => {
+    const p = pendingDelete.current;
+    if (!p) return;
+    clearTimeout(p.timer);
+    pendingDelete.current = null;
+    sendDelete(p);
+  };
+  const flushRef = useRef(flushDelete);
+  flushRef.current = flushDelete;
+  useEffect(() => {
+    const flush = () => flushRef.current();
+    window.addEventListener('pagehide', flush);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      flush();
+    };
+  }, []);
+
   // Load once when the page opens.
   useEffect(() => {
     loadData();
@@ -194,7 +240,8 @@ function TaskList() {
         fetchJson('/api/labels/'),
       ]);
       setLabels(labelsRes);
-      setTasks(tasksRes);
+      const pending = pendingDelete.current;
+      setTasks(pending ? tasksRes.filter((x) => !pending.ids.has(x.id)) : tasksRes);
       setProjects(projectsRes);
       setUsers(usersRes);
       setArchiveAfterDays(settingsRes.archive_after_days);
@@ -274,14 +321,101 @@ function TaskList() {
     }
   };
 
-  const handleDeleteTask = async (taskId) => {
-    if (!window.confirm(t('Are you sure you want to delete this task? Subtasks will be deleted too.'))) return;
+  // Gone from the list right away; really deleted when the undo time is up.
+  const handleDeleteTask = (taskId) => {
+    const task = tasks.find((x) => x.id === taskId);
+    if (!task) return;
+    flushDelete();
+    const ids = new Set([taskId]);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const x of tasks) {
+        if (x.parent_task_id != null && ids.has(x.parent_task_id) && !ids.has(x.id)) {
+          ids.add(x.id);
+          grew = true;
+        }
+      }
+    }
+    setTasks((ts) => ts.filter((x) => !ids.has(x.id)));
+    const p = { taskId, ids };
+    p.timer = setTimeout(() => {
+      if (pendingDelete.current === p) {
+        pendingDelete.current = null;
+        sendDelete(p);
+      }
+    }, UNDO_MS + 300);
+    pendingDelete.current = p;
+    const subtasks = ids.size - 1;
+    setUndo({
+      key: Date.now(),
+      message:
+        t('Deleted “{title}”', { title: task.title }) +
+        (subtasks ? ' ' + tn(subtasks, '(and one subtask)', '(and {n} subtasks)') : ''),
+      onUndo: () => {
+        if (pendingDelete.current === p) {
+          clearTimeout(p.timer);
+          pendingDelete.current = null;
+        }
+        loadData(true);
+      },
+    });
+  };
+
+  // "Undo" after ticking a task off: back to the status it had.
+  const offerUndoDone = (task) =>
+    setUndo({
+      key: Date.now(),
+      message: t('Marked “{title}” done', { title: task.title }),
+      onUndo: async () => {
+        try {
+          await fetchJson(`/api/tasks/${task.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: task.status }),
+          });
+        } catch (err) {
+          setError(t('Failed to update task: {error}', { error: err.message }));
+        }
+        await loadData(true);
+      },
+    });
+
+  const handleSaveTemplate = async (task) => {
+    const name = window.prompt(t('Save “{title}” with its subtasks as a template named:', { title: task.title }), task.title);
+    if (!name || !name.trim()) return;
     try {
-      const response = await authFetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error(await parseApiError(response));
+      await fetchJson('/api/v1/templates/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), task_id: task.id }),
+      });
+      await loadTemplates();
+      setUndo({ key: Date.now(), message: t('Saved as template “{name}”', { name: name.trim() }) });
+    } catch (err) {
+      setError(t('Failed to save the template: {error}', { error: err.message }));
+    }
+  };
+
+  const handleTemplateCreate = async (templateId, payload) => {
+    try {
+      const res = await fetchJson(`/api/v1/templates/${templateId}/use`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      setExpandedIds((prev) => {
+        const next = new Set(prev);
+        if (payload.parent_task_id) next.add(payload.parent_task_id);
+        if (res.ids.length > 1) next.add(res.ids[0]);
+        return next;
+      });
+      setShowForm(false);
+      setParentTaskForNew(null);
+      setProjectForNew(null);
       await loadData();
     } catch (err) {
-      setError(t('Failed to delete task: {error}', { error: err.message }));
+      setError(t('Failed to create tasks: {error}', { error: err.message }));
     }
   };
 
@@ -297,6 +431,7 @@ function TaskList() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
+      if (status === 'done') offerUndoDone(task);
       // A repeating task just created its next occurrence on the server.
       if (status === 'done' && task.recurrence_unit) await loadData();
     } catch (err) {
@@ -315,6 +450,7 @@ function TaskList() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
+      if (status === 'done' && task.status !== 'done') offerUndoDone(task);
       // Reload for completed_at (Done column order) and repeating tasks.
       if (status === 'done' || task.status === 'done') await loadData();
     } catch (err) {
@@ -686,6 +822,8 @@ function TaskList() {
       allTasks={tasks}
       onSubmit={selectedTask ? handleUpdateTask : handleCreateTask}
       onBulkSubmit={handleBulkCreate}
+      templates={templates}
+      onTemplateSubmit={handleTemplateCreate}
       onCancel={handleFormCancel}
     />
   );
@@ -719,6 +857,7 @@ function TaskList() {
       inlineForm={inlineForm}
       remainingOf={remainingOf}
       keyboardId={keyboardId}
+      onSaveTemplate={handleSaveTemplate}
     />
   );
 
@@ -1113,6 +1252,8 @@ function TaskList() {
         </button>{' '}
         <kbd>?</kbd>
       </p>
+
+      <UndoToast key={undo?.key} undo={undo} onClose={() => setUndo(null)} />
 
       {showKeys && (
         <div className="kbd-help-backdrop" onClick={() => setShowKeys(false)}>

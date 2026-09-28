@@ -13,6 +13,7 @@ import { t, locale } from '../i18n';
 import { priorityName } from '../names';
 import { notificationExcerpt } from './NotificationBell';
 import { useSyncRefresh } from '../desktop/useSyncRefresh';
+import UndoToast from './UndoToast';
 
 export const START_KEY = 'pm.startWithMyDay';
 const UNASSIGNED_KEY = 'pm.myDayUnassigned';
@@ -42,6 +43,7 @@ function MyDay() {
   const [error, setError] = useState(null);
   const [includeUnassigned, setIncludeUnassigned] = useState(() => readFlag(UNASSIGNED_KEY, true));
   const [startHere, setStartHere] = useState(() => readFlag(START_KEY, false));
+  const [undo, setUndo] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -85,6 +87,20 @@ function MyDay() {
       body: JSON.stringify({ status: 'done' }),
     });
     if (!res.ok) setError(t('Could not complete the task.'));
+    else {
+      setUndo({
+        key: Date.now(),
+        message: t('Marked “{title}” done', { title: task.title }),
+        onUndo: async () => {
+          await authFetch(`/api/tasks/${task.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: task.status }),
+          });
+          await load();
+        },
+      });
+    }
     await load(); // repeating tasks, unblocked tasks
   };
 
@@ -259,6 +275,7 @@ function MyDay() {
           )}
         </section>
       </div>
+      <UndoToast key={undo?.key} undo={undo} onClose={() => setUndo(null)} />
     </div>
   );
 }

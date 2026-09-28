@@ -16,6 +16,9 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 - **Quick entry**: *+ New Task* puts the cursor in the title — type and press **Enter** to create it. **Edit** and **Add subtask** open the form right below that task in the list, so there's no scrolling back and forth. *Create* and *Cancel* sit at the top of the form and stay in view while scrolling; **Ctrl+Enter** saves from any field (description, bulk list), **Esc** cancels
 - **Priorities**: Each task is *Low*, *Medium*, *High* or *Critical* (picked from a list); anything above Low shows as a colored badge, and lists sort by it
 - **Time estimates**: An optional *Estimate* per task — type `2h`, `1.5h`, `45m` or `1:30`. It shows on the task (⏱ 1h 30min); a task without its own estimate shows what its open subtasks add up to (⏱ Σ). Each project and category header shows the **open work, estimated**. Done tasks count nothing; a task's own estimate covers its subtasks, so nothing is counted twice. Estimates are in the history and the CSV export (in hours)
+- **Weekly review**: A page (◷ *Review*) for any week: what got **done**, how many tasks are **new**, what's **overdue** and what's **due the week after**, plus **open work per project** (done this week, open, overdue, estimated hours). Everyone's tasks or *only mine*; **Copy as text** for a status mail, **Print** for paper
+- **Templates**: Save a task with its subtasks as a template (⋯ → *Save as template…*), then create it again with *From template* in the task form — pick the template, optionally a new title, and the project, deadline and assignee for this round. Titles, descriptions, priorities, estimates and labels come along; everything starts as *To Do*. Shared by everyone; Settings → *Task templates* lists them
+- **Undo**: Deleting a task (with its subtasks) or ticking one off shows an **Undo** bar for a few seconds — no more "Are you sure?" for tasks. Undoing a completed repeating task also takes back the next occurrence it created, as long as nobody has worked on that one yet
 - **Keyboard shortcuts** on the Tasks page: **n** new task, **/** search, **j / k** move through the list, then **e** edit, **x** done / not done, **a** add subtask, **c** comments, **o** open/close subtasks, **Del** delete; **?** shows the list
 - **Hierarchical Tasks**: Main tasks with subtasks in a tree structure, drag-to-reorder at any level (in manual sort order) or **Move up / Move down** in each task's **⋯ menu** (works on touchscreens), **Move to…** another project or category (subtasks come along), subtask progress (e.g. *1/2*) on the parent; when all subtasks are ticked the parent is highlighted as ready (*✓ 2/2*) but stays open — it only moves to *Completed* when you tick it yourself, so more subtasks can still be added
 - **Bulk Entry**: *Several (one per line)* in the task form — type or paste a list, indent lines (Tab or two spaces) to make subtasks at any depth; bullets and Markdown checkboxes (`- [x] done`) are understood, a live preview shows the resulting tree, and project, status, priority, deadline and assignee apply to all of them. Works from *+ New Task*, a project/category section's **+**, or a task's **+** (all lines become its subtasks)
@@ -59,7 +62,10 @@ A self-hosted task management application with hierarchical tasks (main tasks + 
 | ![Bulk entry: one task per line, indented lines become subtasks](docs/screenshots/bulk-desktop.png) | ![Login with registration closed](docs/screenshots/login-phone.png) |
 | ![Notifications: assignments, comments, deadlines](docs/screenshots/bell-desktop.png) | ![Task menu on a phone](docs/screenshots/menu-phone.png) |
 | ![Private project with members](docs/screenshots/project-private-desktop.png) | |
-| ![Keyboard shortcuts](docs/screenshots/shortcuts-desktop.png) | |
+| ![Keyboard shortcuts](docs/screenshots/shortcuts-desktop.png) | ![Weekly review on a phone](docs/screenshots/review-phone.png) |
+| ![Weekly review](docs/screenshots/review-desktop.png) | |
+| ![Creating tasks from a template](docs/screenshots/template-desktop.png) | |
+| ![Undo after deleting a task](docs/screenshots/undo-desktop.png) | |
 
 <details>
 <summary>Settings (your account, archive days, backup &amp; restore, export, updates, users &amp; registration)</summary>
@@ -179,6 +185,8 @@ project-manager/
 │       ├── i18n.js          # t()/tn(), language detection; texts in locales/de.js
 │       ├── names.js         # Status and priority names
 │       ├── estimate.js      # Time estimates: parse "1h 30m", format, add up
+│       ├── review.js        # Weekly review: done, overdue, due next week, per project
+│       ├── clipboard.js     # Copy text, also on plain-HTTP servers
 │       ├── bulkParse.js     # "One task per line" text → task tree
 │       ├── recurrence.js    # Repeat settings as text
 │       ├── activity.js      # Task history entries as sentences

@@ -326,3 +326,8 @@
 .task-form input[aria-invalid="true"] {
   border-color: var(--color-error-text);
 }
+
+/* "From template": template and title stacked beside the preview */
+.template-fields .form-group + .form-group {
+  margin-top: 14px;
+}
