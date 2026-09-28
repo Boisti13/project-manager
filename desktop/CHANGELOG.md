@@ -3,6 +3,12 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.2.2 — 2026-09-28
+
+### Changed
+- **Edit and Add subtask open right below the task** in the list instead of at the top, with the cursor in the title (server v1.34.0 interface).
+- **Save and Cancel at the top of the form**, staying in view while scrolling; *type → Enter* creates a task, **Ctrl+Enter** saves from any field, **Esc** cancels (server v1.33.0 interface).
+
 ## v0.2.1 — 2026-09-27
 
 ### Changed
