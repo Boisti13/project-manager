@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authFetch, useAuth } from '../context/AuthContext';
-import { buildProjectIndex } from '../projects';
+import { buildProjectIndex, withoutArchived } from '../projects';
 import { weekStart, addDays, buildReview, deadlineDay } from '../review';
 import { childIndex, formatEstimate } from '../estimate';
 import { copyText } from '../clipboard';
@@ -65,17 +65,22 @@ function WeeklyReview() {
     },
     [byId, projectIndex]
   );
+  const activeIds = useMemo(
+    () => new Set(withoutArchived(data?.tasks || [], projectIndex).map((x) => x.id)),
+    [data, projectIndex]
+  );
   const review = useMemo(
     () =>
       data &&
-      buildReview(data.tasks, {
+      // Done tasks count wherever they are; open ones only in active projects.
+      buildReview(data.tasks.filter((x) => x.status === 'done' || activeIds.has(x.id)), {
         start,
         mine,
         userId: currentUser?.id,
         projectOf,
         childrenOf: childIndex(data.tasks),
       }),
-    [data, start, mine, currentUser, projectOf]
+    [data, start, mine, currentUser, projectOf, activeIds]
   );
 
   const setWeek = (next) => {

@@ -96,6 +96,11 @@ class Project(Base):
     parent_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True)
     # Private: only members (and admins) see it, its categories and tasks.
     is_private = Column(Boolean, nullable=False, default=False, server_default=false())
+    # Finished and put away (top-level projects only): hidden from lists and
+    # choices, its tasks still found by search.
+    archived_at = Column(DateTime, nullable=True)
+    # Secret in the read-only share link (routers/shared.py); None: not shared.
+    share_token = Column(String(64), nullable=True, unique=True)
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 

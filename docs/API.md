@@ -103,7 +103,9 @@ api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via
 | `/tasks/`, `/tasks/{id}`, `/tasks/bulk`, `/tasks/{id}/activity` | tasks (fields incl. `label_ids`, `blocked_by_ids`, `estimate_minutes`, repeat rule: `recurrence_unit`, `recurrence_interval`, `recurrence_weekdays` (0 = Monday), `recurrence_monthly`, `recurrence_from`) and their history |
 | `/tasks/bulk-update` | change several tasks in one request, all or nothing: `{"updates": [{"id": 1, "status": "done"}, {"id": 2, "priority": 3, "expected": {...}}]}` — each item takes the fields of `PUT /tasks/{id}` (incl. `expected`); someone who gets several tasks assigned is notified once |
 | `/tasks/{id}/comments`, `/comments/{id}`, `/comments/search` | comments |
-| `/projects/`, `/projects/{id}` | projects and categories (`parent_id`), `is_private`, `member_ids` |
+| `/projects/`, `/projects/{id}` | projects and categories (`parent_id`), `is_private`, `member_ids`; `archived_at` (set with `PUT {"archived": true/false}`, top-level projects only) |
+| `/projects/{id}/share` | `POST`: a read-only link for the project (`share_token`; the same one if it exists), `DELETE`: stop sharing |
+| `/share/{token}` | **no login**: the shared project, its categories and tasks (no comments, history or people) |
 | `/labels/` | labels |
 | `/templates/`, `/templates/{id}`, `/templates/{id}/use` | task templates (shared): save a task with its subtasks (`name`, `task_id`), list them (with the `tree`), delete (who saved it, or an admin), and create the tasks (`title`, `project_id`, `parent_task_id`, `deadline`, `assignee_id`; returns their `ids`, the top one first) |
 | `/saved-filters/`, `/saved-filters/{id}` | the current user's saved task-list filters: `name` and `query` (the Tasks page URL query, e.g. `assignee=me&sort=deadline`); saving under an existing name replaces it |

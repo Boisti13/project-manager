@@ -3,6 +3,12 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.4.0 — 2026-09-28
+
+### Added
+- **Formatted descriptions and comments** with clickable links, which open in your browser (server v1.41.0 interface).
+- **Archived projects** stay out of the lists and choices, also offline; archiving, restoring and **read-only share links** are on the Projects page (need the connection to the server).
+
 ## v0.3.0 — 2026-09-28
 
 ### Added

@@ -1,3 +1,4 @@
+import secrets
 from collections import Counter
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -102,6 +103,14 @@ def update_project(project_id: int, project: schemas.ProjectUpdate, current_user
     data = project.model_dump(exclude_unset=True)
     is_private = data.pop("is_private", None)
     member_ids = data.pop("member_ids", None)
+    archived = data.pop("archived", None)
+    if archived is not None:
+        if db_project.parent_id is not None:
+            raise HTTPException(status_code=400, detail="Categories are archived with their project")
+        if archived and db_project.archived_at is None:
+            db_project.archived_at = utcnow()
+        elif not archived:
+            db_project.archived_at = None
     if "parent_id" in data:
         validate_parent(db, current_user, project_id, data["parent_id"])
     for key, value in data.items():
@@ -113,6 +122,35 @@ def update_project(project_id: int, project: schemas.ProjectUpdate, current_user
     db.commit()
     db.refresh(db_project)
     return db_project
+
+def _top_level(db: Session, user: User, project_id: int) -> Project:
+    project = access.require_project(db, user, project_id)
+    if project.parent_id is not None:
+        raise HTTPException(status_code=400, detail="Share the whole project, not a category")
+    return project
+
+
+@router.post("/{project_id}/share", response_model=schemas.Project)
+def share_project(project_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """A read-only link to the project (/share/<token>): anyone with it sees its
+    tasks without logging in. Asking again keeps the same link."""
+    project = _top_level(db, current_user, project_id)
+    if not project.share_token:
+        project.share_token = secrets.token_urlsafe(24)
+        db.commit()
+        db.refresh(project)
+    return project
+
+
+@router.delete("/{project_id}/share", response_model=schemas.Project)
+def unshare_project(project_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Stops sharing: the link stops working (sharing again makes a new one)."""
+    project = _top_level(db, current_user, project_id)
+    project.share_token = None
+    db.commit()
+    db.refresh(project)
+    return project
+
 
 @router.delete("/{project_id}")
 def delete_project(project_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

@@ -331,3 +331,10 @@
 .template-fields .form-group + .form-group {
   margin-top: 14px;
 }
+
+.form-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}

@@ -15,6 +15,7 @@ import ConnectScreen from './components/desktop/ConnectScreen';
 import './App.css';
 import WeeklyReview from './components/WeeklyReview';
 import VersionWatch from './components/VersionWatch';
+import SharedProject from './components/SharedProject';
 
 // The Windows app loads its pages from files, where only #/… addresses work.
 const Router = IS_DESKTOP ? HashRouter : BrowserRouter;
@@ -88,6 +89,7 @@ function AppShell() {
               </ProtectedRoute>
             }
           />
+          <Route path="/share/:token" element={<SharedProject />} />
           <Route
             path="/review"
             element={

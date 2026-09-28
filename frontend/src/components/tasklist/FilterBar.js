@@ -141,6 +141,15 @@ function FilterBar({
                   </option>
                 )),
               ])}
+              {projectIndex.archived.length > 0 && (
+                <optgroup label={t('Archived')}>
+                  {projectIndex.archived.map((p) => (
+                    <option key={p.id} value={String(p.id)}>
+                      {p.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
 

@@ -1,6 +1,6 @@
 [package]
 name = "project-manager-desktop"
-version = "0.3.0"
+version = "0.4.0"
 description = "Project Manager for Windows: works offline, syncs with your server"
 edition = "2021"
 publish = false
@@ -15,6 +15,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-updater = "2"
+tauri-plugin-opener = "2"  # links in descriptions and comments open in the browser
 serde_json = "1"  # generate_context! needs it for the plugin config
 
 [profile.release]

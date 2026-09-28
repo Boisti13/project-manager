@@ -9,6 +9,7 @@ How to use Project Manager, page by page. Running a server is described in
 - [The Tasks page](#the-tasks-page)
   - [Adding tasks](#adding-tasks) · [Editing](#editing) · [Subtasks](#subtasks)
   - [What a task can have](#what-a-task-can-have): priority, deadline, estimate, labels, waiting for other tasks, repeating
+  - [Formatting](#formatting): bold, lists, clickable links
   - [Ticking tasks off](#ticking-tasks-off) · [Undo](#undo)
   - [List, board and calendar](#list-board-and-calendar)
   - [Finding tasks](#finding-tasks): search, filters, saved filters
@@ -16,7 +17,7 @@ How to use Project Manager, page by page. Running a server is described in
   - [Templates](#templates)
   - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Comments and history](#comments-and-history)
-- [Projects and categories](#projects-and-categories)
+- [Projects and categories](#projects-and-categories): private projects, [archiving](#archiving-finished-projects), [sharing a read-only link](#sharing-a-project-read-only)
 - [Notifications](#notifications)
 - [Weekly review](#weekly-review)
 - [Calendar feed](#calendar-feed)
@@ -129,6 +130,23 @@ yourself, so more subtasks can still be added.
   a fresh checklist. Shown with a ↻ badge.
 - **Assignee**: who does it. In a [private project](#projects-and-categories)
   only its members can be assigned.
+
+### Formatting
+
+Descriptions and comments understand a little Markdown:
+
+| Type | Shows as |
+|---|---|
+| `**bold**`, `*italic*`, `~~struck~~`, `` `code` `` | **bold**, *italic*, ~~struck~~, `code` |
+| `https://…` or `[the quote](https://…)` | a clickable link (opens in a new tab; in the Windows app, in your browser) |
+| `- item` or `1. item` on their own lines | a list |
+| `- [ ] open` / `- [x] done` | a checklist (for real subtasks, use subtasks) |
+| `# Heading`, `> quote`, ```` ``` ```` code block ```` ``` ```` | a heading, a quote, a code block |
+
+Line breaks stay as typed. Search still highlights matches inside formatted
+text.
+
+![A formatted description](screenshots/markdown-desktop.png)
 
 ### Ticking tasks off
 
@@ -243,7 +261,8 @@ On the Tasks page (not while typing in a field); **?** shows the list.
 
 💬 on a task opens its discussion (the count is shown on the row). Authors
 can edit (marked *edited*) and delete their comments; admins can delete any.
-The same panel shows the task's **history** — who created it and who changed
+Comments can be [formatted](#formatting) like descriptions. The same panel
+shows the task's **history** — who created it and who changed
 what: status, assignee, project, title, description, deadline, priority,
 estimate, repeat, labels, what it waits for — between the comments
 (*Hide history* shows comments only).
@@ -267,6 +286,40 @@ creates or manages a private project stays a member.
 | | | |
 |---|---|---|
 | ![Projects with progress](screenshots/projects-desktop.png) | ![A private project with members](screenshots/project-private-desktop.png) | ![Projects on a phone](screenshots/projects-phone.png) |
+
+### Archiving finished projects
+
+The **box** button on a project archives it (it asks first, and says if
+tasks in it are still open). An archived project and its categories:
+
+- disappear from the Tasks page, the project choices (task form, filters,
+  *Move to…*, select mode), My day, the bell's deadline reminders, the
+  weekly review's open work and the calendar feed;
+- are still found by **search**, and the *Project* filter lists them under
+  *Archived* — so nothing is lost;
+- are listed at the bottom of the Projects page under **Archived projects**,
+  with **Restore** to bring one back.
+
+### Sharing a project read-only
+
+The **link** button on a project makes a **read-only link** for someone
+without an account — a partner or customer, say. Anyone with the link sees
+the project's categories and tasks with their subtasks: titles,
+descriptions, status, priorities, deadlines, estimates, labels and the
+progress — without logging in, and without being able to change anything.
+Comments, history and who does what stay private. The page shows the
+current state whenever it's opened.
+
+**Copy** the link to send it; **Stop sharing** makes it stop working (sharing
+again makes a new one). A shared project shows its link button in blue.
+Whoever can see a project can share it — including private ones, so think
+before sharing those.
+
+| | |
+|---|---|
+| ![Share link and archived projects](screenshots/projects-share-desktop.png) | ![The shared page on a phone](screenshots/shared-phone.png) |
+
+![The shared project page](screenshots/shared-desktop.png)
 
 ## Notifications
 

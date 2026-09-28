@@ -4,6 +4,7 @@ import { parseServerDate } from '../taskFilters';
 import { describeActivity } from '../activity';
 import '../styles/TaskComments.css';
 import { t, locale } from '../i18n';
+import Markdown from './Markdown';
 
 const errorText = async (res) => {
   const data = await res.json().catch(() => ({}));
@@ -217,7 +218,7 @@ function TaskComments({ taskId, onCountChange, changeKey }) {
                   </div>
                 </div>
               ) : (
-                <p className="comment-body">{c.body}</p>
+                <Markdown text={c.body} className="comment-body" />
               )}
             </div>
           );

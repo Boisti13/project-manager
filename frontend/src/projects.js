@@ -36,7 +36,11 @@ export function buildProjectIndex(projects) {
 
   return {
     byId,
-    topLevel,
+    // Active top-level projects: what lists and choices offer. Archived ones
+    // are kept apart (the Projects page shows them; search still finds their tasks).
+    topLevel: topLevel.filter((p) => !p.archived_at),
+    archived: topLevel.filter((p) => p.archived_at),
+    allTopLevel: topLevel,
     categoriesOf: (id) => children.get(id) || [],
     topOf,
     parentIdOf: (id) => {
@@ -46,6 +50,8 @@ export function buildProjectIndex(projects) {
     // Private projects: only members (and admins) see them; categories
     // follow their project.
     isPrivate: (id) => !!topOf(id)?.is_private,
+    /** Project `id` (or the project of category `id`) is archived. */
+    isArchived: (id) => !!topOf(id)?.archived_at,
     /** Users who may be assigned tasks in project `id` (all when it's public). */
     assignableUsers: (id, users) => {
       const top = topOf(id);
@@ -110,7 +116,7 @@ export function groupTasksByProject(roots, index, { includeEmpty = false } = {})
   const byCompleted = (a, b) => completedTime(b) - completedTime(a) || b.id - a.id;
   const hasAny = (b) => b.tasks.length > 0 || b.completed.length > 0;
 
-  const result = index.topLevel
+  const result = index.allTopLevel
     .filter((p) => groups.has(p.id))
     .map((p) => {
       const { cats, ...g } = groups.get(p.id);
@@ -125,6 +131,19 @@ export function groupTasksByProject(roots, index, { includeEmpty = false } = {})
     g.categories.forEach((c) => c.completed.sort(byCompleted));
   }
   return result;
+}
+
+/** Tasks that aren't in an archived project (subtasks follow their parent's project). */
+export function withoutArchived(tasks, index) {
+  const byId = new Map(tasks.map((x) => [x.id, x]));
+  const projectOf = (task) => {
+    for (let cur = task; cur; cur = byId.get(cur.parent_task_id)) if (cur.project_id != null) return cur.project_id;
+    return null;
+  };
+  return tasks.filter((x) => {
+    const p = projectOf(x);
+    return p == null || !index.isArchived(p);
+  });
 }
 
 /** Open (not done) root tasks in a project section, categories included. */

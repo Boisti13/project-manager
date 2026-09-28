@@ -6,6 +6,7 @@ import { parseServerDate } from '../taskFilters';
 import '../styles/NotificationBell.css';
 import { t, tn, locale } from '../i18n';
 import { useSyncRefresh } from '../desktop/useSyncRefresh';
+import { buildProjectIndex, withoutArchived } from '../projects';
 
 const UPCOMING_WINDOW_DAYS = 3;
 const POLL_INTERVAL_MS = 60000;
@@ -31,6 +32,7 @@ export const notificationExcerpt = (n) => {
 function NotificationBell() {
   const { currentUser } = useAuth();
   const [tasks, setTasks] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [notes, setNotes] = useState({ unread: 0, items: [] });
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
@@ -38,8 +40,13 @@ function NotificationBell() {
 
   const load = useCallback(async () => {
     try {
-      const [tRes, nRes] = await Promise.all([authFetch('/api/tasks/'), authFetch('/api/notifications/')]);
+      const [tRes, nRes, pRes] = await Promise.all([
+        authFetch('/api/tasks/'),
+        authFetch('/api/notifications/'),
+        authFetch('/api/projects/'),
+      ]);
       if (tRes.ok) setTasks(await tRes.json());
+      if (pRes.ok) setProjects(await pRes.json());
       if (nRes.ok) setNotes(await nRes.json());
     } catch {
       // notifications are best-effort; ignore transient failures
@@ -83,7 +90,8 @@ function NotificationBell() {
   // Deadlines for tasks that are yours, or nobody's.
   const now = new Date();
   const upcomingCutoff = new Date(now.getTime() + UPCOMING_WINDOW_DAYS * 24 * 60 * 60 * 1000);
-  const relevant = tasks.filter(
+  // Archived projects don't remind anyone.
+  const relevant = withoutArchived(tasks, buildProjectIndex(projects)).filter(
     (t) => t.deadline && t.status !== 'done' && (t.assignee_id == null || t.assignee_id === currentUser?.id)
   );
   const deadlineOf = (t) => parseServerDate(t.deadline);

@@ -131,12 +131,15 @@ class ProjectUpdate(BaseModel):
     parent_id: Optional[int] = None
     is_private: Optional[bool] = None
     member_ids: Optional[List[int]] = None
+    archived: Optional[bool] = None  # top-level projects only
 
 class Project(ProjectBase):
     id: int
     uid: str
     is_private: bool = False
     member_ids: List[int] = []
+    archived_at: Optional[datetime] = None
+    share_token: Optional[str] = None  # read-only link: /share/<token>
     created_at: datetime
     updated_at: datetime
 

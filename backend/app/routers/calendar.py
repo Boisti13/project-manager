@@ -65,6 +65,15 @@ def calendar(token: str, request: Request, scope: Literal["mine", "all"] = Query
 
     projects = {p.id: p for p in db.query(Project)}
 
+    def archived(task):
+        pid = task.project_id if task.project_id is not None else (
+            parents[task.parent_task_id].project_id if task.parent_task_id in parents else None)
+        p = projects.get(pid)
+        top = projects.get(p.parent_id) if p is not None and p.parent_id else p
+        return top is not None and top.archived_at is not None
+
+    tasks = [task for task in tasks if not archived(task)]
+
     def project_label(pid):
         p = projects.get(pid)
         if not p:

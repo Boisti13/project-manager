@@ -21,7 +21,8 @@ working offline.
 - **List, board and calendar** views; search, filters and **saved filters**
 - **My day** start page and a **weekly review** with open work per project
 - **Quick**: type and press Enter, several tasks at once (one per line), **templates**, **keyboard shortcuts**, **change several tasks at once**, **Undo**
-- **Comments, history and notifications** for working together
+- **Comments, history and notifications** for working together; descriptions and comments with **formatting and clickable links**
+- **Archive** finished projects (still searchable), **share a project read-only** with a link — no account needed
 - **Calendar feed** for Outlook, Apple Calendar, Thunderbird or Android
 - **Phone-friendly**, installable to the home screen; **dark mode**
 - **Windows app** with a local copy: works offline, syncs when back online, updates itself

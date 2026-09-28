@@ -2,6 +2,18 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.41.0 — 2026-09-28
+
+### Added
+- **Formatting in descriptions and comments** (a Markdown subset): `**bold**`, `*italic*`, `~~struck~~`, `` `code` ``, lists, checklists (`- [x]`), headings, quotes and code blocks. **Links are clickable** — `[text](https://…)` or a pasted `https://…`; only web and mail links, anything else stays text. Line breaks stay as typed, search still highlights matches, and the form says what works. In the Windows app, links open in the browser.
+- **Archive finished projects**: the box button on a project (Projects page). Archived projects leave the Tasks page, all project choices, My day, deadline reminders, the review's open work and the calendar feed — but search still finds their tasks, the *Project* filter lists them under *Archived*, and **Restore** at the bottom of the Projects page brings one back.
+- **Share a project read-only**: the link button on a project creates a link (`/share/…`) that shows its categories, tasks and subtasks — titles, descriptions, status, priorities, deadlines, estimates, labels, progress — to anyone, **without an account**, and without changing anything. Comments, history and names stay private. **Stop sharing** makes the link dead.
+
+### Under the hood
+- Migration `0018`: `projects.archived_at`, `projects.share_token`; `routers/shared.py` (`GET /api/v1/share/{token}`, no login), `POST/DELETE /api/v1/projects/{id}/share`; `frontend/src/markdown.js` (renders to React elements, no HTML), `components/Markdown.js`, `SharedProject.js`, `ProjectShare.js`.
+- Windows app: Tauri's opener plugin for links.
+- 4 new backend tests, 6 new frontend tests, 3 new browser tests.
+
 ## v1.40.0 — 2026-09-28
 
 ### Added

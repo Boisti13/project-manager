@@ -44,6 +44,7 @@ with a local copy of your data.
 ### Offline
 
 - Everything you can see stays available offline, including comments.
+- Links in descriptions and comments open in your normal browser.
 - **Offline you can**: create, edit, tick off and delete tasks and subtasks
   (also several at once), reorder them, and write, edit and delete comments.
   The changes wait in a queue and are sent in order once the server is
@@ -64,7 +65,8 @@ with a local copy of your data.
 
 - `desktop/src-tauri/` — the [Tauri](https://tauri.app) shell: a native
   window with the system's WebView2 showing the React frontend. No
-  server-side code; the only plugin is the updater.
+  server-side code; the plugins are the updater and the opener (links open
+  in the browser).
 - `frontend/src/desktop/` — the offline layer, active only in builds with
   `REACT_APP_TARGET=desktop`:
   - `store.js` — the local copy (IndexedDB in the app's WebView profile),

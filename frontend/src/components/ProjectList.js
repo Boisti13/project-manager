@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import ProjectForm from './ProjectForm';
 import TrashIcon from './TrashIcon';
+import ProjectShare from './ProjectShare';
+import { ArchiveIcon, LinkIcon } from './icons';
+import { parseServerDate } from '../taskFilters';
 import { authFetch, useAuth } from '../context/AuthContext';
 import { buildProjectIndex } from '../projects';
 import { progressByProject, combineProgress, percentDone } from '../progress';
@@ -68,6 +71,9 @@ function ProjectList() {
   const [form, setForm] = useState(null);
   const [notice, setNotice] = useState(null);
   const importRef = useRef(null);
+  // The project whose share link is open, and whether archived projects are shown.
+  const [shareOpen, setShareOpen] = useState(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   const projectIndex = useMemo(() => buildProjectIndex(projects), [projects]);
 
@@ -154,6 +160,45 @@ function ProjectList() {
       setError(t('Failed to delete: {error}', { error: err.message }));
     }
   };
+
+  const setArchived = async (project, archived, stats) => {
+    if (archived) {
+      const open = stats.total - stats.done;
+      const msg =
+        t('Archive “{name}”? It’s hidden from the lists and choices; search still finds its tasks, and you can restore it any time.', {
+          name: project.name,
+        }) + (open ? ' ' + tn(open, 'One task in it is still open.', '{n} tasks in it are still open.') : '');
+      if (!window.confirm(msg)) return;
+    }
+    try {
+      await fetchJson(`/api/projects/${project.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ archived }),
+      });
+      setShareOpen(null);
+      await loadData();
+      setNotice(
+        archived
+          ? t('“{name}” is archived. It’s under “Archived projects” at the bottom.', { name: project.name })
+          : t('“{name}” is back.', { name: project.name })
+      );
+    } catch (err) {
+      setError(t('Failed to save: {error}', { error: err.message }));
+    }
+  };
+
+  const shareButton = (project) => (
+    <button
+      className={`task-action-btn share-btn ${project.share_token ? 'active' : ''}`}
+      onClick={() => setShareOpen(shareOpen === project.id ? null : project.id)}
+      title={project.share_token ? t('Shared with a link') : t('Share a read-only link')}
+      aria-label={t('Share')}
+      aria-expanded={shareOpen === project.id}
+    >
+      <LinkIcon />
+    </button>
+  );
 
   // Export: one project (with categories and tasks), or everything incl.
   // tasks without a project. See backend/app/routers/transfer.py.
@@ -319,6 +364,15 @@ function ProjectList() {
                     >
                       ⤓
                     </button>
+                    {shareButton(project)}
+                    <button
+                      className="task-action-btn archive-btn"
+                      onClick={() => setArchived(project, true, stats)}
+                      title={t('Archive (finished)')}
+                      aria-label={t('Archive')}
+                    >
+                      <ArchiveIcon />
+                    </button>
                     <button className="task-action-btn edit-btn" onClick={() => openForm({ project })} title={t('Edit')}>
                       ✎
                     </button>
@@ -327,6 +381,8 @@ function ProjectList() {
                     </button>
                   </div>
                 </div>
+
+                {shareOpen === project.id && <ProjectShare project={project} onChanged={loadData} onError={setError} />}
 
                 {categories.length > 0 && (
                   <ul className="category-list">
@@ -360,6 +416,48 @@ function ProjectList() {
           })
         )}
       </div>
+
+      {projectIndex.archived.length > 0 && (
+        <div className="archived-projects">
+          <button className="completed-toggle" onClick={() => setShowArchived((v) => !v)} aria-expanded={showArchived}>
+            <span className="project-group-caret">{showArchived ? '▼' : '▶'}</span>
+            {t('Archived projects ({n})', { n: projectIndex.archived.length })}
+          </button>
+          {showArchived && (
+            <ul className="archived-list">
+              {projectIndex.archived.map((project) => {
+                const categories = projectIndex.categoriesOf(project.id);
+                const stats = combineProgress([statsOf(project.id), ...categories.map((c) => statsOf(c.id))]);
+                return (
+                  <li key={project.id} className="archived-item" style={{ '--project-color': projectIndex.colorOf(project.id) }}>
+                    <div className="archived-row">
+                      <span className="project-swatch" />
+                      <Link to={`/?project=${project.id}`} className="archived-name">
+                        {project.name}
+                      </Link>
+                      <span className="label-usage">
+                        {t('archived {date}', { date: shortDate(parseServerDate(project.archived_at)) })}
+                        {' · '}
+                        {t('{done} of {total} done', { done: stats.done, total: stats.total })}
+                      </span>
+                      <span className="project-actions">
+                        {shareButton(project)}
+                        <button className="btn btn-secondary btn-small" onClick={() => setArchived(project, false, stats)}>
+                          {t('Restore')}
+                        </button>
+                        <button className="task-action-btn delete-btn" onClick={() => handleDelete(project)} title={t('Delete')} aria-label={t('Delete')}>
+                          <TrashIcon />
+                        </button>
+                      </span>
+                    </div>
+                    {shareOpen === project.id && <ProjectShare project={project} onChanged={loadData} onError={setError} />}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

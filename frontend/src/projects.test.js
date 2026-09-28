@@ -1,6 +1,6 @@
 // Run with `npm test` (react-scripts / Jest).
 import assert from 'assert';
-import { buildProjectIndex, groupTasksByProject, groupTaskCount, NO_PROJECT_COLOR } from './projects';
+import { buildProjectIndex, groupTasksByProject, groupTaskCount, NO_PROJECT_COLOR, withoutArchived } from './projects';
 import { DEFAULT_FILTERS, buildTaskTree } from './taskFilters';
 
 const projects = [
@@ -169,4 +169,25 @@ test('private projects: categories follow, only members are assignable', () => {
   assert.deepStrictEqual(idx.assignableUsers(2, users).map((u) => u.id), [10, 12]);
   assert.strictEqual(idx.assignableUsers(3, users).length, 3);
   assert.strictEqual(idx.assignableUsers(null, users).length, 3);
+});
+
+test('archived projects: kept apart, their tasks left out, still grouped when shown', () => {
+  const idx = buildProjectIndex([
+    { id: 1, name: 'Active', parent_id: null },
+    { id: 2, name: 'Old', parent_id: null, archived_at: '2026-09-01T10:00:00' },
+    { id: 3, name: 'Old part', parent_id: 2 },
+  ]);
+  assert.deepStrictEqual(idx.topLevel.map((p) => p.id), [1]);
+  assert.deepStrictEqual(idx.archived.map((p) => p.id), [2]);
+  assert.ok(idx.isArchived(2) && idx.isArchived(3) && !idx.isArchived(1) && !idx.isArchived(99));
+  const tasks = [
+    { id: 10, project_id: 1, parent_task_id: null, status: 'todo' },
+    { id: 11, project_id: 3, parent_task_id: null, status: 'todo' },
+    { id: 12, project_id: null, parent_task_id: 11, status: 'todo' }, // subtask follows its parent
+    { id: 13, project_id: null, parent_task_id: null, status: 'todo' },
+  ];
+  assert.deepStrictEqual(withoutArchived(tasks, idx).map((t) => t.id), [10, 13]);
+  // not offered as an empty section, but grouped when its tasks are shown (search)
+  assert.deepStrictEqual(groupTasksByProject([], idx, { includeEmpty: true }).map((g) => g.key), ['p1']);
+  assert.deepStrictEqual(groupTasksByProject([tasks[1]], idx).map((g) => g.key), ['p2']);
 });

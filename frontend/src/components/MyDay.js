@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authFetch, useAuth } from '../context/AuthContext';
-import { buildProjectIndex } from '../projects';
+import { buildProjectIndex, withoutArchived } from '../projects';
 import { buildLabelIndex } from '../labels';
 import { buildDependencyIndex } from '../dependencies';
 import { buildMyDay, recentNotifications, greeting } from '../myday';
@@ -74,8 +74,8 @@ function MyDay() {
   const labelIndex = useMemo(() => buildLabelIndex(data?.labels || []), [data]);
   const depIndex = useMemo(() => buildDependencyIndex(data?.tasks || []), [data]);
   const day = useMemo(
-    () => buildMyDay(data?.tasks || [], { userId: currentUser?.id, includeUnassigned }),
-    [data, currentUser, includeUnassigned]
+    () => buildMyDay(withoutArchived(data?.tasks || [], projectIndex), { userId: currentUser?.id, includeUnassigned }),
+    [data, currentUser, includeUnassigned, projectIndex]
   );
   const taskById = useMemo(() => new Map((data?.tasks || []).map((t) => [t.id, t])), [data]);
 

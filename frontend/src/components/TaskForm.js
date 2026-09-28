@@ -362,6 +362,7 @@ function TaskForm({
               placeholder={t('Task description')}
               rows="3"
             />
+            <small className="form-hint">{t('Formatting: **bold**, *italic*, `code`, - lists, links are clickable')}</small>
           </div>
         </>
       ) : (
@@ -485,6 +486,11 @@ function TaskForm({
                 </optgroup>
               );
             })}
+            {formData.project_id != null && projectIndex.isArchived(formData.project_id) && (
+              <option value={formData.project_id}>
+                {t('{name} (archived)', { name: projectIndex.labelOf(formData.project_id) })}
+              </option>
+            )}
           </select>
         </div>
       </div>

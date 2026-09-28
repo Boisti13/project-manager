@@ -84,3 +84,15 @@ test('buildTaskTree, URL params and highlighting', () => {
   ]);
   assert.deepStrictEqual(highlightParts('abc', ''), [{ text: 'abc', hit: false }]);
 });
+
+test('tasks of archived projects only show when searching or filtering by a project', () => {
+  const tasks = [
+    { id: 1, title: 'Active task', project_id: 1, parent_task_id: null, status: 'todo', order: 0 },
+    { id: 2, title: 'Old task', project_id: 2, parent_task_id: null, status: 'todo', order: 0 },
+  ];
+  const opts = { isArchivedProject: (id) => id === 2 };
+  const ids = (f) => buildTaskTree(tasks, { ...DEFAULT_FILTERS, ...f }, opts).roots.map((t) => t.id);
+  assert.deepStrictEqual(ids({}), [1]);
+  assert.deepStrictEqual(ids({ q: 'task' }), [1, 2]);
+  assert.deepStrictEqual(ids({ project: '2' }), [2]);
+});

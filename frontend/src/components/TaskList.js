@@ -462,6 +462,7 @@ function TaskList() {
         archiveAfterDays,
         commentMatchIds,
         labelNameOf: labelIndex.nameOf,
+        isArchivedProject: projectIndex.isArchived,
       }),
     [tasks, filters, currentUser, projectIndex, archiveAfterDays, commentMatchIds, labelIndex]
   );

@@ -10,6 +10,7 @@ import '../styles/Dependencies.css';
 import { t, tn, shortDate } from '../i18n';
 import { statusName, priorityName } from '../names';
 import { formatEstimate } from '../estimate';
+import Markdown from './Markdown';
 
 function Highlight({ text, needle }) {
   return highlightParts(text, needle).map((part, i) =>
@@ -288,9 +289,9 @@ function TaskItem({
       </div>
 
       {task.description && (
-        <p className="task-description" ref={descriptionRef}>
-          <Highlight text={task.description} needle={searchText} />
-        </p>
+        <div className="task-description" ref={descriptionRef}>
+          <Markdown text={task.description} highlight={searchText} />
+        </div>
       )}
 
       {showComments && (

@@ -312,3 +312,77 @@
 .private-lock {
   font-size: 12px;
 }
+
+/* Share link and archive (ProjectShare.js, ProjectList.js) */
+.share-btn.active {
+  color: var(--color-primary);
+}
+
+.project-share {
+  margin: 10px 0 4px;
+  padding: 10px 12px;
+  border: 1px dashed var(--color-border);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.project-share p {
+  margin: 0 0 8px;
+}
+
+.project-share-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.project-share-link code {
+  flex: 1 1 280px;
+  min-width: 0;
+  padding: 5px 8px;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.archived-projects {
+  margin-top: 24px;
+}
+
+.archived-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+.archived-item {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.archived-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.archived-row .project-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--project-color);
+  opacity: 0.6;
+}
+
+.archived-name {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.archived-row .project-actions {
+  margin-left: auto;
+}

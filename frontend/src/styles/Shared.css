@@ -1,0 +1,157 @@
+/* The read-only shared project page (components/SharedProject.js). */
+
+.shared-head {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.shared-kicker {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.shared-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 8px;
+}
+
+.shared-head .project-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--project-color);
+}
+
+.shared-archived {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface-hover);
+}
+
+.shared-intro {
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+}
+
+.shared-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.shared-progress-bar {
+  flex: 0 1 240px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: var(--color-border);
+  overflow: hidden;
+}
+
+.shared-progress-bar span {
+  display: block;
+  height: 100%;
+  background-color: var(--project-color);
+}
+
+.shared-section {
+  margin-bottom: 18px;
+}
+
+.shared-section .category-name {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.shared-section-desc {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.shared-tasks,
+.shared-subtasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.shared-subtasks {
+  margin-left: 22px;
+}
+
+.shared-tasks > .shared-task {
+  margin-bottom: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--project-color);
+  border-radius: 6px;
+  background-color: var(--color-surface);
+}
+
+.shared-subtasks .shared-task {
+  padding: 4px 0 0;
+}
+
+.shared-task-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.shared-check {
+  color: var(--color-text-muted);
+}
+
+.shared-check.done {
+  color: var(--color-success-text);
+}
+
+.shared-title {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.shared-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.shared-description {
+  margin: 4px 0 0 26px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.shared-foot {
+  margin-top: 24px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 600px) {
+  .shared-badges {
+    margin-left: 26px;
+  }
+
+  /* The task list hides it on phones (the checkbox shows done); here it's the only status. */
+  .shared .task-status-badge {
+    display: inline-block;
+  }
+}

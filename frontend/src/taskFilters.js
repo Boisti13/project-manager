@@ -125,6 +125,7 @@ export function buildTaskTree(
     archiveAfterDays = null,
     commentMatchIds = null,
     labelNameOf = () => '',
+    isArchivedProject = () => false,
   } = {}
 ) {
   const children = new Map();
@@ -144,7 +145,11 @@ export function buildTaskTree(
   };
 
   const showArchived = filters.q.trim() !== '' || filters.status === 'done';
-  const everyRoot = children.get(null) || [];
+  // Tasks of archived projects: only when searching or filtering by a project.
+  const showArchivedProjects = filters.q.trim() !== '' || filters.project !== '';
+  const everyRoot = (children.get(null) || []).filter(
+    (t) => showArchivedProjects || t.project_id == null || !isArchivedProject(t.project_id)
+  );
   const allRoots = showArchived ? everyRoot : everyRoot.filter((t) => !isArchived(t, archiveAfterDays, now));
   const archivedCount = everyRoot.length - allRoots.length;
   const active = hasActiveFilters(filters);
