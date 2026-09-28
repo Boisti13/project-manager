@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.36.1 — 2026-09-28
+
+### Changed
+- **Delete buttons show a trash can** instead of ✕ — on tasks, in the ⋯ menu, on projects/categories and on labels (gray, red on hover like before). The ✕ that removes a dependency from a task stays, since it removes a link rather than deleting anything.
+
 ## v1.36.0 — 2026-09-28
 
 ### Changed

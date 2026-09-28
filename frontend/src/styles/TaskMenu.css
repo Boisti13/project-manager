@@ -52,6 +52,11 @@
   color: var(--color-text-secondary);
 }
 
+.tm-icon .trash-icon {
+  display: block;
+  margin: 0 auto;
+}
+
 .tm-danger {
   color: var(--color-error-text) !important;
   border-top: 1px solid var(--color-border-light) !important;

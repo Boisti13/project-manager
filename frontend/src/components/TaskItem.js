@@ -3,6 +3,7 @@ import { highlightParts } from '../taskFilters';
 import TaskComments from './TaskComments';
 import TaskMenu from './TaskMenu';
 import LabelChips from './LabelChips';
+import TrashIcon from './TrashIcon';
 import { describeRecurrence, shortRecurrence } from '../recurrence';
 import '../styles/TaskItem.css';
 import '../styles/Dependencies.css';
@@ -212,8 +213,8 @@ function TaskItem({
           <button className="task-action-btn edit-btn" onClick={() => onEdit(task)} title={t('Edit')}>
             ✎
           </button>
-          <button className="task-action-btn delete-btn" onClick={() => onDelete(task.id)} title={t('Delete')}>
-            ✕
+          <button className="task-action-btn delete-btn" onClick={() => onDelete(task.id)} title={t('Delete')} aria-label={t('Delete')}>
+            <TrashIcon />
           </button>
           {projectIndex && (
             <TaskMenu

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/TaskMenu.css';
 import { t } from '../i18n';
+import TrashIcon from './TrashIcon';
 
 // "⋯" menu on a task row: add subtask, edit, move to another project/category,
 // move up/down (manual order), delete. On phones it replaces the row's
@@ -75,7 +76,7 @@ function TaskMenu({ task, projectIndex, moveState, onAddSubtask, onEdit, onDelet
             <span className="tm-icon">↓</span> {t('Move down')}
           </button>
           <button role="menuitem" className="tm-danger" onClick={run(() => onDelete(task.id))}>
-            <span className="tm-icon">✕</span> {t('Delete')}
+            <span className="tm-icon"><TrashIcon size={14} /></span> {t('Delete')}
           </button>
         </div>
       )}

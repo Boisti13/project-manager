@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { authFetch } from '../context/AuthContext';
 import { labelTextColor } from '../labels';
+import TrashIcon from './TrashIcon';
 import '../styles/Labels.css';
 import { t, tn } from '../i18n';
 
@@ -117,8 +118,8 @@ function LabelSettings() {
                   <button className="task-action-btn" onClick={() => setEditing({ ...l })} title={t('Rename / recolor')}>
                     ✎
                   </button>
-                  <button className="task-action-btn delete-btn" onClick={() => remove(l)} title={t('Delete label')}>
-                    ✕
+                  <button className="task-action-btn delete-btn" onClick={() => remove(l)} title={t('Delete label')} aria-label={t('Delete label')}>
+                    <TrashIcon />
                   </button>
                 </span>
               </li>

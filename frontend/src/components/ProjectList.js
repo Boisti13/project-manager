@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import ProjectForm from './ProjectForm';
+import TrashIcon from './TrashIcon';
 import { authFetch, useAuth } from '../context/AuthContext';
 import { buildProjectIndex } from '../projects';
 import { progressByProject, combineProgress, percentDone } from '../progress';
@@ -321,8 +322,8 @@ function ProjectList() {
                     <button className="task-action-btn edit-btn" onClick={() => openForm({ project })} title={t('Edit')}>
                       ✎
                     </button>
-                    <button className="task-action-btn delete-btn" onClick={() => handleDelete(project)} title={t('Delete')}>
-                      ✕
+                    <button className="task-action-btn delete-btn" onClick={() => handleDelete(project)} title={t('Delete')} aria-label={t('Delete')}>
+                      <TrashIcon />
                     </button>
                   </div>
                 </div>
@@ -346,8 +347,8 @@ function ProjectList() {
                           <button className="task-action-btn edit-btn" onClick={() => openForm({ project: c })} title={t('Edit')}>
                             ✎
                           </button>
-                          <button className="task-action-btn delete-btn" onClick={() => handleDelete(c)} title={t('Delete')}>
-                            ✕
+                          <button className="task-action-btn delete-btn" onClick={() => handleDelete(c)} title={t('Delete')} aria-label={t('Delete')}>
+                            <TrashIcon />
                           </button>
                         </span>
                       </li>
