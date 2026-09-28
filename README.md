@@ -1,6 +1,9 @@
 # Project Manager
 
 [![CI](https://github.com/Boisti13/project-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/Boisti13/project-manager/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/Boisti13/project-manager?filter=v*&label=release)](https://github.com/Boisti13/project-manager/releases/latest)
+[![Windows app](https://img.shields.io/github/v/release/Boisti13/project-manager?filter=desktop-v*&label=windows%20app)](https://github.com/Boisti13/project-manager/releases?q=desktop-v&expanded=true)
+[![License: MIT](https://img.shields.io/github/license/Boisti13/project-manager)](LICENSE)
 
 A self-hosted task management application with hierarchical tasks (main tasks + subtasks), list/board/calendar views, color-coded projects with categories, task comments and history, recurring tasks, multi-user support, deadlines, search and filtering, a phone-friendly layout and in-app updates.
 
