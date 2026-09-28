@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import (
     users, tasks, projects, auth, system, settings, transfer, comments, notifications, labels, tokens, deletions, sync,
+    calendar,
 )
 from app.version import APP_VERSION
 
@@ -49,6 +50,7 @@ ROUTES = [
     (notifications.router, "/notifications", "notifications"),
     (settings.router, "/settings", "settings"),
     (transfer.router, "/transfer", "export / import"),
+    (calendar.router, "/calendar", "calendar feed"),
     (sync.router, "/sync", "sync"),
     (deletions.router, "/deletions", "sync"),
     (system.router, "/system", "system"),

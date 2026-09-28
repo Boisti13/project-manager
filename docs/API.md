@@ -103,6 +103,7 @@ api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via
 | `/notifications/`, `/notifications/read` | the current user's notifications |
 | `/users/` | users (admins: `/users/admin/all`, create, change) |
 | `/transfer/export`, `/transfer/import` | project export/import (JSON) |
+| `/calendar/feed`, `/calendar/feed/reset`, `/calendar/{token}.ics?scope=mine\|all` | the user's calendar feed link, and the feed itself (no login: the token in the link is the key) |
 | `/sync/?since=…` | everything visible, or what changed since a cursor — for offline clients |
 | `/deletions/?since=…` | what was deleted (tasks, comments, projects, labels), for clients that keep a copy |
 | `/settings/`, `/system/…` | instance settings, version/updates, backups (admins) |

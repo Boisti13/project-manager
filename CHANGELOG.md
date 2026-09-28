@@ -2,6 +2,20 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.35.0 — 2026-09-28
+
+### Added
+- **Calendar feed**: Settings → **Calendar feed** gives you a private link (`/api/v1/calendar/<secret>.ics`) that calendar apps subscribe to.
+  - Your **open tasks with a deadline** as all-day entries (marked *free*, not busy), with project/category, parent task, priority, assignee, labels, description and a link back to the task; tasks *in progress* start with ▶.
+  - **Repeating tasks appear as series**, so upcoming dates show up too — weekdays, last day / last or first workday, *2nd Tuesday*, *last Friday*; not for rules *counted from completion*.
+  - Choose **Mine and unassigned** or **Everything I can see** (private projects stay private); texts follow your language.
+  - **New link** replaces the secret; the old link stops working (so does a deactivated user's).
+  - Works with apps that fetch the feed on the device — classic Outlook, Apple Calendar (iPhone/Mac), Thunderbird, **ICSx⁵** on Android. Google Calendar, Outlook.com and the new Outlook fetch from their own servers, which can't reach a server on a private network or VPN.
+
+### Under the hood
+- Migration `0015`: `users.calendar_token`; `backend/app/calendar_feed.py` (iCalendar with line folding and escaping, RRULEs), `routers/calendar.py`.
+- 5 new backend tests.
+
 ## v1.34.0 — 2026-09-28
 
 ### Changed

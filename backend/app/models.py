@@ -37,6 +37,8 @@ class User(Base):
     created_at = Column(DateTime, default=utcnow)
     # Interface language ("en", "de"); None: follow the browser.
     language = Column(String(5), nullable=True)
+    # Secret in the user's calendar feed URL (routers/calendar.py); None until first shown.
+    calendar_token = Column(String(64), nullable=True, unique=True)
 
     tasks = relationship("Task", back_populates="assignee")
 

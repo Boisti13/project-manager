@@ -7,6 +7,7 @@ import AccountSettings from './AccountSettings';
 import BackupSettings from './BackupSettings';
 import LabelSettings from './LabelSettings';
 import ApiTokenSettings from './ApiTokenSettings';
+import CalendarFeedSettings from './CalendarFeedSettings';
 import DesktopSettings from './desktop/DesktopSettings';
 import { IS_DESKTOP } from '../desktop/platform';
 import '../styles/Settings.css';
@@ -110,6 +111,8 @@ function Settings() {
 
       {/* Managing tokens needs a password login; the Windows app uses a token itself. */}
       {!IS_DESKTOP && <ApiTokenSettings />}
+
+      {!IS_DESKTOP && <CalendarFeedSettings />}
 
       <ArchiveSettings />
 

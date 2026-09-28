@@ -316,3 +316,17 @@
   background-color: var(--color-surface);
   color: var(--color-text-primary);
 }
+
+/* Settings → Calendar feed */
+.feed-link {
+  margin: 10px 0;
+}
+
+.feed-howto {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.feed-howto li {
+  margin: 2px 0;
+}
