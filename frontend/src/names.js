@@ -18,6 +18,9 @@ export function statusName(status) {
   }
 }
 
+// Priorities offered in the task form (older tasks may carry higher numbers).
+export const PRIORITIES = [0, 1, 2, 3];
+
 export function priorityName(priority) {
   switch (Number(priority)) {
     case 0:

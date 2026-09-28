@@ -4,7 +4,7 @@ import DependencyPicker from './DependencyPicker';
 import { parseBulk, countNested } from '../bulkParse';
 import '../styles/TaskForm.css';
 import { t, tn } from '../i18n';
-import { STATUSES, statusName } from '../names';
+import { STATUSES, statusName, PRIORITIES, priorityName } from '../names';
 import { WORKDAYS, weekdayName, weekdayOf, ordinal } from '../recurrence';
 
 const bulkPlaceholder = () =>
@@ -331,14 +331,13 @@ function TaskForm({
 
         <div className="form-group">
           <label>{t('Priority')}</label>
-          <input
-            type="number"
-            name="priority"
-            value={formData.priority}
-            onChange={handleChange}
-            min="0"
-            max="10"
-          />
+          <select name="priority" value={formData.priority ?? 0} onChange={handleChange}>
+            {[...new Set([...PRIORITIES, formData.priority ?? 0])].map((p) => (
+              <option key={p} value={p}>
+                {priorityName(p)}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.36.0 — 2026-09-28
+
+### Changed
+- **Priority is picked by name**: the task form (single and *Several*) has a **Low / Medium / High / Critical** list instead of a number field. Existing tasks keep their priority; a task with an older value above *Critical* keeps it until you change it.
+
 ## v1.35.0 — 2026-09-28
 
 ### Added

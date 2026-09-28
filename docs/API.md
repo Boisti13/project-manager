@@ -13,6 +13,8 @@ desktop client, automations) can use the same API.
   needs internet access to show it.
 - **JSON** in and out; timestamps are UTC without a timezone suffix
   (`2026-09-27T10:15:00`), deadlines are dates at midnight.
+- **Priority** is a number: `0` Low (default), `1` Medium, `2` High,
+  `3` Critical.
 
 ## HTTPS
 
