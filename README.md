@@ -161,9 +161,20 @@ cd frontend
 npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, views (board/calendar), labels, dependencies, myday, exportCsv, bulkParse, recurrence, activity, i18n
 ```
 
+**Browser tests** — the real app (backend + production build) in Chromium, with Playwright: logging in, creating and editing tasks inline, estimates, deleting and ticking off with Undo (incl. repeating tasks), keyboard shortcuts, search, saved filters, changing several tasks at once (incl. all-or-nothing), templates, My day, the weekly review, German, and the phone layout:
+
+```bash
+cd frontend && npm run build && cd ..
+pip install -r backend/requirements.txt -r e2e/requirements.txt
+python -m playwright install chromium
+pytest e2e
+```
+
+Like the backend tests they use `PM_TEST_DATABASE_URL` or start a throwaway PostgreSQL; `PM_E2E_BUILD=path` tests another build, `PW_CHANNEL=chrome` uses an installed Chrome. Each test makes its own project and tasks, so they don't depend on each other. When one fails, a screenshot lands in `e2e/artifacts/` and the server's output in `e2e/server.log`.
+
 **Translations** — every UI text goes through `t('English text')` (or `tn(n, 'one …', '{n} …')` for plurals) from `frontend/src/i18n.js`; the German text for it lives in `frontend/src/locales/de.js`, keyed by the English text. `i18n.test.js` fails when a text used in the code has no German entry, or when the placeholders (`{name}`) differ. Server error messages stay English.
 
-**CI** — [GitHub Actions](.github/workflows/ci.yml) runs the backend tests (PostgreSQL 16, Python 3.10 and 3.12), the frontend tests and production build, and shellcheck on every push to `main`/`dev` and on pull requests.
+**CI** — [GitHub Actions](.github/workflows/ci.yml) runs the backend tests (PostgreSQL 16, Python 3.10 and 3.12), the frontend tests and production build, the browser tests (screenshots of failures are kept as a download), and shellcheck on every push to `main`/`dev` and on pull requests.
 
 ## Architecture
 
@@ -210,6 +221,7 @@ project-manager/
 │   └── fix-db-encoding.sh   # Converts a SQL_ASCII database to UTF-8 (older installs)
 ├── deploy/nginx.conf        # Production Nginx config (static build + /api proxy)
 ├── docs/screenshots/        # README screenshots (sample data)
+├── e2e/                     # Browser tests (Playwright): serve.py runs backend + build, test_*.py
 ├── CHANGELOG.md             # What changed in each release
 ├── docker-compose.yml       # Local dev only, not used in production
 └── DEPLOYMENT.md            # LXC deployment, updates, migrations, troubleshooting

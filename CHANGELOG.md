@@ -2,6 +2,14 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.39.1 — 2026-09-28
+
+### Fixed
+- **Shift+click in select mode** now picks the whole range between two tasks; it only picked the one clicked (unless they were next to each other).
+
+### Under the hood
+- **Browser tests** (`e2e/`, Playwright + Chromium): the real app with its production build — logging in, creating and editing tasks, estimates, Undo, keyboard shortcuts, search, saved filters, changing several tasks at once, templates, My day, the weekly review, German and the phone layout. They run in CI on every push (they found the Shift+click bug on their first run); screenshots of failures are kept.
+
 ## v1.39.0 — 2026-09-28
 
 ### Added

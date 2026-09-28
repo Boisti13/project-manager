@@ -69,3 +69,7 @@ frontend/build.old/
 desktop/src-tauri/target/
 desktop/src-tauri/gen/
 desktop/src-tauri/icons/
+
+# Browser tests (e2e/)
+e2e/artifacts/
+e2e/server.log

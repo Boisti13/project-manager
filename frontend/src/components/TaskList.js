@@ -385,11 +385,12 @@ function TaskList() {
   const shownIds = () => [...document.querySelectorAll('.task-list .task-item')].map((r) => parseInt(r.id.slice(5), 10));
 
   const toggleSelect = (id, range = false) => {
+    // Read now: the updater below runs later, after the anchor has moved on.
+    const order = shownIds();
+    const a = order.indexOf(selectAnchor.current);
+    const b = order.indexOf(id);
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      const order = shownIds();
-      const a = order.indexOf(selectAnchor.current);
-      const b = order.indexOf(id);
       if (range && a !== -1 && b !== -1) {
         order.slice(Math.min(a, b), Math.max(a, b) + 1).forEach((x) => next.add(x));
       } else if (next.has(id)) next.delete(id);
