@@ -35,6 +35,11 @@ test('blocks: paragraphs, line breaks, lists, checklists, headings, quotes, code
   assert.strictEqual(html('```\nif a < b:\n    **x**\n```'), '<pre><code>if a &lt; b:\n    **x**</code></pre>');
 });
 
+test('@mentions are marked, e-mail addresses are not', () => {
+  assert.strictEqual(html('@anna, see a@b.de and @max.b.'),
+    '<p><span class="md-mention">@anna</span>, see a@b.de and <span class="md-mention">@max.b</span>.</p>');
+});
+
 test('text goes through renderText (search highlighting)', () => {
   const renderText = (s, key) => <mark key={key}>{s}</mark>;
   assert.strictEqual(html('**big** deal', { renderText }), '<p><strong><mark>big</mark></strong><mark> deal</mark></p>');

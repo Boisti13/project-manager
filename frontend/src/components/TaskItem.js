@@ -11,6 +11,7 @@ import { t, tn, shortDate } from '../i18n';
 import { statusName, priorityName } from '../names';
 import { formatEstimate } from '../estimate';
 import Markdown from './Markdown';
+import { PinIcon } from './icons';
 
 function Highlight({ text, needle }) {
   return highlightParts(text, needle).map((part, i) =>
@@ -45,6 +46,8 @@ function TaskItem({
   remainingOf = null, // (task) -> open minutes estimated for it and its subtasks
   onSaveTemplate = null,
   selection = null, // select mode: { ids: Set, toggle(id, shiftKey) }
+  isPinned = null, // (id) -> pinned to My day
+  onTogglePin = null,
   keyboardId = null, // row picked with j/k
   indent = 0,
 }) {
@@ -220,6 +223,11 @@ function TaskItem({
               {progress.done}/{progress.total}
             </span>
           )}
+          {isPinned?.(task.id) && (
+            <span className="task-pin" title={t('Pinned to My day')} aria-label={t('Pinned to My day')}>
+              <PinIcon size={13} />
+            </span>
+          )}
           {task.priority > 0 && (
             <span className="task-priority" data-priority={task.priority}>
               {priorityName(task.priority)}
@@ -283,6 +291,8 @@ function TaskItem({
               onMove={onMove}
               onMoveTo={onMoveTo}
               onSaveTemplate={onSaveTemplate}
+              pinned={!!isPinned?.(task.id)}
+              onTogglePin={onTogglePin}
             />
           )}
         </div>
@@ -345,6 +355,8 @@ function TaskItem({
               remainingOf={remainingOf}
               onSaveTemplate={onSaveTemplate}
               selection={selection}
+              isPinned={isPinned}
+              onTogglePin={onTogglePin}
               keyboardId={keyboardId}
               indent={indent + 1}
             />

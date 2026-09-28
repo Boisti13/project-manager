@@ -5,6 +5,7 @@ import { describeActivity } from '../activity';
 import '../styles/TaskComments.css';
 import { t, locale } from '../i18n';
 import Markdown from './Markdown';
+import MentionTextarea from './MentionTextarea';
 
 const errorText = async (res) => {
   const data = await res.json().catch(() => ({}));
@@ -201,7 +202,7 @@ function TaskComments({ taskId, onCountChange, changeKey }) {
               </div>
               {editing?.id === c.id ? (
                 <div className="comment-edit">
-                  <textarea
+                  <MentionTextarea
                     value={editing.body}
                     onChange={(e) => setEditing({ ...editing, body: e.target.value })}
                     onKeyDown={keys(saveEdit, () => setEditing(null))}
@@ -225,11 +226,11 @@ function TaskComments({ taskId, onCountChange, changeKey }) {
         })}
 
       <div className="comment-new">
-        <textarea
+        <MentionTextarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={keys(add)}
-          placeholder={t('Write a comment…  (Ctrl+Enter to send)')}
+          placeholder={t('Write a comment… @name notifies someone  (Ctrl+Enter to send)')}
           rows="2"
           aria-label={t('New comment')}
         />

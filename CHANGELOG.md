@@ -2,6 +2,16 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.42.0 — 2026-09-28
+
+### Added
+- **@mentions in comments**: type `@` and a few letters and a list suggests people (↑/↓, Enter or Tab to pick). The person gets **"… mentioned you"** in the bell and under *Recent comments* on My day — even if the task isn't theirs, as long as they can see it. Editing a comment only notifies people newly mentioned; someone who'd get a normal comment notification gets just the mention. Mentions are highlighted in comments.
+- **Pinned tasks** at the top of **My day**: pin a task with the pin on its My day row, *Pin to My day* in its ⋯ menu, or **p** on the keyboard. Pins are per user; pinned tasks show a pin in the list. When pinned tasks are done, *Unpin them* clears them.
+
+### Under the hood
+- Migration `0019`: table `task_pins`; `routers/pins.py` (`/api/v1/pins/`); `notify.commented` handles mentions; `components/MentionTextarea.js`, `usePins.js`.
+- 5 new backend tests, 1 new frontend test, 2 new browser tests.
+
 ## v1.41.0 — 2026-09-28
 
 ### Added

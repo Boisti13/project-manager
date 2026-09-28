@@ -297,6 +297,15 @@ class TaskTemplate(Base):
     created_by = relationship("User")
 
 
+class TaskPin(Base):
+    """A task someone pinned to the top of their My day (routers/pins.py)."""
+    __tablename__ = "task_pins"
+
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), primary_key=True, index=True)
+    created_at = Column(DateTime, default=utcnow)
+
+
 class AppSetting(Base):
     """Instance-wide settings as key/value strings (see routers/settings.py)."""
     __tablename__ = "app_settings"

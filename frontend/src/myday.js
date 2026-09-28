@@ -40,8 +40,9 @@ export function buildMyDay(tasks, { userId, now = Date.now(), includeUnassigned 
 
 /** Notifications of `kind` from the last `days` days, newest first. */
 export function recentNotifications(items, kind, { now = Date.now(), days = 7 } = {}) {
+  const kinds = Array.isArray(kind) ? kind : [kind];
   return items
-    .filter((n) => n.kind === kind && n.task_id && parseServerDate(n.created_at)?.getTime() >= now - days * DAY_MS)
+    .filter((n) => kinds.includes(n.kind) && n.task_id && parseServerDate(n.created_at)?.getTime() >= now - days * DAY_MS)
     .sort((a, b) => parseServerDate(b.created_at) - parseServerDate(a.created_at));
 }
 

@@ -15,6 +15,7 @@ export const describeNotification = (n) => {
   const who = n.actor || t('Someone');
   if (n.kind === 'assigned') return t('{who} assigned you', { who });
   if (n.kind === 'comment') return t('{who} commented', { who });
+  if (n.kind === 'mention') return t('{who} mentioned you', { who });
   if (n.kind === 'unblocked') return t('Ready to start — {who} finished what it waited for', { who });
   return who;
 };
@@ -134,7 +135,7 @@ function NotificationBell() {
                 <button
                   className={`bell-item ${n.read ? '' : 'bell-unread'}`}
                   key={n.id}
-                  onClick={() => n.task_id && goTo(n.task_id, n.kind === 'comment')}
+                  onClick={() => n.task_id && goTo(n.task_id, n.kind === 'comment' || n.kind === 'mention')}
                   disabled={!n.task_id}
                 >
                   <span className="bell-item-meta">

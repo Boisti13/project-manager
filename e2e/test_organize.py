@@ -90,3 +90,47 @@ def test_template_save_and_use(page, api):
     made = [t for t in api.tasks() if t["title"] in ("October check", "Backups", "Updates") and t["project_id"] == other["id"]]
     assert sorted(t["title"] for t in made) == ["Backups", "October check", "Updates"]
     assert {t["status"] for t in made} == {"todo"}  # everything starts fresh
+
+
+def test_mention_someone_in_a_comment(page, api, users):
+    project = api.project()
+    task = api.task("Check the quote", project_id=project["id"])
+    open_list(page, project)
+    row(page, "Check the quote").locator(".comment-btn").click()
+    box = page.locator(".comment-new textarea")
+    box.click()
+    page.keyboard.type("Please look @an")
+    suggestion = page.locator(".mention-list li", has_text="@anna")
+    suggestion.wait_for()
+    page.keyboard.press("Enter")  # picks the suggestion, doesn't send
+    assert box.input_value() == "Please look @anna "
+    page.keyboard.type("today")
+    page.keyboard.press("Control+Enter")
+    page.locator(".comment-body .md-mention", has_text="@anna").wait_for()
+    notes = users["anna"].get("/api/v1/notifications/")["items"]
+    assert any(n["kind"] == "mention" and n["task_id"] == task["id"] for n in notes)
+
+
+def test_pin_a_task_to_my_day(page, api):
+    project = api.project()
+    api.task("Keep an eye on this", project_id=project["id"])
+    open_list(page, project)
+    row(page, "Keep an eye on this").locator(".menu-btn").click()
+    page.get_by_role("menuitem", name="Pin to My day").click()
+    row(page, "Keep an eye on this").locator(".task-pin").wait_for()
+    tid = api.find("Keep an eye on this")["id"]
+    wait_for(lambda: tid in api.get("/api/v1/pins/"))
+
+    page.goto("/today")
+    pinned = page.locator(".myday-pinned")
+    pinned.locator(".myday-title", has_text="Keep an eye on this").wait_for()
+    pinned.locator(".myday-task", has_text="Keep an eye on this").locator(".myday-pin").click()
+    pinned.wait_for(state="detached")
+    wait_for(lambda: tid not in api.get("/api/v1/pins/"))
+
+    # and with the keyboard: j, p
+    open_list(page, project)
+    page.locator("body").click(position={"x": 5, "y": 5})
+    page.keyboard.press("j")
+    page.keyboard.press("p")
+    wait_for(lambda: tid in api.get("/api/v1/pins/"))

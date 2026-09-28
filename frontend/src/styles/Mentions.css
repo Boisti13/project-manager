@@ -1,0 +1,48 @@
+/* @mentions: suggestions while typing (MentionTextarea.js) and in comments (markdown.js). */
+
+.mention-box {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mention-box textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mention-list {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 40;
+  min-width: 180px;
+  margin: 2px 0 0;
+  padding: 4px 0;
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background-color: var(--color-surface);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+.mention-list li {
+  padding: 5px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--color-text-primary);
+}
+
+.mention-list li.active,
+.mention-list li:hover {
+  background-color: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+
+.md-mention {
+  padding: 0 3px;
+  border-radius: 3px;
+  font-weight: 600;
+  color: var(--color-info-text);
+  background-color: var(--color-info-bg);
+}

@@ -9,6 +9,7 @@ const SHORTCUTS = () => [
   ['e', t('Edit')],
   ['x', t('Mark done / not done')],
   ['a', t('Add subtask')],
+  ['p', t('Pin / unpin on My day')],
   ['c', t('Comments & history')],
   ['o', t('Open / close subtasks')],
   ['Space', t('Select it, to change several at once')],

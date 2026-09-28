@@ -377,3 +377,10 @@
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* Pinned to My day */
+.task-pin {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-primary);
+}

@@ -15,6 +15,7 @@ import { useUndoableDelete } from './tasklist/useUndoableDelete';
 import { useSelection } from './tasklist/useSelection';
 import { useSavedFilters } from './tasklist/useSavedFilters';
 import { useTaskShortcuts } from './tasklist/useTaskShortcuts';
+import { usePins } from './usePins';
 import { flattenVisible } from '../views';
 import { buildLabelIndex } from '../labels';
 import { buildDependencyIndex } from '../dependencies';
@@ -104,6 +105,9 @@ function TaskList() {
     setSearchParams(filtersToParams({ ...DEFAULT_FILTERS, sort: filters.sort, view: filters.view }), { replace: true });
     setCollapsedIds(new Set());
   };
+
+  const pins = usePins((error) => setError(t('Failed to pin: {error}', { error })));
+  const togglePin = (task) => pins.toggle(task.id);
 
   const saved = useSavedFilters({ filters, setSearchParams, setError, onApplied: () => setCollapsedIds(new Set()) });
 
@@ -496,6 +500,7 @@ function TaskList() {
     addSubtask: handleAddSubtask,
     toggleDone: handleToggleDone,
     deleteTask: handleDeleteTask,
+    togglePin,
   });
 
   if (loading) return <div className="container"><p>{t('Loading tasks…')}</p></div>;
@@ -560,6 +565,8 @@ function TaskList() {
       keyboardId={keyboardId}
       onSaveTemplate={handleSaveTemplate}
       selection={selection.active ? { ids: selection.ids, toggle: selection.toggle } : null}
+      isPinned={pins.has}
+      onTogglePin={togglePin}
     />
   );
 

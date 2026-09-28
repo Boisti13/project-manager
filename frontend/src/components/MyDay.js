@@ -9,11 +9,13 @@ import { timeAgo } from './TaskComments';
 import { formatDay, isOverdue } from './TaskBoard';
 import LabelChips from './LabelChips';
 import '../styles/MyDay.css';
-import { t, locale } from '../i18n';
+import { t, tn, locale } from '../i18n';
 import { priorityName } from '../names';
 import { notificationExcerpt } from './NotificationBell';
 import { useSyncRefresh } from '../desktop/useSyncRefresh';
 import UndoToast from './UndoToast';
+import { usePins } from './usePins';
+import { PinIcon } from './icons';
 
 export const START_KEY = 'pm.startWithMyDay';
 const UNASSIGNED_KEY = 'pm.myDayUnassigned';
@@ -44,6 +46,7 @@ function MyDay() {
   const [includeUnassigned, setIncludeUnassigned] = useState(() => readFlag(UNASSIGNED_KEY, true));
   const [startHere, setStartHere] = useState(() => readFlag(START_KEY, false));
   const [undo, setUndo] = useState(null);
+  const pins = usePins((error) => setError(t('Failed to pin: {error}', { error })));
 
   const load = useCallback(async () => {
     try {
@@ -143,6 +146,15 @@ function MyDay() {
             </span>
           )}
           {task.deadline && <span className={`task-deadline ${isOverdue(task) ? 'overdue' : ''}`}>{formatDay(task.deadline)}</span>}
+          <button
+            className={`task-action-btn myday-pin ${pins.has(task.id) ? 'on' : ''}`}
+            onClick={() => pins.toggle(task.id)}
+            title={pins.has(task.id) ? t('Unpin from My day') : t('Pin to My day')}
+            aria-label={pins.has(task.id) ? t('Unpin from My day') : t('Pin to My day')}
+            aria-pressed={pins.has(task.id)}
+          >
+            <PinIcon size={14} />
+          </button>
         </span>
       </li>
     );
@@ -161,7 +173,12 @@ function MyDay() {
   if (!data) return <div className="container"><p>{t('Loading your day…')}</p></div>;
 
   const assigned = recentNotifications(data.notes, 'assigned').filter((n) => taskById.get(n.task_id)?.status !== 'done');
-  const comments = recentNotifications(data.notes, 'comment').slice(0, 8);
+  const comments = recentNotifications(data.notes, ['comment', 'mention']).slice(0, 8);
+  // Pinned tasks (in the order they were pinned); done ones only counted.
+  const activeIds = new Set(withoutArchived(data.tasks, projectIndex).map((x) => x.id));
+  const pinnedTasks = pins.ids.map((id) => taskById.get(id)).filter((x) => x && activeIds.has(x.id));
+  const pinnedOpen = pinnedTasks.filter((x) => x.status !== 'done');
+  const pinnedDone = pinnedTasks.filter((x) => x.status === 'done');
   const now = new Date();
   const counts = [
     ['overdue', day.overdue.length, t('overdue'), 'danger'],
@@ -220,6 +237,23 @@ function MyDay() {
         </label>
       </div>
 
+      {pinnedTasks.length > 0 && (
+        <section className="myday-section myday-pinned">
+          <h2>
+            📌 {t('Pinned')} <span className="project-group-count">{pinnedOpen.length}</span>
+          </h2>
+          {pinnedOpen.length > 0 && <ul>{pinnedOpen.map(row)}</ul>}
+          {pinnedDone.length > 0 && (
+            <p className="myday-empty">
+              {tn(pinnedDone.length, 'One pinned task is done.', '{n} pinned tasks are done.')}{' '}
+              <button className="link-btn" onClick={() => pins.unpin(pinnedDone.map((x) => x.id))}>
+                {t('Unpin them')}
+              </button>
+            </p>
+          )}
+        </section>
+      )}
+
       <div className="myday-grid">
         <div id="myday-overdue">{section('overdue', t('⚠ Overdue'), day.overdue, t('Nothing overdue. 🎉'), 'danger')}</div>
         <div id="myday-today">{section('today', t('Due today'), day.dueToday, t('Nothing due today.'), 'warn')}</div>
@@ -266,7 +300,10 @@ function MyDay() {
                     {n.task_title}
                   </button>
                   <span className="myday-meta">
-                    {n.actor || t('Someone')} · {timeAgo(n.created_at)}
+                    {n.kind === 'mention'
+                      ? t('{who} mentioned you', { who: n.actor || t('Someone') })
+                      : n.actor || t('Someone')}{' '}
+                    · {timeAgo(n.created_at)}
                   </span>
                   {n.excerpt && <span className="myday-excerpt">“{n.excerpt}”</span>}
                 </li>

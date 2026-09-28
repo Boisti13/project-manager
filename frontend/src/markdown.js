@@ -4,7 +4,7 @@
 //   **bold**  *italic*  _italic_  ~~struck~~  `code`
 //   [text](https://…)  and bare https://… links (http, https, mailto only)
 //   - lists / * lists / 1. numbered lists, "- [ ]" and "- [x]" checklists
-//   # headings, > quotes, ``` code blocks ```
+//   # headings, > quotes, ``` code blocks ```, @mentions
 //
 // Single line breaks stay line breaks. renderText(text, key) draws plain
 // text (e.g. with search highlighting); onLink(event, url) can take over
@@ -24,6 +24,7 @@ const INLINE = new RegExp(
     '\\*([^*\\s](?:[^*\\n]*[^*\\s])?)\\*', // 7 italic
     '(?<![\\w])_([^_\\s](?:[^_\\n]*[^_\\s])?)_(?![\\w])', // 8 italic, not inside snake_case
     '((?:https?:\\/\\/|mailto:)[^\\s<>]*[^\\s<>.,;:!?\'")\\]])', // 9 bare link
+    '(?<![\\w@/])@([\\w.\\-]*\\w)', // 10 @mention (not in e-mail addresses)
   ].join('|'),
   'g'
 );
@@ -50,6 +51,7 @@ function inline(text, ctx, keyBase) {
     else if (m[6]) out.push(<del key={k}>{inline(m[6], ctx, k)}</del>);
     else if (m[7] || m[8]) out.push(<em key={k}>{inline(m[7] || m[8], ctx, k)}</em>);
     else if (m[9]) out.push(link(m[9], ctx.renderText(m[9], `${k}.t`), ctx, k, m[9]));
+    else if (m[10]) out.push(<span key={k} className="md-mention">{ctx.renderText(`@${m[10]}`, `${k}.t`)}</span>);
   }
   plain(text.slice(last));
   return out;

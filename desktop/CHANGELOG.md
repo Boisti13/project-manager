@@ -3,6 +3,11 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.5.0 — 2026-09-28
+
+### Added
+- **@mentions in comments** with suggestions while typing, and **pinned tasks** at the top of My day (server v1.42.0 interface). Pinning needs the connection to the server; offline, My day shows the pins it knew last.
+
 ## v0.4.0 — 2026-09-28
 
 ### Added

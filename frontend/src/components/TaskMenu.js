@@ -2,11 +2,24 @@ import React, { useState, useEffect, useRef } from 'react';
 import '../styles/TaskMenu.css';
 import { t } from '../i18n';
 import TrashIcon from './TrashIcon';
+import { PinIcon } from './icons';
 
 // "⋯" menu on a task row: add subtask, edit, move to another project/category,
 // move up/down (manual order), delete. On phones it replaces the row's
 // individual buttons.
-function TaskMenu({ task, projectIndex, moveState, onAddSubtask, onEdit, onDelete, onMove, onMoveTo, onSaveTemplate }) {
+function TaskMenu({
+  task,
+  projectIndex,
+  moveState,
+  onAddSubtask,
+  onEdit,
+  onDelete,
+  onMove,
+  onMoveTo,
+  onSaveTemplate,
+  pinned = false,
+  onTogglePin = null,
+}) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState('main'); // 'main' | 'move'
   const ref = useRef(null);
@@ -56,6 +69,14 @@ function TaskMenu({ task, projectIndex, moveState, onAddSubtask, onEdit, onDelet
           <button role="menuitem" onClick={run(() => onEdit(task))}>
             <span className="tm-icon">✎</span> {t('Edit')}
           </button>
+          {onTogglePin && (
+            <button role="menuitem" onClick={run(() => onTogglePin(task))}>
+              <span className="tm-icon">
+                <PinIcon size={14} />
+              </span>{' '}
+              {pinned ? t('Unpin from My day') : t('Pin to My day')}
+            </button>
+          )}
           <button role="menuitem" onClick={() => setView('move')}>
             <span className="tm-icon">⇢</span> {t('Move to…')}
           </button>

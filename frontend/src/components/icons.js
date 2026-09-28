@@ -34,3 +34,11 @@ export const LinkIcon = ({ size = 15 }) => (
     <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5" />
   </Icon>
 );
+
+/** A pushpin: pinned to My day. */
+export const PinIcon = ({ size = 15 }) => (
+  <Icon size={size}>
+    <path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z" />
+    <path d="M12 15v6" />
+  </Icon>
+);

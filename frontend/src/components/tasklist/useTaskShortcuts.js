@@ -7,7 +7,7 @@ import { shownTaskIds } from './useSelection';
  * on every key press:
  *   enabled, listView, keyboardId, setKeyboardId, showKeys, setShowKeys,
  *   selection (useSelection), deleteSelected, tasks,
- *   focusSearch, newTask, edit(task), addSubtask(task), toggleDone(task), deleteTask(id)
+ *   focusSearch, newTask, edit(task), addSubtask(task), toggleDone(task), deleteTask(id), togglePin(task)
  */
 export function useTaskShortcuts(ctx) {
   const latest = useRef(ctx);
@@ -75,6 +75,8 @@ function handleKey(e, c) {
     c.addSubtask(task);
   } else if (e.key === 'x') {
     c.toggleDone(task);
+  } else if (e.key === 'p') {
+    c.togglePin(task);
   } else if (e.key === 'c') {
     click('.comment-btn');
   } else if (e.key === 'o') {

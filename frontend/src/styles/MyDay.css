@@ -202,3 +202,21 @@
 .myday .task-list-header .btn {
   text-decoration: none;
 }
+
+/* Pinned tasks, and the pin button on each row */
+.myday-pinned {
+  margin-bottom: 16px;
+  border-left: 4px solid var(--color-primary);
+}
+
+.myday-pin {
+  width: 26px;
+  height: 26px;
+  opacity: 0.35;
+}
+
+.myday-pin:hover,
+.myday-pin.on {
+  opacity: 1;
+  color: var(--color-primary);
+}

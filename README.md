@@ -19,9 +19,9 @@ working offline.
 - **Tasks with subtasks** at any depth — priority, deadline, time estimate, labels, assignee, "waits for" other tasks
 - **Repeating tasks**: every N days/weeks/months, on chosen weekdays, the last workday of the month, the 2nd Tuesday …
 - **List, board and calendar** views; search, filters and **saved filters**
-- **My day** start page and a **weekly review** with open work per project
+- **My day** start page with your **pinned tasks**, and a **weekly review** with open work per project
 - **Quick**: type and press Enter, several tasks at once (one per line), **templates**, **keyboard shortcuts**, **change several tasks at once**, **Undo**
-- **Comments, history and notifications** for working together; descriptions and comments with **formatting and clickable links**
+- **Comments with @mentions, history and notifications** for working together; descriptions and comments with **formatting and clickable links**
 - **Archive** finished projects (still searchable), **share a project read-only** with a link — no account needed
 - **Calendar feed** for Outlook, Apple Calendar, Thunderbird or Android
 - **Phone-friendly**, installable to the home screen; **dark mode**

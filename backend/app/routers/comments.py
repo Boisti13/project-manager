@@ -64,8 +64,10 @@ def edit_comment(comment_id: int, data: schemas.CommentCreate, current_user: Use
     if not body:
         raise HTTPException(status_code=400, detail="Comment is empty")
     if body != comment.body:
+        previous = comment.body
         comment.body = body
         comment.edited_at = utcnow()
+        notify.commented(db, comment, current_user, previous_body=previous)
         db.commit()
         db.refresh(comment)
     return to_schema(comment)

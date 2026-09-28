@@ -58,6 +58,13 @@ comments**. It shows your tasks and, if you like, unassigned ones
 (with [Undo](#undo)); titles open the task in the list. *Open My day when I
 start the app* makes it the start page.
 
+**Pinned tasks** come first: things you want in view whatever their
+deadline. Pin a task with the pin button on its row here, with *Pin to My
+day* in its ⋯ menu on the Tasks page, or with **p** on the keyboard; pinned
+tasks show a pin in the list. Pins are your own — nobody else sees them.
+When pinned tasks are done, the section says so and *Unpin them* clears
+them.
+
 | | |
 |---|---|
 | ![My day](screenshots/myday-desktop.png) | ![My day on a phone](screenshots/myday-phone.png) |
@@ -248,6 +255,7 @@ On the Tasks page (not while typing in a field); **?** shows the list.
 | **e** | Edit it |
 | **x** | Mark it done / not done |
 | **a** | Add a subtask |
+| **p** | Pin it to My day / unpin it |
 | **c** | Comments & history |
 | **o** | Open / close its subtasks |
 | **Space** | Select it, to change several at once |
@@ -261,8 +269,12 @@ On the Tasks page (not while typing in a field); **?** shows the list.
 
 💬 on a task opens its discussion (the count is shown on the row). Authors
 can edit (marked *edited*) and delete their comments; admins can delete any.
-Comments can be [formatted](#formatting) like descriptions. The same panel
-shows the task's **history** — who created it and who changed
+Comments can be [formatted](#formatting) like descriptions. Type **@** and a
+few letters to **mention** someone: a list suggests people (↑/↓, Enter or
+Tab to pick). They get a *… mentioned you* notification — even if the task
+isn't theirs — as long as they can see the task; editing a comment only
+notifies people who are newly mentioned. The same panel shows the task's
+**history** — who created it and who changed
 what: status, assignee, project, title, description, deadline, priority,
 estimate, repeat, labels, what it waits for — between the comments
 (*Hide history* shows comments only).
@@ -270,6 +282,8 @@ estimate, repeat, labels, what it waits for — between the comments
 | | |
 |---|---|
 | ![Comments and history](screenshots/comments-desktop.png) | ![On a phone](screenshots/comments-phone.png) |
+
+![Mentioning someone](screenshots/mention-desktop.png)
 
 ## Projects and categories
 
@@ -324,8 +338,8 @@ before sharing those.
 ## Notifications
 
 The 🔔 in the top bar tells you when someone **assigns you a task** (several
-at once count as one), **comments** on a task you're assigned to or have
-commented on, or **finishes the last task one of yours waited for** — plus
+at once count as one), **mentions you** in a comment, **comments** on a task
+you're assigned to or have commented on, or **finishes the last task one of yours waited for** — plus
 overdue and soon-due deadlines of your (and unassigned) tasks. Clicking one
 opens the task, with its project, parents and comments opened on the way.
 
