@@ -2,6 +2,14 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.39.3 — 2026-09-28
+
+### Documentation
+- **New [user guide](docs/user-guide.md)**: using the app page by page — My day, adding and editing tasks, subtasks, priorities, estimates, labels, dependencies, repeating tasks, Undo, the list/board/calendar, search and saved filters, changing several tasks at once, templates, keyboard shortcuts, comments and history, projects and private projects, notifications, the weekly review, the calendar feed, settings, phones and admin tasks — with screenshots.
+- **Shorter README**: an overview with highlights, screenshots, the install commands and a table of all documentation.
+- **[docs/development.md](docs/development.md)**: setup, tests (backend, frontend, browser), translations, CI, architecture, branches and versioning, moved out of the README.
+- On GitHub: repository description, topics, and badges for the latest release, the Windows app and the license; the unused wiki is switched off.
+
 ## v1.39.2 — 2026-09-28
 
 ### Fixed
