@@ -5,6 +5,7 @@ import { checkForUpdate, subscribeUpdates, updateStatus } from '../../desktop/up
 import { timeAgo } from '../TaskComments';
 import { t, tn } from '../../i18n';
 import '../../styles/Desktop.css';
+import { compareFeatures } from '../../version';
 
 // Windows app, in the navigation bar: online/offline, unsent changes, last
 // sync. Click to sync now; problems lead to Settings.
@@ -32,6 +33,7 @@ function SyncStatus() {
   }, []);
 
   const problems = s.conflicts.length;
+  const gap = compareFeatures(s.serverVersion);
   let tone = 'ok';
   let text;
   if (s.authError) {
@@ -69,6 +71,27 @@ function SyncStatus() {
       {u.available && (
         <button type="button" className="sync-pill sync-update" onClick={() => navigate('/settings')}>
           ⬆ {t('Update {version}', { version: u.available.version })}
+        </button>
+      )}
+      {/* The server has features this app's interface doesn't (and no app update to get them yet), or the other way round. */}
+      {gap === 'server-newer' && !u.available && (
+        <button
+          type="button"
+          className="sync-pill sync-warn"
+          onClick={() => navigate('/settings')}
+          title={t('The server runs version {version}, which has features this app doesn’t show yet.', { version: s.serverVersion })}
+        >
+          ⚠ {t('App older than the server')}
+        </button>
+      )}
+      {gap === 'server-older' && (
+        <button
+          type="button"
+          className="sync-pill sync-warn"
+          onClick={() => navigate('/settings')}
+          title={t('The server runs version {version}; some features of this app need a newer one.', { version: s.serverVersion })}
+        >
+          ⚠ {t('Server older than the app')}
         </button>
       )}
     </span>

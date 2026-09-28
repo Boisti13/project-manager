@@ -3,6 +3,14 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.3.0 — 2026-09-28
+
+### Added
+- **Warning when the app and the server don't match**: *⚠ App older than the server* when the server has features the app doesn't show yet (and there's no app update for them), *⚠ Server older than the app* the other way round. *Settings → Windows app* shows both versions and what to do (server v1.40.0 interface).
+
+### Changed
+- The **⬆ Update** pill is readable on the blue bar (white with blue text).
+
 ## v0.2.8 — 2026-09-28
 
 ### Fixed

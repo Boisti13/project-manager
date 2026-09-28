@@ -14,6 +14,7 @@ import { IS_DESKTOP } from './desktop/platform';
 import ConnectScreen from './components/desktop/ConnectScreen';
 import './App.css';
 import WeeklyReview from './components/WeeklyReview';
+import VersionWatch from './components/VersionWatch';
 
 // The Windows app loads its pages from files, where only #/… addresses work.
 const Router = IS_DESKTOP ? HashRouter : BrowserRouter;
@@ -57,6 +58,7 @@ function AppShell() {
         <p className="App-subtitle">{t('Organize your tasks hierarchically')}</p>
       </header>
       {currentUser && <Nav />}
+      <VersionWatch />
       <main>
         <Routes>
           <Route path="/login" element={IS_DESKTOP ? <ConnectScreen /> : <Login />} />

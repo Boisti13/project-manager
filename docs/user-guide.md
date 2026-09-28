@@ -39,6 +39,10 @@ under *Settings → Your account*; until then it follows the browser. The 🌙
 button in the top bar switches to **dark mode** (remembered per browser;
 by default it follows the system).
 
+When the server is updated while the app is open in a browser tab, a bar
+says *Project Manager was updated to version …* — **Reload** to get the new
+version (or *Later*).
+
 | | | |
 |---|---|---|
 | ![Login with registration closed](screenshots/login-phone.png) | ![My day in German](screenshots/myday-de-phone.png) | ![Dark mode](screenshots/tasks-desktop-dark.png) |

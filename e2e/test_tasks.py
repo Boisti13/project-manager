@@ -21,6 +21,8 @@ def test_log_in_and_create_a_task_with_enter(make_page, api):
     title.press("Enter")
     row(page, "Order cables").wait_for()
     assert api.find("Order cables")["project_id"] == project["id"]
+    # build and server are the same version: no "was updated, reload" banner
+    assert page.locator(".version-banner").count() == 0
 
 
 def test_edit_opens_below_the_task_and_takes_an_estimate(page, api):

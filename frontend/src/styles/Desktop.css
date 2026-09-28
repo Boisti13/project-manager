@@ -58,8 +58,14 @@
 }
 
 .sync-update {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  border-color: #fff;
+  background: #fff;
+  color: #1565c0;
+  font-weight: 600;
+}
+
+.sync-update:hover {
+  background: #e3f2fd;
 }
 
 .desktop-update {
@@ -108,4 +114,25 @@
   .sync-text {
     display: none;
   }
+}
+
+/* The app's interface and the server's features differ (version.js). */
+.sync-warn {
+  border-color: #ffca28;
+  background: #ffca28;
+  color: #3e2723;
+  font-weight: 600;
+}
+
+.sync-warn:hover {
+  background: #ffd54f;
+}
+
+.desktop-version-note {
+  margin: 12px 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--color-warning-text);
+  background-color: var(--color-warning-bg);
 }

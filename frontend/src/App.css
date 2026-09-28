@@ -79,3 +79,17 @@ main {
     padding: 12px 0 calc(72px + env(safe-area-inset-bottom));
   }
 }
+
+/* The server was updated while this page was open (components/VersionWatch.js). */
+.version-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 14px;
+  padding: 8px 16px;
+  font-size: 14px;
+  color: var(--color-info-text);
+  background-color: var(--color-info-bg);
+  border-bottom: 1px solid var(--color-border);
+}

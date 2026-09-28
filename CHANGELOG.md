@@ -2,6 +2,21 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.40.0 — 2026-09-28
+
+### Added
+- **Windows app: warning when app and server don't match.** The app knows which server version its interface was built from and compares it with the server while syncing:
+  - the server has features the app doesn't show yet, and there's no app update to bring them: **⚠ App older than the server** in the top bar (if an app update is out, the **⬆ Update** pill covers it);
+  - the app is newer than the server: **⚠ Server older than the app** — some features won't work until the server is updated;
+  - *Settings → Windows app* shows the server's version, the app's interface version and what to do. Only feature releases count (1.40 → 1.41), not fix or docs releases.
+- **Web app: reload after a server update.** A tab left open while the server was updated shows *Project Manager was updated to version … · Reload*, instead of silently running the old interface.
+
+### Changed
+- The Windows app's **⬆ Update** pill is now white with blue text, readable on the blue bar.
+
+### Under the hood
+- `npm run build` stamps the version into the interface (`frontend/.env.production`, `src/version.js`); the Windows app's sync looks up `/api/v1/health` at most every 10 minutes.
+
 ## v1.39.3 — 2026-09-28
 
 ### Documentation

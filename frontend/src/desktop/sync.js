@@ -40,6 +40,7 @@ export class SyncEngine {
       ...this.state,
       pending: this.store.outbox.length,
       lastSync: this.store.getMeta('lastSync') || null,
+      serverVersion: this.store.getMeta('serverVersion') || null,
       conflicts: this.store.getMeta('conflicts') || [],
     };
   }
@@ -102,6 +103,7 @@ export class SyncEngine {
       try {
         await this.push();
         changed = await this.pull();
+        await this.checkServerVersion();
         this.state = { online: true, syncing: false, authError: false, error: null };
       } catch (err) {
         if (err instanceof OfflineError) this.state = { ...this.state, online: false, syncing: false, error: null };
@@ -119,6 +121,25 @@ export class SyncEngine {
       return this.status();
     })();
     return this.running;
+  }
+
+  /**
+   * The server's version (GET /api/v1/health), looked up at most every 10
+   * minutes, to compare with the app's interface (version.js). A failure
+   * here doesn't fail the sync.
+   */
+  async checkServerVersion(everyMs = 10 * 60 * 1000) {
+    const now = Date.now();
+    if (this.versionCheckedAt && now - this.versionCheckedAt < everyMs) return;
+    try {
+      const res = await this.fetcher('/api/v1/health', {});
+      if (!res.ok) return;
+      const { version } = await res.json();
+      this.versionCheckedAt = now;
+      if (version && version !== this.store.getMeta('serverVersion')) this.store.setMeta('serverVersion', version);
+    } catch {
+      // next time
+    }
   }
 
   // ---------------------------------------------------------------- push

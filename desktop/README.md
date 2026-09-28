@@ -31,6 +31,15 @@ with a local copy of your data.
    installs it and restarts the app. Changes still waiting to be sent are kept.
    *Check for updates* looks right away. (v0.1.0 has no updater: install
    v0.2.0 once by hand.)
+5. **App and server versions** (from v0.3.0): the app's interface is built
+   from a certain server version (*Settings → Windows app → App version*,
+   e.g. "interface of server 1.40.0"). When the server has gained features
+   since then and there's no app update to bring them yet, the top bar shows
+   *⚠ App older than the server* (the web app already has them). The other
+   way round — the app is newer than the server — shows *⚠ Server older than
+   the app*: some features won't work until the server is updated. Only
+   feature releases count (1.40 → 1.41), not fix or docs releases; the
+   server's version is looked up while syncing, at most every 10 minutes.
 
 ### Offline
 

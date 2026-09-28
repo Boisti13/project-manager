@@ -148,7 +148,7 @@ The server only ever pulls from GitHub (Settings → Updates or the manual steps
 
 ## Versioning
 
-Semantic versioning (`MAJOR.MINOR.PATCH`), tracked in the `VERSION` file at the repo root — the backend reads it at startup and serves it at `/api/health`. The frontend's `package.json` (and `package-lock.json`) version is kept in sync.
+Semantic versioning (`MAJOR.MINOR.PATCH`), tracked in the `VERSION` file at the repo root — the backend reads it at startup and serves it at `/api/health`. The frontend's `package.json` (and `package-lock.json`) version is kept in sync; `npm run build` stamps it into the interface (`frontend/.env.production` → `REACT_APP_VERSION`, read in `src/version.js`). The web app compares it with the server's to offer a reload after an update; the Windows app compares feature versions (major.minor) to warn when it's older or newer than the server. So a **minor** bump means "the interface changed in a way worth an app update".
 
 **Bump `VERSION` on every behavior-changing commit** (not for docs or comments), update the [user guide](user-guide.md) / README, the screenshots and [CHANGELOG.md](../CHANGELOG.md) alongside, and tag the corresponding commit on `main` as `vX.Y.Z`:
 

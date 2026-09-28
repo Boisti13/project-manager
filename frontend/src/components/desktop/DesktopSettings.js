@@ -7,6 +7,7 @@ import { canUpdate, checkForUpdate, installUpdate, subscribeUpdates, updateStatu
 import { parseServerDate } from '../../taskFilters';
 import { t, tn, locale } from '../../i18n';
 import '../../styles/Desktop.css';
+import { APP_VERSION, compareFeatures } from '../../version';
 
 const fieldNames = {
   title: () => t('Title'), description: () => t('Description'), status: () => t('Status'),
@@ -23,6 +24,7 @@ function DesktopSettings() {
   useEffect(() => engine.subscribe((status) => setS(status)), []);
   const [u, setU] = useState(updateStatus());
   useEffect(() => subscribeUpdates(setU), []);
+  const gap = compareFeatures(s.serverVersion);
 
   const when = (value) => (value ? parseServerDate(value).toLocaleString(locale()) : '—');
 
@@ -66,9 +68,38 @@ function DesktopSettings() {
         </div>
         <div className="info-row">
           <span className="info-label">{t('App version')}</span>
-          <span className="info-value">{DESKTOP_VERSION}</span>
+          <span className="info-value">
+            {DESKTOP_VERSION}
+            {APP_VERSION && ` · ${t('interface of server {version}', { version: APP_VERSION })}`}
+          </span>
+        </div>
+        <div className="info-row">
+          <span className="info-label">{t('Server version')}</span>
+          <span className="info-value">{s.serverVersion || '–'}</span>
         </div>
       </div>
+
+      {gap === 'server-newer' && (
+        <p className="desktop-version-note">
+          ⚠{' '}
+          {t('The server runs version {server}, this app’s interface is from {app}: what was added since isn’t in the app yet.', {
+            server: s.serverVersion,
+            app: APP_VERSION,
+          })}{' '}
+          {u.available
+            ? t('Install the update below.')
+            : t('There’s no newer app version yet; the web app has it already.')}
+        </p>
+      )}
+      {gap === 'server-older' && (
+        <p className="desktop-version-note">
+          ⚠{' '}
+          {t('This app is made for server version {app} or newer, but the server runs {server}: some features won’t work until the server is updated (web app → Settings → Updates).', {
+            server: s.serverVersion,
+            app: APP_VERSION,
+          })}
+        </p>
+      )}
 
       {canUpdate() && (
         <div className="desktop-update">

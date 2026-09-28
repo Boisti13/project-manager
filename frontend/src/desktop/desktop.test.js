@@ -17,6 +17,7 @@ function fakeServer() {
   const tick = () => String(clock++).padStart(6, '0');
   const srv = {
     online: true,
+    version: '1.39.3',
     tasks: new Map(),
     comments: new Map(),
     deletions: [],
@@ -64,6 +65,7 @@ function fakeServer() {
         ids: { tasks: [...srv.tasks.keys()], projects: [], labels: [] },
       });
     }
+    if (method === 'GET' && p === 'health') return reply(200, { status: 'ok', version: srv.version });
     if (method === 'GET' && p === 'users/') return reply(200, [{ id: 1, username: 'me', is_admin: false }]);
     if (method === 'GET' && p === 'settings/') return reply(200, { archive_after_days: 30 });
     if (method === 'GET' && p === 'auth/me') return reply(200, { id: 1, username: 'me' });
@@ -127,6 +129,18 @@ test('full sync fills the local copy; reads are answered locally', async () => {
   assert.deepStrictEqual(call('GET', '/api/settings/').data, { archive_after_days: 30 });
   assert.strictEqual(call('GET', '/api/system/info'), null); // server-only: passed through
   assert.ok(store.getMeta('cursor'));
+});
+
+test('sync keeps the server version, looked up again only after a while', async () => {
+  const { srv, engine } = setup();
+  await engine.sync();
+  assert.strictEqual(engine.status().serverVersion, '1.39.3');
+  srv.version = '1.40.0';
+  await engine.sync();
+  assert.strictEqual(engine.status().serverVersion, '1.39.3'); // checked a moment ago
+  engine.versionCheckedAt -= 11 * 60 * 1000;
+  await engine.sync();
+  assert.strictEqual(engine.status().serverVersion, '1.40.0');
 });
 
 test('offline changes are queued, then sent in order with real ids', async () => {
