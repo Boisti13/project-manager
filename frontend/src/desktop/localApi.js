@@ -27,7 +27,7 @@ export function normalizeDeadline(value) {
 
 // Fields a task create/update may carry, as the server takes them.
 const TASK_FIELDS = [
-  'title', 'description', 'status', 'priority', 'order', 'deadline', 'project_id', 'parent_task_id',
+  'title', 'description', 'status', 'priority', 'estimate_minutes', 'order', 'deadline', 'project_id', 'parent_task_id',
   'assignee_id', 'recurrence_unit', 'recurrence_interval', 'recurrence_weekdays', 'recurrence_monthly',
   'recurrence_from', 'label_ids', 'blocked_by_ids',
 ];
@@ -171,6 +171,7 @@ export class LocalApi {
       description: body.description ?? null,
       status,
       priority: body.priority ?? 0,
+      estimate_minutes: body.estimate_minutes ?? null,
       order: body.order ?? 0,
       deadline: normalizeDeadline(body.deadline),
       project_id: body.project_id ?? null,

@@ -9,6 +9,7 @@ import '../styles/TaskItem.css';
 import '../styles/Dependencies.css';
 import { t, tn, shortDate } from '../i18n';
 import { statusName, priorityName } from '../names';
+import { formatEstimate } from '../estimate';
 
 function Highlight({ text, needle }) {
   return highlightParts(text, needle).map((part, i) =>
@@ -40,6 +41,8 @@ function TaskItem({
   onLabelClick = null,
   dependencyIndex = null,
   inlineForm = null, // { taskId, element }: the edit / add-subtask form, shown below that task
+  remainingOf = null, // (task) -> open minutes estimated for it and its subtasks
+  keyboardId = null, // row picked with j/k
   indent = 0,
 }) {
   const subtasks = childrenOf(task);
@@ -51,6 +54,8 @@ function TaskItem({
   // open -- new subtasks may still be added. Ticking it is a deliberate step.
   const isReady = progress.total > 0 && progress.done === progress.total && task.status !== 'done';
   const openBlockers = dependencyIndex ? dependencyIndex.openBlockersOf(task) : [];
+  // Without its own estimate, a task shows what its subtasks add up to.
+  const subtaskEstimate = !task.estimate_minutes && remainingOf ? remainingOf(task) : 0;
   const [dragOver, setDragOver] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -118,7 +123,7 @@ function TaskItem({
   return (
     <div
       id={`task-${task.id}`}
-      className={`task-item ${dragOver ? 'drag-over' : ''} ${dragging ? 'dragging' : ''} ${isContext ? 'task-context' : ''} ${isReady ? 'task-ready' : ''}`}
+      className={`task-item ${dragOver ? 'drag-over' : ''} ${dragging ? 'dragging' : ''} ${isContext ? 'task-context' : ''} ${isReady ? 'task-ready' : ''} ${keyboardId === task.id ? 'kbd-current' : ''}`}
       style={{ marginLeft: `${indent * 20}px` }}
       draggable={draggableNow}
       {...(draggableNow && {
@@ -177,6 +182,16 @@ function TaskItem({
           {task.priority > 0 && (
             <span className="task-priority" data-priority={task.priority}>
               {priorityName(task.priority)}
+            </span>
+          )}
+          {task.estimate_minutes > 0 && (
+            <span className="task-estimate" title={t('Estimate')}>
+              ⏱ {formatEstimate(task.estimate_minutes)}
+            </span>
+          )}
+          {subtaskEstimate > 0 && (
+            <span className="task-estimate task-estimate-sum" title={t('Open subtasks, estimated')}>
+              ⏱ Σ {formatEstimate(subtaskEstimate)}
             </span>
           )}
           {openBlockers.length > 0 && (
@@ -242,7 +257,8 @@ function TaskItem({
           taskId={task.id}
           onCountChange={(n) => onCommentCount?.(task.id, n)}
           changeKey={[
-            task.updated_at, task.status, task.title, task.description, task.priority, task.deadline,
+            task.updated_at, task.status, task.title, task.description, task.priority, task.estimate_minutes,
+            task.deadline,
             task.assignee_id, task.project_id, task.recurrence_unit, task.recurrence_interval,
             (task.label_ids || []).join(','),
             (task.blocked_by_ids || []).join(','),
@@ -284,6 +300,8 @@ function TaskItem({
               onLabelClick={onLabelClick}
               dependencyIndex={dependencyIndex}
               inlineForm={inlineForm}
+              remainingOf={remainingOf}
+              keyboardId={keyboardId}
               indent={indent + 1}
             />
           ))}

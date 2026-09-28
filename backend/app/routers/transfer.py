@@ -38,6 +38,7 @@ class TaskData(BaseModel):
     description: Optional[str] = None
     status: TaskStatus = TaskStatus.TODO
     priority: int = 0
+    estimate_minutes: Optional[int] = Field(default=None, ge=1, le=60 * 24 * 365)
     order: int = 0
     deadline: Optional[datetime] = None
     completed_at: Optional[datetime] = None
@@ -95,6 +96,7 @@ def _task_tree(task: Task, children: dict) -> dict:
         "description": task.description,
         "status": task.status.value if task.status else "todo",
         "priority": task.priority or 0,
+        "estimate_minutes": task.estimate_minutes,
         "order": task.order or 0,
         "deadline": task.deadline.isoformat() if task.deadline else None,
         "completed_at": task.completed_at.isoformat() if task.completed_at else None,
@@ -217,7 +219,7 @@ def import_projects(data: ExportFile, current_user: User = Depends(get_current_u
         for item in items:
             task = Task(
                 title=item.title, description=item.description, status=item.status,
-                priority=item.priority, order=item.order, deadline=item.deadline,
+                priority=item.priority, estimate_minutes=item.estimate_minutes, order=item.order, deadline=item.deadline,
                 completed_at=item.completed_at, project_id=project_id, parent_task_id=parent_id,
                 recurrence_unit=item.recurrence_unit,
                 recurrence_interval=(item.recurrence_interval or 1) if item.recurrence_unit else None,

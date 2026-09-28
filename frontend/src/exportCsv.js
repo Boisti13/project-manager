@@ -1,6 +1,6 @@
 // CSV export of all tasks. Semicolon-separated with a UTF-8 BOM so Excel
 // (including German-locale Excel) opens it with columns and umlauts intact.
-import { t } from './i18n';
+import { t, locale } from './i18n';
 import { statusName, priorityName } from './names';
 
 const SEP = ';';
@@ -15,8 +15,12 @@ const day = (iso) => (iso ? iso.slice(0, 10) : '');
 
 export const csvColumns = () => [
   t('ID'), t('Project'), t('Category'), t('Task'), t('Parent task'), t('Status'), t('Priority'),
-  t('Assignee'), t('Deadline'), t('Created'), t('Completed'), t('Description'), t('Labels'),
+  t('Assignee'), t('Deadline'), t('Created'), t('Completed'), t('Description'), t('Labels'), t('Estimate (hours)'),
 ];
+
+// Hours as a number in the interface language's format, so spreadsheets can add them up.
+const hours = (minutes) =>
+  minutes ? (minutes / 60).toLocaleString(locale(), { maximumFractionDigits: 2, useGrouping: false }) : '';
 
 export function tasksToCsv(tasks, projectIndex, users, labels = []) {
   const labelName = new Map(labels.map((l) => [l.id, l.name]));
@@ -51,6 +55,7 @@ export function tasksToCsv(tasks, projectIndex, users, labels = []) {
         day(t.completed_at),
         t.description,
         (t.label_ids || []).map((id) => labelName.get(id)).filter(Boolean).sort().join(', '),
+        hours(t.estimate_minutes),
       ];
     });
 

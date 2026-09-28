@@ -6,6 +6,7 @@ import '../styles/TaskForm.css';
 import { t, tn } from '../i18n';
 import { STATUSES, statusName, PRIORITIES, priorityName } from '../names';
 import { WORKDAYS, weekdayName, weekdayOf, ordinal } from '../recurrence';
+import { parseEstimate, formatEstimate } from '../estimate';
 
 const bulkPlaceholder = () =>
   t(
@@ -80,6 +81,9 @@ function TaskForm({
   const [mode, setMode] = useState('single');
   const [bulkText, setBulkText] = useState('');
   const bulk = useMemo(() => parseBulk(bulkText), [bulkText]);
+  // Typed text ("1h 30m"); parsed to minutes on submit.
+  const [estimateText, setEstimateText] = useState('');
+  const [estimateError, setEstimateError] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -117,6 +121,7 @@ function TaskForm({
         label_ids: task.label_ids || [],
         blocked_by_ids: task.blocked_by_ids || [],
       });
+      setEstimateText(formatEstimate(task.estimate_minutes));
     }
   }, [task]);
 
@@ -181,8 +186,14 @@ function TaskForm({
       });
       return;
     }
+    const estimate = parseEstimate(estimateText);
+    if (Number.isNaN(estimate)) {
+      setEstimateError(true);
+      return;
+    }
     onSubmit({
       ...formData,
+      estimate_minutes: estimate,
       deadline,
       recurrence_interval: formData.recurrence_unit ? formData.recurrence_interval : null,
       recurrence_weekdays:
@@ -317,7 +328,7 @@ function TaskForm({
         </div>
       )}
 
-      <div className="form-row">
+      <div className={`form-row ${mode !== 'bulk' ? 'form-row-3' : ''}`}>
         <div className="form-group">
           <label>{t('Status')}</label>
           <select name="status" value={formData.status} onChange={handleChange}>
@@ -339,6 +350,31 @@ function TaskForm({
             ))}
           </select>
         </div>
+
+        {mode !== 'bulk' && (
+          <div className="form-group">
+            <label htmlFor="task-estimate">{t('Estimate')}</label>
+            <input
+              id="task-estimate"
+              type="text"
+              value={estimateText}
+              placeholder={t('e.g. 1h 30m')}
+              aria-invalid={estimateError}
+              onChange={(e) => {
+                setEstimateText(e.target.value);
+                setEstimateError(false);
+              }}
+              onBlur={() => {
+                const m = parseEstimate(estimateText);
+                if (Number.isNaN(m)) setEstimateError(true);
+                else setEstimateText(formatEstimate(m));
+              }}
+            />
+            {estimateError && (
+              <small className="estimate-error">{t('Hours and minutes, e.g. 2h, 1.5h, 45m or 1:30')}</small>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="form-row">

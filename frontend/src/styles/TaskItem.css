@@ -353,3 +353,27 @@
     padding: 12px;
   }
 }
+
+/* Time estimate; "Σ" = added up from the subtasks. */
+.task-estimate {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface-hover);
+}
+
+.task-estimate-sum {
+  font-weight: 500;
+  background: none;
+  border: 1px dashed var(--color-border);
+}
+
+/* Row picked with the keyboard (j / k). */
+.task-item.kbd-current > .task-header {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

@@ -1,7 +1,7 @@
 import uuid
 
 from sqlalchemy import (
-    Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Table, Uuid, Enum as SQLEnum, false, text,
+    Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Table, UniqueConstraint, Uuid, Enum as SQLEnum, false, text,
 )
 from sqlalchemy.orm import relationship, backref
 from app.database import Base
@@ -116,6 +116,8 @@ class Task(Base):
     description = Column(Text, nullable=True)
     status = Column(SQLEnum(TaskStatus), default=TaskStatus.TODO)
     priority = Column(Integer, default=0)
+    # Time estimate in minutes (None: not estimated).
+    estimate_minutes = Column(Integer, nullable=True)
     order = Column(Integer, default=0)
     deadline = Column(DateTime, nullable=True)
     # Set when the task becomes done, cleared when it's reopened; drives the
@@ -260,6 +262,19 @@ class Deletion(Base):
     uid = Column(Uuid(as_uuid=False), nullable=True)
     deleted_at = Column(DateTime, default=utcnow, index=True)
     deleted_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+
+class SavedFilter(Base):
+    """A named set of task-list filters (the URL query, e.g.
+    "assignee=me&label=3&sort=deadline"), per user (routers/saved_filters.py)."""
+    __tablename__ = "saved_filters"
+    __table_args__ = (UniqueConstraint("user_id", "name", name="saved_filters_user_name_key"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(60), nullable=False)
+    query = Column(String(2000), nullable=False)
+    created_at = Column(DateTime, default=utcnow)
 
 
 class AppSetting(Base):

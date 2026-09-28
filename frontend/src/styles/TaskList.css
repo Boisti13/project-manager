@@ -464,3 +464,151 @@
     padding: 0 10px;
   }
 }
+
+/* Open work estimated in a project / category */
+.estimate-total {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* Saved filters */
+.saved-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+
+.saved-filter {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background-color: var(--color-surface);
+  overflow: hidden;
+}
+
+.saved-filter.active {
+  border-color: var(--color-primary);
+  background-color: var(--color-info-bg);
+}
+
+.saved-filter-apply,
+.saved-filter-delete,
+.saved-filter-save {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--color-text);
+  padding: 4px 10px;
+}
+
+.saved-filter.active .saved-filter-apply {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.saved-filter-delete {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px 4px 2px;
+  color: var(--color-text-muted);
+}
+
+.saved-filter-delete:hover {
+  color: var(--color-error-text);
+}
+
+.saved-filter-save {
+  border: 1px dashed var(--color-border);
+  border-radius: 14px;
+  color: var(--color-text-secondary);
+}
+
+.saved-filter-save:hover,
+.saved-filter-apply:hover {
+  color: var(--color-primary);
+}
+
+/* Keyboard shortcuts */
+.kbd-hint {
+  margin: 24px 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 6px;
+  font-family: inherit;
+  font-size: 12px;
+  text-align: center;
+  border: 1px solid var(--color-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.kbd-help-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+.kbd-help {
+  width: 100%;
+  max-width: 380px;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 20px 24px;
+  border-radius: 8px;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.kbd-help h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.kbd-help dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  margin: 0 0 12px;
+}
+
+.kbd-help dt {
+  text-align: right;
+}
+
+.kbd-help dd {
+  margin: 0;
+  font-size: 14px;
+}
+
+.kbd-help-note {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 0 0 12px;
+}
+
+/* Phones have no keyboard shortcuts to speak of. */
+@media (hover: none) and (pointer: coarse) {
+  .kbd-hint {
+    display: none;
+  }
+}

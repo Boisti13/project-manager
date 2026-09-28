@@ -157,6 +157,7 @@ def spawn_next(db: Session, task: Task):
     shift = (nxt_deadline - base) if base else timedelta(0)
     nxt = Task(
         title=task.title, description=task.description, status=TaskStatus.TODO, priority=task.priority,
+        estimate_minutes=task.estimate_minutes,
         order=task.order, deadline=nxt_deadline, project_id=task.project_id,
         parent_task_id=task.parent_task_id, assignee_id=task.assignee_id,
         recurrence_unit=task.recurrence_unit, recurrence_interval=n, recurrence_weekdays=task.recurrence_weekdays,

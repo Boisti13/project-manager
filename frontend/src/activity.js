@@ -2,6 +2,7 @@
 import { recurrenceHow } from './recurrence';
 import { statusName, priorityName } from './names';
 import { t, locale } from './i18n';
+import { formatEstimate } from './estimate';
 
 // "2026-10-01" -> local date text, without timezone shifts.
 export function formatDay(iso) {
@@ -36,6 +37,10 @@ export function describeActivity({ kind, actor, old_value: o, new_value: n }, fm
       return t('changed status from {old} to {new}', { old: statusName(o), new: statusName(n) });
     case 'priority':
       return t('changed priority from {old} to {new}', { old: priorityName(o), new: priorityName(n) });
+    case 'estimate':
+      if (!n) return t('removed the estimate ({old})', { old: formatEstimate(Number(o)) });
+      if (!o) return t('estimated it at {new}', { new: formatEstimate(Number(n)) });
+      return t('changed the estimate from {old} to {new}', { old: formatEstimate(Number(o)), new: formatEstimate(Number(n)) });
     case 'deadline':
       if (!n) return t('removed the deadline');
       if (!o) return t('set the deadline to {date}', { date: fmtDay(n) });

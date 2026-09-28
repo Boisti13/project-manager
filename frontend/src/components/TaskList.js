@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
@@ -22,6 +22,8 @@ import '../styles/TaskViews.css';
 import { t, tn } from '../i18n';
 import { STATUSES, statusName } from '../names';
 import { useSyncRefresh } from '../desktop/useSyncRefresh';
+import { childIndex, remainingMinutes, totalRemaining, formatEstimate } from '../estimate';
+import TrashIcon from './TrashIcon';
 
 const VIEWS = [
   { id: 'list', label: () => t('☰ List') },
@@ -30,6 +32,32 @@ const VIEWS = [
 ];
 
 const COLLAPSED_KEY = 'pm.collapsedGroups';
+
+// Keyboard shortcuts on the Tasks page (shown with "?").
+const SHORTCUTS = () => [
+  ['n', t('New task')],
+  ['/', t('Search')],
+  ['j / k', t('Next / previous task')],
+  ['e', t('Edit')],
+  ['x', t('Mark done / not done')],
+  ['a', t('Add subtask')],
+  ['c', t('Comments & history')],
+  ['o', t('Open / close subtasks')],
+  ['Del', t('Delete')],
+  ['Esc', t('Clear the selection')],
+  ['Ctrl+Enter', t('Save the form')],
+  ['?', t('Show / hide this list')],
+];
+
+// Same filters, whatever the order of the parameters.
+const sameQuery = (a, b) => {
+  const norm = (q) => {
+    const p = new URLSearchParams(q);
+    p.sort();
+    return p.toString();
+  };
+  return norm(a) === norm(b);
+};
 
 function loadCollapsedGroups() {
   try {
@@ -67,6 +95,10 @@ function TaskList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const searchRef = useRef(null);
+  // Keyboard: the row picked with j/k, and the shortcut list.
+  const [keyboardId, setKeyboardId] = useState(null);
+  const [showKeys, setShowKeys] = useState(false);
+  const [savedFilters, setSavedFilters] = useState([]);
 
   const filters = useMemo(() => filtersFromParams(searchParams), [searchParams]);
   const filtering = hasActiveFilters(filters);
@@ -102,18 +134,27 @@ function TaskList() {
     };
   }, [filters.q]);
 
-  // "/" focuses the search box (unless already typing somewhere).
+  // Keyboard shortcuts (unless typing somewhere); see onShortcut below.
+  const shortcutRef = useRef(null);
   useEffect(() => {
-    const onKey = (e) => {
-      const tag = document.activeElement?.tagName;
-      if (e.key === '/' && tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
-        e.preventDefault();
-        searchRef.current?.focus();
-      }
-    };
+    const onKey = (e) => shortcutRef.current?.(e);
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  // Saved filters: optional extra, so a failure (e.g. the Windows app offline)
+  // just leaves the list empty.
+  const loadSavedFilters = useCallback(async () => {
+    try {
+      const res = await authFetch('/api/v1/saved-filters/');
+      if (res.ok) setSavedFilters(await res.json());
+    } catch {
+      // not shown
+    }
+  }, []);
+  useEffect(() => {
+    loadSavedFilters();
+  }, [loadSavedFilters]);
 
   // Load once when the page opens.
   useEffect(() => {
@@ -431,6 +472,9 @@ function TaskList() {
   };
 
   const projectIndex = useMemo(() => buildProjectIndex(projects), [projects]);
+  // Estimates add up over all subtasks, also the ones a filter hides.
+  const allChildrenOf = useMemo(() => childIndex(tasks), [tasks]);
+  const remainingOf = useCallback((task) => remainingMinutes(task, allChildrenOf), [allChildrenOf]);
   const labelIndex = useMemo(() => buildLabelIndex(labels), [labels]);
   const dependencyIndex = useMemo(() => buildDependencyIndex(tasks), [tasks]);
   const filterByLabel = (label) => setFilter('label', String(label.id));
@@ -521,6 +565,102 @@ function TaskList() {
   const handleToggleExpand = (taskId) =>
     toggleIn(tree.autoExpandIds.has(taskId) ? setCollapsedIds : setExpandedIds, taskId);
 
+  // ---- saved filters
+  const currentQuery = new URLSearchParams(filtersToParams(filters)).toString();
+  const activeSaved = savedFilters.find((f) => sameQuery(f.query, currentQuery));
+
+  const saveFilter = async () => {
+    const name = window.prompt(t('Save these filters as:'), activeSaved?.name || '');
+    if (!name || !name.trim()) return;
+    try {
+      await fetchJson('/api/v1/saved-filters/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), query: currentQuery }),
+      });
+      await loadSavedFilters();
+    } catch (err) {
+      setError(t('Failed to save the filter: {error}', { error: err.message }));
+    }
+  };
+
+  const applySaved = (f) => {
+    setSearchParams(new URLSearchParams(f.query), { replace: true });
+    setCollapsedIds(new Set());
+  };
+
+  const deleteSaved = async (f) => {
+    if (!window.confirm(t('Delete the saved filter “{name}”?', { name: f.name }))) return;
+    try {
+      const res = await authFetch(`/api/v1/saved-filters/${f.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(await parseApiError(res));
+      await loadSavedFilters();
+    } catch (err) {
+      setError(t('Failed to delete the filter: {error}', { error: err.message }));
+    }
+  };
+
+  // ---- keyboard shortcuts (the window listener calls the latest version)
+  shortcutRef.current = (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey || loading) return;
+    const el = document.activeElement;
+    const tag = el?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return;
+    if (e.key === '?') {
+      setShowKeys((v) => !v);
+      return;
+    }
+    if (e.key === 'Escape') {
+      if (showKeys) setShowKeys(false);
+      else setKeyboardId(null);
+      return;
+    }
+    if (showKeys) return;
+    if (e.key === '/') {
+      e.preventDefault();
+      searchRef.current?.focus();
+      return;
+    }
+    if (e.key === 'n') {
+      e.preventDefault();
+      openNewTask(filters.project ? parseInt(filters.project, 10) : null);
+      return;
+    }
+    if (filters.view === 'board' || filters.view === 'calendar') return;
+
+    // Rows in the order they're shown (subtasks after their parent).
+    const ids = [...document.querySelectorAll('.task-list .task-item')].map((r) => parseInt(r.id.slice(5), 10));
+    if (e.key === 'j' || e.key === 'k') {
+      if (!ids.length) return;
+      e.preventDefault();
+      const i = ids.indexOf(keyboardId);
+      const step = e.key === 'j' ? 1 : -1;
+      const next = i === -1 ? (step > 0 ? 0 : ids.length - 1) : Math.min(ids.length - 1, Math.max(0, i + step));
+      setKeyboardId(ids[next]);
+      document.getElementById(`task-${ids[next]}`)?.querySelector('.task-header')?.scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    const task = ids.includes(keyboardId) ? tasks.find((x) => x.id === keyboardId) : null;
+    if (!task) return;
+    const click = (selector) =>
+      document.getElementById(`task-${task.id}`)?.querySelector(`:scope > .task-header ${selector}`)?.click();
+    if (e.key === 'e') {
+      e.preventDefault();
+      handleEditTask(task);
+    } else if (e.key === 'a') {
+      e.preventDefault();
+      handleAddSubtask(task);
+    } else if (e.key === 'x') {
+      handleToggleDone(task);
+    } else if (e.key === 'c') {
+      click('.comment-btn');
+    } else if (e.key === 'o') {
+      click('.expand-btn');
+    } else if (e.key === 'Delete') {
+      handleDeleteTask(task.id);
+    }
+  };
+
   if (loading) return <div className="container"><p>{t('Loading tasks…')}</p></div>;
 
   const visibleRoots = tree.roots;
@@ -577,8 +717,20 @@ function TaskList() {
       onLabelClick={filterByLabel}
       dependencyIndex={dependencyIndex}
       inlineForm={inlineForm}
+      remainingOf={remainingOf}
+      keyboardId={keyboardId}
     />
   );
+
+  // Open work estimated in a section (tasks shown there, with their subtasks).
+  const estimateBadge = (roots) => {
+    const minutes = totalRemaining(roots, allChildrenOf);
+    return minutes > 0 ? (
+      <span className="estimate-total" title={t('Open work, estimated')}>
+        ⏱ {formatEstimate(minutes)}
+      </span>
+    ) : null;
+  };
 
   // Filtering by status "done" or searching opens the Completed rows, so
   // results are never hidden behind them.
@@ -664,6 +816,36 @@ function TaskList() {
             aria-label={t('Search tasks')}
           />
         </div>
+
+        {(savedFilters.length > 0 || (currentQuery && !activeSaved)) && (
+          <div className="saved-filters" aria-label={t('Saved filters')}>
+            {savedFilters.map((f) => {
+              const active = f === activeSaved;
+              return (
+                <span key={f.id} className={`saved-filter ${active ? 'active' : ''}`}>
+                  <button className="saved-filter-apply" onClick={() => applySaved(f)} aria-pressed={active}>
+                    ★ {f.name}
+                  </button>
+                  {active && (
+                    <button
+                      className="saved-filter-delete"
+                      onClick={() => deleteSaved(f)}
+                      title={t('Delete saved filter')}
+                      aria-label={t('Delete saved filter')}
+                    >
+                      <TrashIcon size={13} />
+                    </button>
+                  )}
+                </span>
+              );
+            })}
+            {currentQuery && !activeSaved && (
+              <button className="saved-filter-save" onClick={saveFilter} title={t('Keep these filters, search and sort under a name')}>
+                ☆ {t('Save filter')}
+              </button>
+            )}
+          </div>
+        )}
 
         <button
           className="btn btn-secondary btn-small filters-toggle"
@@ -861,6 +1043,7 @@ function TaskList() {
                       </span>
                     )}
                     <span className="project-group-count">{groupTaskCount(group)}</span>
+                    {estimateBadge([...group.tasks, ...group.categories.flatMap((c) => c.tasks)])}
                   </button>
                   <button
                     className="task-action-btn"
@@ -889,6 +1072,7 @@ function TaskList() {
                             <span className="project-group-caret">{catCollapsed ? '▶' : '▼'}</span>
                             <span className="category-name">{cat.project.name}</span>
                             <span className="project-group-count">{cat.tasks.length}</span>
+                            {estimateBadge(cat.tasks)}
                           </button>
                           <button
                             className="task-action-btn"
@@ -921,6 +1105,41 @@ function TaskList() {
           })
         )}
       </div>
+      )}
+
+      <p className="kbd-hint">
+        <button className="link-btn" onClick={() => setShowKeys(true)}>
+          {t('Keyboard shortcuts')}
+        </button>{' '}
+        <kbd>?</kbd>
+      </p>
+
+      {showKeys && (
+        <div className="kbd-help-backdrop" onClick={() => setShowKeys(false)}>
+          <div
+            className="kbd-help"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('Keyboard shortcuts')}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2>{t('Keyboard shortcuts')}</h2>
+            <dl>
+              {SHORTCUTS().map(([key, what]) => (
+                <React.Fragment key={key}>
+                  <dt>
+                    <kbd>{key}</kbd>
+                  </dt>
+                  <dd>{what}</dd>
+                </React.Fragment>
+              ))}
+            </dl>
+            <p className="kbd-help-note">{t('j / k pick a task in the list; the other keys act on it.')}</p>
+            <button className="btn btn-secondary btn-small" onClick={() => setShowKeys(false)} autoFocus>
+              {t('Close')}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

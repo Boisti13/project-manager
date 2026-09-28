@@ -2,6 +2,23 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.37.0 — 2026-09-28
+
+### Added
+- **Time estimates**: tasks get an optional **Estimate** (next to Status and Priority). Type it the way you'd say it: `2h`, `1.5h` or `1,5`, `45m`, `1h 30m`, `1:30`; a plain number means hours.
+  - Shown on the task and on board cards (⏱ 1h 30min). A task without its own estimate shows what its open subtasks add up to (⏱ Σ …).
+  - Each **project and category header** shows the open work, estimated. Done tasks count nothing, and a task's own estimate covers its subtasks, so nothing is counted twice.
+  - In the task history, carried over to the next occurrence of repeating tasks, in the export/import file and in the CSV export (*Estimate (hours)*, a number spreadsheets can add up).
+- **Saved filters**: set up filters, search, sort and view on the Tasks page, then **☆ Save filter** and give it a name. It appears as a ★ chip above the filters; one click brings it back. The active one has a trash can to delete it; saving under an existing name replaces it. Saved per user on the server, so they're on every device.
+- **Keyboard shortcuts** on the Tasks page — **?** shows them all:
+  - **n** new task, **/** search;
+  - **j / k** move through the list (the picked task is outlined), then **e** edit, **x** done / not done, **a** add subtask, **c** comments & history, **o** open/close subtasks, **Del** delete; **Esc** clears the selection.
+  - Keys are ignored while typing in a field.
+
+### Under the hood
+- Migration `0016`: `tasks.estimate_minutes`, table `saved_filters`; `routers/saved_filters.py` (`/api/v1/saved-filters/`), `frontend/src/estimate.js`.
+- 4 new backend tests, 3 new frontend tests.
+
 ## v1.36.1 — 2026-09-28
 
 ### Changed

@@ -6,6 +6,7 @@ import '../styles/TaskViews.css';
 import '../styles/Dependencies.css';
 import { t, shortDate } from '../i18n';
 import { statusName, priorityName } from '../names';
+import { formatEstimate } from '../estimate';
 
 const DONE_SHOWN = 15;
 
@@ -81,6 +82,11 @@ function TaskBoard({
           )}
           {task.deadline && (
             <span className={`task-deadline ${isOverdue(task) ? 'overdue' : ''}`}>{formatDay(task.deadline)}</span>
+          )}
+          {task.estimate_minutes > 0 && (
+            <span className="task-estimate" title={t('Estimate')}>
+              ⏱ {formatEstimate(task.estimate_minutes)}
+            </span>
           )}
           {openBlockers.length > 0 && (
             <span className="task-waiting" title={t('Waiting for: {tasks}', { tasks: openBlockers.map((b) => b.title).join(', ') })}>

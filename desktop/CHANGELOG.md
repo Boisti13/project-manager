@@ -3,6 +3,13 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.2.4 — 2026-09-28
+
+### Added
+- **Time estimates** on tasks, with the open work per project and category — also offline (server v1.37.0 interface; needs server v1.37.0 to sync them).
+- **Saved filters** as ★ chips above the filters (need the connection to the server; offline they're not shown).
+- **Keyboard shortcuts** on the Tasks page — press **?** for the list.
+
 ## v0.2.3 — 2026-09-28
 
 ### Changed

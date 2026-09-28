@@ -66,6 +66,15 @@ class DeletionEntry(BaseModel):
 class Preferences(BaseModel):
     language: Optional[Literal["en", "de"]] = None  # None: follow the browser
 
+class SavedFilterCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
+    query: str = Field(max_length=2000)  # URL query of the task list, without "?"
+
+class SavedFilter(SavedFilterCreate):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -121,6 +130,8 @@ class Label(BaseModel):
     updated_at: Optional[datetime] = None
 
 # Task schemas
+ESTIMATE_MAX = 60 * 24 * 365  # minutes
+
 RecurrenceUnit = Literal["day", "week", "month", "year"]
 RecurrenceMonthly = Literal["day", "last_day", "last_workday", "first_workday", "weekday", "last_weekday"]
 RecurrenceFrom = Literal["schedule", "completion"]
@@ -136,6 +147,7 @@ class TaskBase(BaseModel):
     description: Optional[str] = None
     status: TaskStatus = TaskStatus.TODO
     priority: int = 0
+    estimate_minutes: Optional[int] = Field(default=None, ge=1, le=ESTIMATE_MAX)
     order: int = 0
     deadline: Optional[datetime] = None
     project_id: Optional[int] = None
@@ -204,6 +216,7 @@ class TaskUpdate(BaseModel):
     description: Optional[str] = None
     status: Optional[TaskStatus] = None
     priority: Optional[int] = None
+    estimate_minutes: Optional[int] = Field(default=None, ge=1, le=ESTIMATE_MAX)
     order: Optional[int] = None
     deadline: Optional[datetime] = None
     project_id: Optional[int] = None

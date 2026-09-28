@@ -11,7 +11,8 @@ test('CSV export: projects, categories, inherited project, quoting, BOM', () => 
   const tasks = [
     { id: 1, title: 'Order modules', project_id: 2, parent_task_id: null, status: 'done', priority: 3,
       assignee_id: 7, deadline: '2026-09-20T00:00:00', created_at: '2026-09-01T10:00:00',
-      completed_at: '2026-09-21T08:00:00', description: 'Größe: "XL"; 2 Stück', label_ids: [1, 2, 99] },
+      completed_at: '2026-09-21T08:00:00', description: 'Größe: "XL"; 2 Stück', label_ids: [1, 2, 99],
+      estimate_minutes: 90 },
     { id: 2, title: 'Check quote', project_id: null, parent_task_id: 1, status: 'todo', priority: 0,
       assignee_id: null, deadline: null, created_at: '2026-09-02T10:00:00', completed_at: null, description: null },
     { id: 3, title: 'Loose task', project_id: null, parent_task_id: null, status: 'blocked', priority: 1,
@@ -27,10 +28,10 @@ test('CSV export: projects, categories, inherited project, quoting, BOM', () => 
   assert.strictEqual(lines[0].split(';')[1], 'Project');
   assert.strictEqual(
     lines[1],
-    '1;6GHub;Ordering;Order modules;;Done;Critical;bastian;2026-09-20;2026-09-01;2026-09-21;"Größe: ""XL""; 2 Stück";A-team, urgent'
+    '1;6GHub;Ordering;Order modules;;Done;Critical;bastian;2026-09-20;2026-09-01;2026-09-21;"Größe: ""XL""; 2 Stück";A-team, urgent;1.5'
   );
-  assert.strictEqual(lines[2], '2;6GHub;Ordering;Check quote;Order modules;To Do;Low;;;2026-09-02;;;');
+  assert.strictEqual(lines[2], '2;6GHub;Ordering;Check quote;Order modules;To Do;Low;;;2026-09-02;;;;');
   // The quoted description keeps its own line break inside the field.
-  assert.strictEqual(lines[3], '3;;;Loose task;;Blocked;Medium;;;2026-09-03;;"two\nlines";');
+  assert.strictEqual(lines[3], '3;;;Loose task;;Blocked;Medium;;;2026-09-03;;"two\nlines";;');
   assert.strictEqual(lines.length, 5); // header, 3 rows, trailing empty
 });

@@ -15,6 +15,8 @@ desktop client, automations) can use the same API.
   (`2026-09-27T10:15:00`), deadlines are dates at midnight.
 - **Priority** is a number: `0` Low (default), `1` Medium, `2` High,
   `3` Critical.
+- **Estimate** (`estimate_minutes`) is a number of minutes, or `null` for
+  none (1 to 525600).
 
 ## HTTPS
 
@@ -98,10 +100,11 @@ api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via
 |---|---|
 | `/auth/login`, `/auth/me`, `/auth/me/preferences` | log in, current user, language |
 | `/auth/tokens/` | personal API tokens (password login only) |
-| `/tasks/`, `/tasks/{id}`, `/tasks/bulk`, `/tasks/{id}/activity` | tasks (fields incl. `label_ids`, `blocked_by_ids`, repeat rule: `recurrence_unit`, `recurrence_interval`, `recurrence_weekdays` (0 = Monday), `recurrence_monthly`, `recurrence_from`) and their history |
+| `/tasks/`, `/tasks/{id}`, `/tasks/bulk`, `/tasks/{id}/activity` | tasks (fields incl. `label_ids`, `blocked_by_ids`, `estimate_minutes`, repeat rule: `recurrence_unit`, `recurrence_interval`, `recurrence_weekdays` (0 = Monday), `recurrence_monthly`, `recurrence_from`) and their history |
 | `/tasks/{id}/comments`, `/comments/{id}`, `/comments/search` | comments |
 | `/projects/`, `/projects/{id}` | projects and categories (`parent_id`), `is_private`, `member_ids` |
 | `/labels/` | labels |
+| `/saved-filters/`, `/saved-filters/{id}` | the current user's saved task-list filters: `name` and `query` (the Tasks page URL query, e.g. `assignee=me&sort=deadline`); saving under an existing name replaces it |
 | `/notifications/`, `/notifications/read` | the current user's notifications |
 | `/users/` | users (admins: `/users/admin/all`, create, change) |
 | `/transfer/export`, `/transfer/import` | project export/import (JSON) |
