@@ -186,6 +186,26 @@ test('changes to something created offline fold into its queued create', async (
   assert.deepStrictEqual([...srv.tasks.values()].map((t) => t.title), ['Final']);
 });
 
+test('bulk update offline: applied locally, sent as one update per task', async () => {
+  const { srv, engine, call } = setup();
+  const a = srv.addTask({ title: 'A' });
+  const b = srv.addTask({ title: 'B', priority: 2 });
+  await engine.sync();
+  srv.online = false;
+  const res = call('POST', '/api/v1/tasks/bulk-update', {
+    updates: [{ id: a.id, priority: 3 }, { id: b.id, priority: 3, deadline: '2026-10-09' }],
+  });
+  assert.strictEqual(res.status, 200);
+  const local = Object.fromEntries(call('GET', '/api/tasks/').data.map((t) => [t.title, t]));
+  assert.deepStrictEqual([local.A.priority, local.B.priority, local.B.deadline], [3, 3, '2026-10-09T00:00:00']);
+  // unknown id: nothing changes
+  assert.strictEqual(call('POST', '/api/v1/tasks/bulk-update', { updates: [{ id: a.id, priority: 1 }, { id: 424242, priority: 1 }] }).status, 404);
+  assert.strictEqual(call('GET', `/api/tasks/${a.id}`).data.priority, 3);
+  srv.online = true;
+  await engine.sync();
+  assert.deepStrictEqual([srv.tasks.get(a.id).priority, srv.tasks.get(b.id).priority], [3, 3]);
+});
+
 test('repeat rules are passed through and normalized like the server does', async () => {
   const { srv, store, engine, call } = setup();
   await engine.sync();

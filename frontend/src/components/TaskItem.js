@@ -43,6 +43,7 @@ function TaskItem({
   inlineForm = null, // { taskId, element }: the edit / add-subtask form, shown below that task
   remainingOf = null, // (task) -> open minutes estimated for it and its subtasks
   onSaveTemplate = null,
+  selection = null, // select mode: { ids: Set, toggle(id, shiftKey) }
   keyboardId = null, // row picked with j/k
   indent = 0,
 }) {
@@ -70,6 +71,14 @@ function TaskItem({
   useEffect(() => {
     if (focusCommentsId === task.id) setShowComments(true);
   }, [focusCommentsId, task.id]);
+  const selected = selection ? selection.ids.has(task.id) : false;
+  // Select mode: a click anywhere on the row (but its buttons) picks it.
+  const onHeaderClick = selection
+    ? (e) => {
+        if (e.target.closest('.expand-btn, .label-chip, a')) return;
+        selection.toggle(task.id, e.shiftKey);
+      }
+    : undefined;
   // Text boxes inside a draggable row can't be selected with the mouse.
   const draggableNow = canDrag && !showComments;
 
@@ -124,7 +133,7 @@ function TaskItem({
   return (
     <div
       id={`task-${task.id}`}
-      className={`task-item ${dragOver ? 'drag-over' : ''} ${dragging ? 'dragging' : ''} ${isContext ? 'task-context' : ''} ${isReady ? 'task-ready' : ''} ${keyboardId === task.id ? 'kbd-current' : ''}`}
+      className={`task-item ${dragOver ? 'drag-over' : ''} ${dragging ? 'dragging' : ''} ${isContext ? 'task-context' : ''} ${isReady ? 'task-ready' : ''} ${keyboardId === task.id ? 'kbd-current' : ''} ${selected ? 'selected' : ''}`}
       style={{ marginLeft: `${indent * 20}px` }}
       draggable={draggableNow}
       {...(draggableNow && {
@@ -135,7 +144,7 @@ function TaskItem({
         onDrop: handleDrop,
       })}
     >
-      <div className="task-header">
+      <div className="task-header" onClick={onHeaderClick}>
         <div className="task-left">
           {canDrag && (
             <span className="drag-handle" title={t('Drag to reorder')}>
@@ -151,14 +160,24 @@ function TaskItem({
               {showSubtasks ? '▼' : '▶'}
             </button>
           )}
-          <input
-            type="checkbox"
-            className="task-done-checkbox"
-            checked={task.status === 'done'}
-            onChange={() => onToggleDone(task)}
-            title={task.status === 'done' ? t('Mark as not done') : t('Mark as done')}
-            aria-label={t('Done: {title}', { title: task.title })}
-          />
+          {selection ? (
+            <input
+              type="checkbox"
+              className="task-select-checkbox"
+              checked={selected}
+              readOnly
+              aria-label={t('Select: {title}', { title: task.title })}
+            />
+          ) : (
+            <input
+              type="checkbox"
+              className="task-done-checkbox"
+              checked={task.status === 'done'}
+              onChange={() => onToggleDone(task)}
+              title={task.status === 'done' ? t('Mark as not done') : t('Mark as done')}
+              aria-label={t('Done: {title}', { title: task.title })}
+            />
+          )}
           <div className="task-status-dot" style={{ backgroundColor: statusColors[task.status] }} />
           <span className={`task-title ${task.status === 'done' ? 'task-title-done' : ''}`}>
             <Highlight text={task.title} needle={searchText} />
@@ -304,6 +323,7 @@ function TaskItem({
               inlineForm={inlineForm}
               remainingOf={remainingOf}
               onSaveTemplate={onSaveTemplate}
+              selection={selection}
               keyboardId={keyboardId}
               indent={indent + 1}
             />

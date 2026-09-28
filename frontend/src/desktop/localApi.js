@@ -83,6 +83,7 @@ export class LocalApi {
 
     if (a === 'tasks') {
       if (!b && M === 'GET') return json(200, this.listTasks());
+      if (b === 'bulk-update' && M === 'POST') return this.bulkUpdate(body || {});
       if ((!b || b === 'bulk') && M === 'POST') {
         const parentId = (body || {}).parent_task_id;
         if (parentId != null && !this.store.get('tasks', parentId)) return notFound('Parent task');
@@ -261,6 +262,15 @@ export class LocalApi {
       }
     }
     return json(200, this.withCount(updated), true);
+  }
+
+  /** Several tasks, each with its own fields; all exist or nothing changes. */
+  bulkUpdate(body) {
+    const updates = body.updates || [];
+    const missing = updates.find((u) => !this.store.get('tasks', u.id));
+    if (missing) return notFound(`Task ${missing.id}`);
+    for (const { id, expected, ...fields } of updates) this.updateTask(id, fields);
+    return json(200, { updated: updates.length }, true);
   }
 
   deleteTask(id) {

@@ -269,6 +269,13 @@ class TaskUpdate(BaseModel):
     # update is refused with 409 and the current task (see docs/API.md).
     expected: Optional[dict] = None
 
+class BulkTaskUpdateItem(TaskUpdate):
+    id: int
+
+class BulkTaskUpdate(BaseModel):
+    """POST /tasks/bulk-update: per task, the fields to change."""
+    updates: List[BulkTaskUpdateItem] = Field(min_length=1, max_length=BULK_MAX_TASKS)
+
 class Task(TaskBase):
     id: int
     uid: str

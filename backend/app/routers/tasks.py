@@ -196,11 +196,10 @@ def check_expected(db_task: Task, expected: dict):
         })
 
 
-@router.put("/{task_id}", response_model=schemas.Task)
-def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    db_task = access.require_task(db, current_user, task_id)
-
-    update_data = task_update.model_dump(exclude_unset=True)
+def apply_update(db: Session, current_user: User, db_task: Task, update_data: dict, notify_assignee: bool = True) -> bool:
+    """Applies a TaskUpdate (as a dict of the fields sent) to a task, with
+    history, notifications, dependencies and repeat handling. Returns whether
+    the assignee changed (for bulk updates, which notify once per person)."""
     expected = update_data.pop("expected", None)
     if expected:
         check_expected(db_task, expected)
@@ -231,7 +230,7 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
         access.check_assignee(db, db_task.assignee_id, db_task.project_id)
     normalize_recurrence(db_task)
     sync_completed_at(db_task)
-    if db_task.assignee_id != previous_assignee:
+    if db_task.assignee_id != previous_assignee and notify_assignee:
         notify.assigned(db, db_task, current_user)
     activity.changed(db, db_task, before, current_user)
     # Labels and dependencies aren't columns; mark the task changed anyway.
@@ -241,10 +240,39 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: Use
     if was_done and db_task.status != TaskStatus.DONE:
         recurrence.take_back_next(db, db_task, current_user)
     record_spawn(db, db_task, current_user)
+    return db_task.assignee_id != previous_assignee
 
+
+@router.put("/{task_id}", response_model=schemas.Task)
+def update_task(task_id: int, task_update: schemas.TaskUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_task = access.require_task(db, current_user, task_id)
+    apply_update(db, current_user, db_task, task_update.model_dump(exclude_unset=True))
     db.commit()
     db.refresh(db_task)
     return db_task
+
+
+@router.post("/bulk-update")
+def update_tasks_bulk(data: schemas.BulkTaskUpdate, current_user: User = Depends(get_current_user),
+                      db: Session = Depends(get_db)):
+    """Changes several tasks in one go, each with its own fields (so the same
+    change for all, or putting back what each had before). All or nothing.
+    Someone who gets several tasks assigned is notified once."""
+    ids = [item.id for item in data.updates]
+    if len(set(ids)) != len(ids):
+        raise HTTPException(status_code=400, detail="A task appears more than once")
+    assigned = {}
+    for item in data.updates:
+        db_task = db.get(Task, item.id)
+        if not db_task or not access.task_visible(db, current_user, db_task):
+            raise HTTPException(status_code=404, detail=f"Task {item.id} not found")
+        changes = item.model_dump(exclude_unset=True, exclude={"id"})
+        if apply_update(db, current_user, db_task, changes, notify_assignee=False) and db_task.assignee_id is not None:
+            assigned.setdefault(db_task.assignee_id, []).append(db_task)
+    for tasks in assigned.values():
+        notify.assigned(db, tasks[0], current_user, count=len(tasks))
+    db.commit()
+    return {"updated": len(ids)}
 
 @router.get("/{task_id}/activity", response_model=list[schemas.ActivityEntry])
 def task_activity(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

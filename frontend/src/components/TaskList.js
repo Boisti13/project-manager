@@ -25,6 +25,7 @@ import { useSyncRefresh } from '../desktop/useSyncRefresh';
 import { childIndex, remainingMinutes, totalRemaining, formatEstimate } from '../estimate';
 import TrashIcon from './TrashIcon';
 import UndoToast, { UNDO_MS } from './UndoToast';
+import BulkEditBar from './BulkEditBar';
 
 const VIEWS = [
   { id: 'list', label: () => t('☰ List') },
@@ -44,7 +45,8 @@ const SHORTCUTS = () => [
   ['a', t('Add subtask')],
   ['c', t('Comments & history')],
   ['o', t('Open / close subtasks')],
-  ['Del', t('Delete')],
+  ['Space', t('Select it, to change several at once')],
+  ['Del', t('Delete (the selected ones, when selecting)')],
   ['Esc', t('Clear the selection')],
   ['Ctrl+Enter', t('Save the form')],
   ['?', t('Show / hide this list')],
@@ -103,8 +105,12 @@ function TaskList() {
   const [templates, setTemplates] = useState([]);
   // The bar at the bottom: { key, message, onUndo? }.
   const [undo, setUndo] = useState(null);
-  // A delete waiting out its undo time: { taskId, ids, timer }.
+  // A delete waiting out its undo time: { taskIds, ids, timer }.
   const pendingDelete = useRef(null);
+  // Select mode: tasks picked to change together.
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const selectAnchor = useRef(null);
 
   const filters = useMemo(() => filtersFromParams(searchParams), [searchParams]);
   const filtering = hasActiveFilters(filters);
@@ -177,8 +183,10 @@ function TaskList() {
   // Deletes wait UNDO_MS for "Undo"; leaving the page sends them right away.
   const sendDelete = async (p) => {
     try {
-      const response = await authFetch(`/api/tasks/${p.taskId}`, { method: 'DELETE', keepalive: true });
-      if (!response.ok && response.status !== 404) throw new Error(await parseApiError(response));
+      for (const id of p.taskIds) {
+        const response = await authFetch(`/api/tasks/${id}`, { method: 'DELETE', keepalive: true });
+        if (!response.ok && response.status !== 404) throw new Error(await parseApiError(response));
+      }
     } catch (err) {
       setError(t('Failed to delete task: {error}', { error: err.message }));
       loadData(true);
@@ -322,11 +330,18 @@ function TaskList() {
   };
 
   // Gone from the list right away; really deleted when the undo time is up.
-  const handleDeleteTask = (taskId) => {
-    const task = tasks.find((x) => x.id === taskId);
-    if (!task) return;
+  const deleteTasks = (pickedIds, onRestored = null) => {
+    const byId = new Map(tasks.map((x) => [x.id, x]));
+    const picked = new Set(pickedIds.filter((id) => byId.has(id)));
+    if (picked.size === 0) return;
     flushDelete();
-    const ids = new Set([taskId]);
+    // Only the top ones are sent; their subtasks go with them.
+    const underPicked = (x) => {
+      for (let p = byId.get(x.parent_task_id); p; p = byId.get(p.parent_task_id)) if (picked.has(p.id)) return true;
+      return false;
+    };
+    const top = [...picked].map((id) => byId.get(id)).filter((x) => !underPicked(x));
+    const ids = new Set(picked);
     let grew = true;
     while (grew) {
       grew = false;
@@ -338,7 +353,7 @@ function TaskList() {
       }
     }
     setTasks((ts) => ts.filter((x) => !ids.has(x.id)));
-    const p = { taskId, ids };
+    const p = { taskIds: top.map((x) => x.id), ids };
     p.timer = setTimeout(() => {
       if (pendingDelete.current === p) {
         pendingDelete.current = null;
@@ -346,20 +361,126 @@ function TaskList() {
       }
     }, UNDO_MS + 300);
     pendingDelete.current = p;
-    const subtasks = ids.size - 1;
+    const subtasks = ids.size - top.length;
     setUndo({
       key: Date.now(),
       message:
-        t('Deleted “{title}”', { title: task.title }) +
+        (top.length === 1
+          ? t('Deleted “{title}”', { title: top[0].title })
+          : tn(top.length, 'Deleted one task', 'Deleted {n} tasks')) +
         (subtasks ? ' ' + tn(subtasks, '(and one subtask)', '(and {n} subtasks)') : ''),
       onUndo: () => {
         if (pendingDelete.current === p) {
           clearTimeout(p.timer);
           pendingDelete.current = null;
         }
-        loadData(true);
+        loadData(true).then(() => onRestored?.());
       },
     });
+  };
+
+  const handleDeleteTask = (taskId) => deleteTasks([taskId]);
+
+  // ---- select mode
+  const shownIds = () => [...document.querySelectorAll('.task-list .task-item')].map((r) => parseInt(r.id.slice(5), 10));
+
+  const toggleSelect = (id, range = false) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      const order = shownIds();
+      const a = order.indexOf(selectAnchor.current);
+      const b = order.indexOf(id);
+      if (range && a !== -1 && b !== -1) {
+        order.slice(Math.min(a, b), Math.max(a, b) + 1).forEach((x) => next.add(x));
+      } else if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    selectAnchor.current = id;
+  };
+
+  const exitSelect = () => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+    selectAnchor.current = null;
+  };
+
+  // One change for every selected task (per task only where it changes
+  // something), with Undo putting back what each had.
+  const applyBulk = async ({ field, value }) => {
+    const num = (v) => (v === 'none' ? null : parseInt(v, 10));
+    const changeFor = (task) => {
+      const labelIds = task.label_ids || [];
+      switch (field) {
+        case 'status':
+          return { status: value };
+        case 'priority':
+          return { priority: parseInt(value, 10) };
+        case 'project_id':
+          return { project_id: num(value) };
+        case 'assignee_id':
+          return { assignee_id: num(value) };
+        case 'deadline':
+          return { deadline: value ? `${value}T00:00:00` : null };
+        case 'add_label':
+          return labelIds.includes(num(value)) ? null : { label_ids: [...labelIds, num(value)] };
+        case 'remove_label':
+          return labelIds.includes(num(value)) ? { label_ids: labelIds.filter((x) => x !== num(value)) } : null;
+        default:
+          return null;
+      }
+    };
+    const updates = [];
+    const before = [];
+    for (const task of tasks.filter((x) => selectedIds.has(x.id))) {
+      const change = changeFor(task);
+      if (!change) continue;
+      const old = {};
+      let differs = false;
+      for (const [key, v] of Object.entries(change)) {
+        old[key] = key === 'label_ids' ? task.label_ids || [] : task[key] ?? null;
+        if (JSON.stringify(old[key]) !== JSON.stringify(v)) differs = true;
+      }
+      if (!differs) continue;
+      updates.push({ id: task.id, ...change });
+      before.push({ id: task.id, ...old });
+    }
+    if (updates.length === 0) {
+      setUndo({ key: Date.now(), message: t('Nothing to change — they’re all like that already.') });
+      return;
+    }
+    const send = (list) =>
+      fetchJson('/api/v1/tasks/bulk-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates: list }),
+      });
+    try {
+      await send(updates);
+      await loadData(true);
+      setUndo({
+        key: Date.now(),
+        message: tn(updates.length, 'Changed one task', 'Changed {n} tasks'),
+        onUndo: async () => {
+          try {
+            await send(before);
+          } catch (err) {
+            setError(t('Failed to change the tasks: {error}', { error: err.message }));
+          }
+          await loadData(true);
+          // Back in view (e.g. un-done): selected again.
+          setSelectedIds((prev) => new Set([...prev, ...updates.map((u) => u.id)]));
+        },
+      });
+    } catch (err) {
+      setError(t('Failed to change the tasks: {error}', { error: err.message }));
+    }
+  };
+
+  const deleteSelected = () => {
+    const picked = [...selectedIds];
+    deleteTasks(picked, () => setSelectedIds(new Set(picked)));
+    setSelectedIds(new Set());
   };
 
   // "Undo" after ticking a task off: back to the status it had.
@@ -607,6 +728,18 @@ function TaskList() {
     }
   };
 
+  useEffect(() => {
+    if (filters.view === 'board' || filters.view === 'calendar') exitSelect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.view]);
+  useEffect(() => {
+    if (!selectMode) return;
+    setSelectedIds((prev) => {
+      const next = new Set([...prev].filter((id) => document.getElementById(`task-${id}`)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [tasks, filters, selectMode]);
+
   const projectIndex = useMemo(() => buildProjectIndex(projects), [projects]);
   // Estimates add up over all subtasks, also the ones a filter hides.
   const allChildrenOf = useMemo(() => childIndex(tasks), [tasks]);
@@ -748,6 +881,7 @@ function TaskList() {
     }
     if (e.key === 'Escape') {
       if (showKeys) setShowKeys(false);
+      else if (selectMode) exitSelect();
       else setKeyboardId(null);
       return;
     }
@@ -776,6 +910,10 @@ function TaskList() {
       document.getElementById(`task-${ids[next]}`)?.querySelector('.task-header')?.scrollIntoView({ block: 'nearest' });
       return;
     }
+    if (e.key === 'Delete' && selectMode && selectedIds.size) {
+      deleteSelected();
+      return;
+    }
     const task = ids.includes(keyboardId) ? tasks.find((x) => x.id === keyboardId) : null;
     if (!task) return;
     const click = (selector) =>
@@ -792,6 +930,10 @@ function TaskList() {
       click('.comment-btn');
     } else if (e.key === 'o') {
       click('.expand-btn');
+    } else if (e.key === ' ') {
+      e.preventDefault();
+      setSelectMode(true);
+      toggleSelect(task.id, e.shiftKey);
     } else if (e.key === 'Delete') {
       handleDeleteTask(task.id);
     }
@@ -844,7 +986,7 @@ function TaskList() {
       childrenOf={tree.childrenOf}
       matchedIds={tree.matchedIds}
       searchText={filters.q}
-      canDrag={canDrag && !inlineForm}
+      canDrag={canDrag && !inlineForm && !selectMode}
       progressOf={tree.progressOf}
       focusCommentsId={focusCommentsId}
       projectIndex={projectIndex}
@@ -858,6 +1000,7 @@ function TaskList() {
       remainingOf={remainingOf}
       keyboardId={keyboardId}
       onSaveTemplate={handleSaveTemplate}
+      selection={selectMode ? { ids: selectedIds, toggle: toggleSelect } : null}
     />
   );
 
@@ -940,6 +1083,16 @@ function TaskList() {
             {t('Assigned to me')}
             {myOpenCount > 0 && <span className="mine-count">{myOpenCount}</span>}
           </button>
+          {filters.view !== 'board' && filters.view !== 'calendar' && (
+            <button
+              className={`mine-toggle ${selectMode ? 'active' : ''}`}
+              onClick={() => (selectMode ? exitSelect() : setSelectMode(true))}
+              aria-pressed={selectMode}
+              title={t('Pick several tasks and change them together')}
+            >
+              {t('☑ Select')}
+            </button>
+          )}
           <input
             ref={searchRef}
             type="search"
@@ -1146,7 +1299,21 @@ function TaskList() {
       )}
 
       {filters.view !== 'board' && filters.view !== 'calendar' && (
-      <div className="task-list">
+      <>
+      {selectMode && (
+        <BulkEditBar
+          count={selectedIds.size}
+          onSelectAll={() => setSelectedIds(new Set(shownIds()))}
+          onClear={() => setSelectedIds(new Set())}
+          onExit={exitSelect}
+          onApply={applyBulk}
+          onDelete={deleteSelected}
+          projectIndex={projectIndex}
+          users={users}
+          labels={labelIndex.list}
+        />
+      )}
+      <div className={`task-list ${selectMode ? 'selecting' : ''}`}>
         {visibleRoots.length === 0 && filtering ? (
           <p className="no-tasks">
             {t('No tasks match these filters.')}{' '}
@@ -1244,6 +1411,7 @@ function TaskList() {
           })
         )}
       </div>
+      </>
       )}
 
       <p className="kbd-hint">

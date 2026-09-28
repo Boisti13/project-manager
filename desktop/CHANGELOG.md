@@ -3,6 +3,11 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.2.6 — 2026-09-28
+
+### Added
+- **Change several tasks at once** (*☑ Select* on the Tasks page): status, priority, project, assignee, deadline, labels or delete for all selected tasks, with Undo — also offline; the changes are sent as one update per task when the app is back online (server v1.39.0 interface).
+
 ## v0.2.5 — 2026-09-28
 
 ### Added

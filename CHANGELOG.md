@@ -2,6 +2,20 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.39.0 — 2026-09-28
+
+### Added
+- **Change several tasks at once**: **☑ Select** next to *Assigned to me* on the Tasks page.
+  - Click tasks to pick them (the checkbox becomes a selection box, the row turns blue); **Shift+click** picks a range, *Select all shown* picks everything in view, *Clear* and *Stop selecting* (or **Esc**) end it. With the keyboard: **Space** picks the task selected with j/k.
+  - The bar above the list (it stays in view while scrolling) sets **status, priority, project/category, assignee, deadline** (or *No deadline*), adds or removes a **label**, or **deletes** the selected tasks — as soon as you pick a value.
+  - Every change shows *Changed n tasks · Undo*; Undo puts back what **each** task had (e.g. their own earlier statuses). Deleting several works like deleting one: gone at once, *Undo* for a few seconds.
+  - All or nothing: if one task can't take the change — say, an assignee who isn't a member of a private project — nothing changes and the reason is shown. Someone who gets several tasks assigned gets one notification.
+  - Tasks that leave the view (e.g. marked done while showing only open ones) drop out of the selection; Undo brings them back selected.
+
+### Under the hood
+- `POST /api/v1/tasks/bulk-update` (per task its own fields, like `PUT /tasks/{id}`; all or nothing); `routers/tasks.apply_update` shared by both. The Windows app applies it to its local copy and sends one update per task.
+- `components/BulkEditBar.js`; 3 new backend tests, 1 new Windows-app test.
+
 ## v1.38.0 — 2026-09-28
 
 ### Added

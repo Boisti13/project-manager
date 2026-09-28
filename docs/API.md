@@ -101,6 +101,7 @@ api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via
 | `/auth/login`, `/auth/me`, `/auth/me/preferences` | log in, current user, language |
 | `/auth/tokens/` | personal API tokens (password login only) |
 | `/tasks/`, `/tasks/{id}`, `/tasks/bulk`, `/tasks/{id}/activity` | tasks (fields incl. `label_ids`, `blocked_by_ids`, `estimate_minutes`, repeat rule: `recurrence_unit`, `recurrence_interval`, `recurrence_weekdays` (0 = Monday), `recurrence_monthly`, `recurrence_from`) and their history |
+| `/tasks/bulk-update` | change several tasks in one request, all or nothing: `{"updates": [{"id": 1, "status": "done"}, {"id": 2, "priority": 3, "expected": {...}}]}` — each item takes the fields of `PUT /tasks/{id}` (incl. `expected`); someone who gets several tasks assigned is notified once |
 | `/tasks/{id}/comments`, `/comments/{id}`, `/comments/search` | comments |
 | `/projects/`, `/projects/{id}` | projects and categories (`parent_id`), `is_private`, `member_ids` |
 | `/labels/` | labels |
