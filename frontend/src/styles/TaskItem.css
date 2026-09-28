@@ -339,3 +339,17 @@
   color: var(--color-info-text);
   background-color: var(--color-info-bg);
 }
+
+/* Edit / Add subtask form, right below the task */
+.task-item .inline-form {
+  margin: 10px 0 4px 32px;
+  cursor: default;
+  scroll-margin: 70px 0 20px 0;
+}
+
+@media (max-width: 600px) {
+  .task-item .inline-form {
+    margin-left: 0;
+    padding: 12px;
+  }
+}

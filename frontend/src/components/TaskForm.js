@@ -266,7 +266,7 @@ function TaskForm({
               value={formData.title}
               onChange={handleChange}
               required
-              autoFocus={!task}
+              autoFocus
               placeholder={t('Enter task title')}
             />
           </div>

@@ -526,6 +526,31 @@ function TaskList() {
   const visibleRoots = tree.roots;
   const canDrag = filters.sort === 'manual';
 
+  // Edit / Add subtask from a row: the form opens right below that task (list
+  // view). New tasks, and edits started from the board, use the top.
+  const inlineTargetId =
+    showForm && filters.view !== 'board' && filters.view !== 'calendar'
+      ? selectedTask?.id ?? parentTaskForNew?.id ?? null
+      : null;
+
+  const taskForm = showForm && (
+    <TaskForm
+      key={`${selectedTask?.id}-${parentTaskForNew?.id}-${projectForNew}`}
+      task={selectedTask}
+      parentTask={parentTaskForNew}
+      defaultProjectId={projectForNew}
+      projectIndex={projectIndex}
+      users={users}
+      labels={labels}
+      onLabelCreated={(l) => setLabels((ls) => [...ls, l])}
+      allTasks={tasks}
+      onSubmit={selectedTask ? handleUpdateTask : handleCreateTask}
+      onBulkSubmit={handleBulkCreate}
+      onCancel={handleFormCancel}
+    />
+  );
+  const inlineForm = inlineTargetId != null ? { taskId: inlineTargetId, element: taskForm } : null;
+
   const renderTask = (task) => (
     <TaskItem
       key={task.id}
@@ -541,7 +566,7 @@ function TaskList() {
       childrenOf={tree.childrenOf}
       matchedIds={tree.matchedIds}
       searchText={filters.q}
-      canDrag={canDrag}
+      canDrag={canDrag && !inlineForm}
       progressOf={tree.progressOf}
       focusCommentsId={focusCommentsId}
       projectIndex={projectIndex}
@@ -551,6 +576,7 @@ function TaskList() {
       labelIndex={labelIndex}
       onLabelClick={filterByLabel}
       dependencyIndex={dependencyIndex}
+      inlineForm={inlineForm}
     />
   );
 
@@ -610,24 +636,7 @@ function TaskList() {
 
       {error && <div className="error-message">{error}</div>}
 
-      {showForm && (
-        <div className="form-container">
-          <TaskForm
-            key={`${selectedTask?.id}-${parentTaskForNew?.id}-${projectForNew}`}
-            task={selectedTask}
-            parentTask={parentTaskForNew}
-            defaultProjectId={projectForNew}
-            projectIndex={projectIndex}
-            users={users}
-            labels={labels}
-            onLabelCreated={(l) => setLabels((ls) => [...ls, l])}
-            allTasks={tasks}
-            onSubmit={selectedTask ? handleUpdateTask : handleCreateTask}
-            onBulkSubmit={handleBulkCreate}
-            onCancel={handleFormCancel}
-          />
-        </div>
-      )}
+      {showForm && !inlineForm && <div className="form-container">{taskForm}</div>}
 
       <div className="filters">
         <div className="filter-search">

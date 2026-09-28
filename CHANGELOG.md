@@ -2,6 +2,13 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.34.0 — 2026-09-28
+
+### Changed
+- **Editing happens where the task is**: in the list, *Edit* and *Add subtask* (buttons, ⋯ menu) open the form **right below that task** instead of at the top of the page, and scroll it into view only as far as needed. *+ New Task* and edits started from the board still use the top.
+- The title field has the cursor when editing, too (Enter saves, Esc cancels right away).
+- While a form is open in the list, drag-and-drop reordering pauses, so text in the form can be selected with the mouse.
+
 ## v1.33.0 — 2026-09-27
 
 ### Changed

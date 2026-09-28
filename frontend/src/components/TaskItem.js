@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { highlightParts } from '../taskFilters';
 import TaskComments from './TaskComments';
 import TaskMenu from './TaskMenu';
@@ -38,6 +38,7 @@ function TaskItem({
   labelIndex = null,
   onLabelClick = null,
   dependencyIndex = null,
+  inlineForm = null, // { taskId, element }: the edit / add-subtask form, shown below that task
   indent = 0,
 }) {
   const subtasks = childrenOf(task);
@@ -52,6 +53,12 @@ function TaskItem({
   const [dragOver, setDragOver] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const formHere = inlineForm && inlineForm.taskId === task.id;
+  const formRef = useRef(null);
+  // Bring the form into view when it opens below this task.
+  useEffect(() => {
+    if (formHere && formRef.current) formRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [formHere]);
   // Opened from a comment notification.
   useEffect(() => {
     if (focusCommentsId === task.id) setShowComments(true);
@@ -242,6 +249,12 @@ function TaskItem({
         />
       )}
 
+      {formHere && (
+        <div className="form-container inline-form" ref={formRef} onDragStart={(e) => e.stopPropagation()}>
+          {inlineForm.element}
+        </div>
+      )}
+
       {showSubtasks && subtasks.length > 0 && (
         <div className="subtasks">
           {subtasks.map((subtask) => (
@@ -269,6 +282,7 @@ function TaskItem({
               labelIndex={labelIndex}
               onLabelClick={onLabelClick}
               dependencyIndex={dependencyIndex}
+              inlineForm={inlineForm}
               indent={indent + 1}
             />
           ))}
