@@ -116,3 +116,23 @@ def test_search_highlights_matches(page, api):
     assert page.locator(".task-list mark").first.inner_text().lower() == "antenna"
     assert page.locator(".task-item", has_text="Something else").count() == 0
     assert re.search(r"q=antenna", page.url)
+
+
+def test_description_starts_under_the_title(make_page, api):
+    project = api.project()
+    parent = api.task("With subtasks", project_id=project["id"], description="Starts under the W")
+    api.task("Child", parent_task_id=parent["id"], description="Starts under the C")
+    api.task("Plain", project_id=project["id"], description="Starts under the P")
+
+    def offsets(page):
+        return page.evaluate("""() => [...document.querySelectorAll('.task-item')].map(item => {
+            const title = item.querySelector(':scope > .task-header .task-title').getBoundingClientRect().left;
+            const desc = item.querySelector(':scope > .task-description');
+            return desc ? Math.round(desc.getBoundingClientRect().left - title) : null;
+        })""")
+
+    for phone in (False, True):
+        page = make_page(phone=phone)
+        open_list(page, project)
+        row(page, "Child").wait_for()  # a project filter shows subtasks expanded
+        assert [o for o in offsets(page) if o is not None] == [0, 0, 0], (phone, offsets(page))

@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.39.2 — 2026-09-28
+
+### Fixed
+- **Task descriptions line up with the title**: the text under a task now starts below the first letter of its title, whatever comes before it (drag handle, ▶ for subtasks, the selection box) — also for subtasks and on phones. Before, it started at a fixed distance and looked out of place.
+
 ## v1.39.1 — 2026-09-28
 
 ### Fixed

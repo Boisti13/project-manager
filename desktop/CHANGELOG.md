@@ -3,6 +3,11 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.2.8 — 2026-09-28
+
+### Fixed
+- **Task descriptions line up with the title** instead of starting at a fixed distance (server v1.39.2 interface).
+
 ## v0.2.7 — 2026-09-28
 
 ### Fixed

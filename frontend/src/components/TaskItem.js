@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { highlightParts } from '../taskFilters';
 import TaskComments from './TaskComments';
 import TaskMenu from './TaskMenu';
@@ -63,6 +63,26 @@ function TaskItem({
   const [showComments, setShowComments] = useState(false);
   const formHere = inlineForm && inlineForm.taskId === task.id;
   const formRef = useRef(null);
+  const headerRef = useRef(null);
+  const titleRef = useRef(null);
+  const descriptionRef = useRef(null);
+  // The description starts under the title's first letter. What comes before
+  // the title differs per row (drag handle, ▶, select mode, phone layout), so
+  // it's measured, and again whenever the row changes size.
+  useLayoutEffect(() => {
+    const header = headerRef.current;
+    if (!descriptionRef.current || !header) return undefined;
+    const align = () => {
+      if (!descriptionRef.current || !titleRef.current) return;
+      const left = titleRef.current.getBoundingClientRect().left - header.getBoundingClientRect().left;
+      descriptionRef.current.style.marginLeft = `${Math.max(0, Math.round(left))}px`;
+    };
+    align();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(align);
+    observer.observe(header);
+    return () => observer.disconnect();
+  });
   // Bring the form into view when it opens below this task.
   useEffect(() => {
     if (formHere && formRef.current) formRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -144,7 +164,7 @@ function TaskItem({
         onDrop: handleDrop,
       })}
     >
-      <div className="task-header" onClick={onHeaderClick}>
+      <div className="task-header" ref={headerRef} onClick={onHeaderClick}>
         <div className="task-left">
           {canDrag && (
             <span className="drag-handle" title={t('Drag to reorder')}>
@@ -179,7 +199,7 @@ function TaskItem({
             />
           )}
           <div className="task-status-dot" style={{ backgroundColor: statusColors[task.status] }} />
-          <span className={`task-title ${task.status === 'done' ? 'task-title-done' : ''}`}>
+          <span ref={titleRef} className={`task-title ${task.status === 'done' ? 'task-title-done' : ''}`}>
             <Highlight text={task.title} needle={searchText} />
           </span>
           {labelIndex && <LabelChips labels={labelIndex.of(task)} onClick={onLabelClick} small />}
@@ -268,7 +288,7 @@ function TaskItem({
       </div>
 
       {task.description && (
-        <p className="task-description">
+        <p className="task-description" ref={descriptionRef}>
           <Highlight text={task.description} needle={searchText} />
         </p>
       )}
