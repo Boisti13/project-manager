@@ -12,7 +12,7 @@
 | Nginx | :80 — `/api/*` → backend, everything else → `frontend/build/` ([`deploy/nginx.conf`](deploy/nginx.conf)). Plain HTTP (the default): a private network, reached remotely over ZeroTier, which encrypts the traffic itself — see [HTTPS](#https) |
 | Backups | `/var/backups/project-manager/`, nightly at 03:15 via `/etc/cron.d/project-manager` and before every update; newest 3 of each kind kept (see [Backups & Export](#backups--export)) |
 
-**Production runs `main`.** Ongoing work happens on `dev`, which can be tried on the live instance via Settings → Updates → *Switch to dev*; merge to `main`, tag a release (see [README.md](README.md#versioning)) and switch back when ready to ship.
+**Production runs `main`.** Ongoing work happens on `dev`, which can be tried on the live instance via Settings → Updates → *Switch to dev*; merge to `main`, tag a release (see [docs/development.md](docs/development.md#versioning)) and switch back when ready to ship.
 
 ## Updating the Live Deployment
 

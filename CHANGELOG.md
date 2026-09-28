@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes, newest first. Versions follow [semantic versioning](README.md#versioning); each release is tagged `vX.Y.Z` on `main`.
+All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
 ## v1.39.2 — 2026-09-28
 

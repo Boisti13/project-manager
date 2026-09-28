@@ -5,105 +5,42 @@
 [![Windows app](https://img.shields.io/github/v/release/Boisti13/project-manager?filter=desktop-v*&label=windows%20app)](https://github.com/Boisti13/project-manager/releases?q=desktop-v&expanded=true)
 [![License: MIT](https://img.shields.io/github/license/Boisti13/project-manager)](LICENSE)
 
-A self-hosted task management application with hierarchical tasks (main tasks + subtasks), list/board/calendar views, color-coded projects with categories, task comments and history, recurring tasks, multi-user support, deadlines, search and filtering, a phone-friendly layout and in-app updates.
+A self-hosted task manager for a small team: projects with categories,
+tasks with subtasks, a list, board and calendar, and a start page that shows
+what needs you today. It runs on your own server (one command on Proxmox),
+works on phones, speaks English and German, and has a Windows app that keeps
+working offline.
 
 ![Tasks grouped by project and category](docs/screenshots/tasks-desktop.png)
 
-## Features
+## Highlights
 
-- **Authentication**: JWT-based login; the first account registered becomes the admin, after that self-registration is **closed** unless an admin allows it (Settings → User Management). New passwords need at least 8 characters; everyone can change their own password under Settings → *Your account*
-- **User Management**: Admins add accounts, set passwords, promote/demote and activate/deactivate users (deactivated users are locked out immediately)
-- **English & German**: The whole interface in English or German (*Deutsch*) — texts, dates, weekdays, the task history and the CSV export. Each user picks it under Settings → *Your account*; until then it follows the browser language
-- **Calendar feed**: A private link (Settings → *Calendar feed*) your calendar app subscribes to — open tasks with a deadline as all-day entries, repeating tasks as series, your tasks or everything you can see; resettable. Works with apps that fetch on the device (classic Outlook, Apple Calendar, Thunderbird, ICSx⁵ on Android); Google Calendar / Outlook.com can't reach a server on a private network
-- **My Day**: A start page (☀ *My day*) with counters and lists of what's **overdue**, **due today**, **due this week**, **in progress** and **waiting for others** — your tasks and, optionally, unassigned ones, subtasks included — plus **recently assigned** tasks and **recent comments**. Tick tasks off right there; titles open the task in the list. Optionally open it automatically when you start the app
-- **Quick entry**: *+ New Task* puts the cursor in the title — type and press **Enter** to create it. **Edit** and **Add subtask** open the form right below that task in the list, so there's no scrolling back and forth. *Create* and *Cancel* sit at the top of the form and stay in view while scrolling; **Ctrl+Enter** saves from any field (description, bulk list), **Esc** cancels
-- **Priorities**: Each task is *Low*, *Medium*, *High* or *Critical* (picked from a list); anything above Low shows as a colored badge, and lists sort by it
-- **Time estimates**: An optional *Estimate* per task — type `2h`, `1.5h`, `45m` or `1:30`. It shows on the task (⏱ 1h 30min); a task without its own estimate shows what its open subtasks add up to (⏱ Σ). Each project and category header shows the **open work, estimated**. Done tasks count nothing; a task's own estimate covers its subtasks, so nothing is counted twice. Estimates are in the history and the CSV export (in hours)
-- **Change several tasks at once**: *☑ Select* on the Tasks page, then click tasks to pick them (Shift+click for a range, *Select all shown*, or **Space** on the task picked with j/k). A bar above the list sets **status, priority, project, assignee, deadline**, adds or removes a **label**, or **deletes** them — each for all selected tasks at once, with **Undo** putting back what each one had. One request, all or nothing: if one task can't take the change (e.g. an assignee who isn't a member of a private project), none changes. Someone who gets several tasks assigned is notified once
-- **Weekly review**: A page (◷ *Review*) for any week: what got **done**, how many tasks are **new**, what's **overdue** and what's **due the week after**, plus **open work per project** (done this week, open, overdue, estimated hours). Everyone's tasks or *only mine*; **Copy as text** for a status mail, **Print** for paper
-- **Templates**: Save a task with its subtasks as a template (⋯ → *Save as template…*), then create it again with *From template* in the task form — pick the template, optionally a new title, and the project, deadline and assignee for this round. Titles, descriptions, priorities, estimates and labels come along; everything starts as *To Do*. Shared by everyone; Settings → *Task templates* lists them
-- **Undo**: Deleting a task (with its subtasks) or ticking one off shows an **Undo** bar for a few seconds — no more "Are you sure?" for tasks. Undoing a completed repeating task also takes back the next occurrence it created, as long as nobody has worked on that one yet
-- **Keyboard shortcuts** on the Tasks page: **n** new task, **/** search, **j / k** move through the list, then **e** edit, **x** done / not done, **a** add subtask, **c** comments, **o** open/close subtasks, **Del** delete; **Space** select it (to change several at once); **?** shows the list
-- **Hierarchical Tasks**: Main tasks with subtasks in a tree structure, drag-to-reorder at any level (in manual sort order) or **Move up / Move down** in each task's **⋯ menu** (works on touchscreens), **Move to…** another project or category (subtasks come along), subtask progress (e.g. *1/2*) on the parent; when all subtasks are ticked the parent is highlighted as ready (*✓ 2/2*) but stays open — it only moves to *Completed* when you tick it yourself, so more subtasks can still be added
-- **Bulk Entry**: *Several (one per line)* in the task form — type or paste a list, indent lines (Tab or two spaces) to make subtasks at any depth; bullets and Markdown checkboxes (`- [x] done`) are understood, a live preview shows the resulting tree, and project, status, priority, deadline and assignee apply to all of them. Works from *+ New Task*, a project/category section's **+**, or a task's **+** (all lines become its subtasks)
-- **Recurring Tasks**: *Repeat* every N days, weeks, months or years — or on chosen weekdays (Mon + Thu, *every workday*), monthly on the last day / last or first workday / the same weekday (2nd Tuesday, last Friday), and optionally counted from completion (*3 days after it was done*). Ticking a repeating task creates the next one with the deadline moved forward on its schedule (month ends handled, never already overdue) and its subtasks as a fresh checklist; shown with a ↻ badge
-- **Done Checkbox & Archive**: Tick tasks off with a checkbox; they move into a collapsed *✓ Completed* row at the end of their project/category (most recent first). After a configurable number of days (Settings → *Completed tasks*, default 30) they're archived — hidden from the list but still found by search or the *Done* filter. Nothing is deleted
-- **Multi-User**: Task assignment, per-user notifications
-- **Private Projects**: Projects are visible to everyone by default; mark one **🔒 Private** and pick its members, and the project — its categories, tasks, subtasks, comments, history, notifications and exports — is visible only to members and admins (non-members get *not found*). Tasks in a private project can only be assigned to members; whoever creates or manages a private project stays a member. Tasks without a project stay visible to everyone
-- **Comments**: Discussion thread on every task and subtask (💬 with count on the row); authors can edit (marked *edited*) and delete their comments, admins can delete any; search also finds tasks by comment text; comments travel with project export/import
-- **Task History**: The 💬 panel also shows who created the task and who changed what — status, assignee, project, title, description, deadline, priority, repeat — interleaved with the comments (*Hide history* to see comments only)
-- **Labels**: Colored tags such as *urgent* or *waiting for supplier*, shared across all projects. Pick or create them in the task form, manage them under Settings → Labels (rename, recolor, delete); they show on list rows and board cards, clicking one filters by it, the *Label* filter and the search find them, and they're kept by repeating tasks, bulk entry, the history, CSV and export/import
-- **Dependencies**: *Waits for* in the task form links a task to others it depends on (search by title). It shows **⏳ waiting** with the open ones in the tooltip until they're done — then its assignee gets a *Ready to start* notification. The Status filter has *Waiting for other tasks*; tasks can't wait for each other in a circle, and the history records changes
-- **Search & Filters**: Full-text search over titles, descriptions and comments (subtasks included), filters for status, project, assignee, label and deadline, sorting by deadline/priority/date/title; filters are kept in the URL. **Saved filters**: *☆ Save filter* keeps the current filters, search, sort and view under a name — one click on its ★ chip brings them back (per user, on every device; the trash can next to the active one deletes it)
-- **List, Board & Calendar Views**: Switch the Tasks page between the list, a **board** with To Do / In Progress / Blocked / Done columns (drag cards between columns, or ◀ ▶ on touch) and a **month calendar** of deadlines (subtasks included; drag a task to another day to move its deadline; on phones days show colored dots and the tapped day's tasks are listed below). Search and filters apply to all three; clicking a task opens it in the list
-- **Projects & Categories**: Projects with one level of categories (e.g. *6GHub → General, Ordering, Documentation*), each project color-coded; the Tasks page lists tasks in collapsible sections per project and per category (remembered per browser), with every task carrying its project's color
-- **Progress Overview**: The Projects page shows each project's progress bar and % done (categories included), open / overdue / due-this-week counts that open the matching filter on the Tasks page, and the next deadline; each category has its own mini bar and overdue count
-- **Phone-friendly**: Bottom tab bar, two-line task rows with large touch targets and a ⋯ menu that opens as a bottom sheet (add subtask, edit, move, delete), folding filters, no input zoom on iOS; installable via *Add to Home Screen* (web app manifest) to run full-screen like an app
-- **Extended Status**: todo / in_progress / blocked / done
-- **Notifications**: The bell tells you when someone **assigns you a task** (a bulk add counts as one), **comments on a task** you're assigned to or have commented on, or **finishes the last task one of yours waited for**, plus overdue and due-within-3-days deadlines of your (and unassigned) tasks. Unread items are highlighted; clicking one jumps to the task — opening its project, category and parents, and its comments
-- **Assigned to me**: One click next to the search shows only your tasks, with a count of your open ones
-- **Dark Mode**: Toggle in the nav, persisted per browser, defaults to OS preference
-- **REST API & tokens**: Everything the app does is available as a documented REST API under `/api/v1` (interactive docs at `/api/docs`), for scripts and future apps. Personal **API tokens** (Settings → API tokens; optional expiry, revocable, stored hashed) act as their user but can't manage tokens or change the password — see [docs/API.md](docs/API.md). Groundwork for offline clients: UUIDs you can choose when creating (safe retries), reliable `updated_at`, a list of deletions, and **`/api/v1/sync`** (full snapshot or changes since a cursor) with optional conflict detection (`expected`) — the basis for an offline Windows app
-- **Windows app (in development)**: the same interface in its own window, with a local copy of your data — keeps working offline, syncs when the server is reachable again and updates itself with one click; see [desktop/README.md](desktop/README.md)
-- **In-app Updates**: Settings shows the running version/branch/commit; anyone can check a branch for updates, admins can update or switch branches (backup, pull, migrate, rebuild the frontend, sync the Nginx config, restart) with a live log; only one update runs at a time, also when one was started by hand
-- **Backups & Restore**: Automatic database backup **every night** (can be turned off) and before every update; *Back up now*, download, delete, upload and one-click **restore** (with automatic safety backup and rollback) in Settings for admins; keeps the newest N of each kind — nightly / other (default 3). Move a whole instance to a new server by restoring a backup there — also straight from the Proxmox helper script
-- **Export & Import**: Export a project (with categories, tasks, subtasks) or everything as JSON and import it into another account or installation; CSV export of all tasks for Excel — see [DEPLOYMENT.md](DEPLOYMENT.md#backups--export)
-- **HTTPS (optional)**: Plain HTTP by default (private network / VPN); one command turns on HTTPS with a certificate from a local CA created on the server (renewed automatically), imported once per device from `http://<server>/ca.crt` — see [DEPLOYMENT.md](DEPLOYMENT.md#https)
-- **Self-Hosted**: One-command install on Proxmox VE (creates the LXC for you) or into any Debian/Ubuntu LXC/VM, no Docker
+- **Projects and categories**, color-coded, with progress; **private projects** only their members see
+- **Tasks with subtasks** at any depth — priority, deadline, time estimate, labels, assignee, "waits for" other tasks
+- **Repeating tasks**: every N days/weeks/months, on chosen weekdays, the last workday of the month, the 2nd Tuesday …
+- **List, board and calendar** views; search, filters and **saved filters**
+- **My day** start page and a **weekly review** with open work per project
+- **Quick**: type and press Enter, several tasks at once (one per line), **templates**, **keyboard shortcuts**, **change several tasks at once**, **Undo**
+- **Comments, history and notifications** for working together
+- **Calendar feed** for Outlook, Apple Calendar, Thunderbird or Android
+- **Phone-friendly**, installable to the home screen; **dark mode**
+- **Windows app** with a local copy: works offline, syncs when back online, updates itself
+- **For the server**: one-command install, updates, nightly backups and one-click restore from the app; optional HTTPS; a documented **REST API** with personal tokens
 
-## Screenshots
+| | | |
+|---|---|---|
+| ![My day](docs/screenshots/myday-desktop.png) | ![Board view](docs/screenshots/board-desktop.png) | ![Weekly review](docs/screenshots/review-desktop.png) |
+| ![Calendar view](docs/screenshots/calendar-desktop.png) | ![Changing several tasks at once](docs/screenshots/bulk-edit-desktop.png) | ![Tasks on a phone](docs/screenshots/tasks-phone.png) |
 
-| Desktop | Phone |
-|---|---|
-| ![My day](docs/screenshots/myday-desktop.png) | ![My day on a phone](docs/screenshots/myday-phone.png) |
-| | ![My day in German](docs/screenshots/myday-de-phone.png) |
-| ![Tasks, dark mode](docs/screenshots/tasks-desktop-dark.png) | ![Tasks on a phone](docs/screenshots/tasks-phone.png) |
-| ![Board view](docs/screenshots/board-desktop.png) | ![Calendar on a phone](docs/screenshots/calendar-phone.png) |
-| ![Calendar view](docs/screenshots/calendar-desktop.png) | |
-| ![Search with highlighted matches](docs/screenshots/tasks-filtered.png) | ![Completed row on a phone, dark mode](docs/screenshots/tasks-phone-dark.png) |
-| ![Projects with categories and progress](docs/screenshots/projects-desktop.png) | ![Project progress on a phone](docs/screenshots/projects-phone.png) |
-| ![Comments and history of a task](docs/screenshots/comments-desktop.png) | ![Comments and history on a phone](docs/screenshots/comments-phone.png) |
-| ![Bulk entry: one task per line, indented lines become subtasks](docs/screenshots/bulk-desktop.png) | ![Login with registration closed](docs/screenshots/login-phone.png) |
-| ![Notifications: assignments, comments, deadlines](docs/screenshots/bell-desktop.png) | ![Task menu on a phone](docs/screenshots/menu-phone.png) |
-| ![Private project with members](docs/screenshots/project-private-desktop.png) | |
-| ![Keyboard shortcuts](docs/screenshots/shortcuts-desktop.png) | ![Weekly review on a phone](docs/screenshots/review-phone.png) |
-| ![Weekly review](docs/screenshots/review-desktop.png) | |
-| ![Creating tasks from a template](docs/screenshots/template-desktop.png) | |
-| ![Undo after deleting a task](docs/screenshots/undo-desktop.png) | ![Changing several tasks on a phone](docs/screenshots/bulk-edit-phone.png) |
-| ![Changing several tasks at once](docs/screenshots/bulk-edit-desktop.png) | |
+More in the **[user guide](docs/user-guide.md)**.
 
-<details>
-<summary>Settings (your account, archive days, backup &amp; restore, export, updates, users &amp; registration)</summary>
+## Install
 
-![Settings](docs/screenshots/settings-desktop.png)
-
-</details>
-
-Screenshots use sample data from a local preview instance.
-
-### On your phone
-
-Open the app's URL in the phone browser and use *Add to Home Screen* (iOS: Share menu; Android/Chrome: ⋮ menu → *Install app*). It then starts full-screen with its own icon. It needs a connection to the server (e.g. over your VPN/ZeroTier when away) — there is no offline mode.
-
-## Releases
-
-See [CHANGELOG.md](CHANGELOG.md) and the [GitHub releases](https://github.com/Boisti13/project-manager/releases).
-
-## Tech Stack
-
-- **Backend**: FastAPI (Python 3.10+) + SQLAlchemy 2.0 + psycopg 3 + PostgreSQL; bcrypt password hashes, JWT sessions (PyJWT)
-- **Frontend**: React 18 + React Router, dependency versions locked in `package-lock.json`
-- **Deployment**: Bare metal on LXC — Supervisor runs the API, Nginx serves the static React build. A Docker Compose setup also exists for local development but is not the production path.
-
-## Installation
-
-**New Proxmox LXC** (run on the PVE host):
+**New Proxmox LXC** (run on the Proxmox host):
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Boisti13/project-manager/main/proxmox/project-manager-lxc.sh)"
 ```
-
-To start the new container from a backup of another instance, put `PM_RESTORE_FILE=/path/to/backup.dump` in front of that command.
 
 **Existing Debian 12 / Ubuntu 22.04+ LXC or VM** (run inside it, as root):
 
@@ -111,150 +48,22 @@ To start the new container from a backup of another instance, put `PM_RESTORE_FI
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Boisti13/project-manager/main/install.sh)"
 ```
 
-Both install PostgreSQL, Nginx, Supervisor and Node.js without Docker, generate the database password and secret key, build the frontend and print the URL. Register the first account to become admin — registration then closes, and you add further users under **Settings → User Management**. Later updates happen from **Settings → Updates**. Options, unattended mode and the manual steps are in [DEPLOYMENT.md](DEPLOYMENT.md#fresh-install).
+Both install PostgreSQL, Nginx, Supervisor and Node.js (no Docker) and print
+the address. Register the first account to become admin; later updates are
+one click in *Settings → Updates*. Options, HTTPS, backups and moving to a
+new server: [DEPLOYMENT.md](DEPLOYMENT.md).
 
-## Development Setup
+## Documentation
 
-Needs Python 3.11+, Node 18+ and a PostgreSQL database.
+| | |
+|---|---|
+| [User guide](docs/user-guide.md) | Using the app: tasks, views, filters, templates, review, shortcuts, settings |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Installing and running a server: updates, HTTPS, backups and restore, troubleshooting |
+| [Windows app](desktop/README.md) | Installing, connecting, working offline, updates |
+| [API](docs/API.md) | REST API, tokens, keeping a copy in sync |
+| [Development](docs/development.md) | Setup, tests, architecture, branches and versions |
+| [CHANGELOG.md](CHANGELOG.md) | What changed in each release ([releases](https://github.com/Boisti13/project-manager/releases)) |
 
-### Backend
+## License
 
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-pip install -r requirements.txt
-cp .env.example .env      # set DB_* to your database
-python migrate.py         # create/upgrade the schema (Alembic)
-uvicorn app.main:app --reload --port 8000
-```
-
-Schema changes go through Alembic migrations — see [DEPLOYMENT.md](DEPLOYMENT.md#database-migrations).
-
-### Frontend
-
-```bash
-cd frontend
-npm ci                    # exact versions from package-lock.json
-npm start                 # dev server on :3000, proxies /api to :8000
-```
-
-`npm run build` produces the static bundle that production serves.
-
-### Docker Compose (alternative)
-
-`docker compose up` starts Postgres, the backend (running `migrate.py` first) and the frontend dev server. Local development only.
-
-## Testing
-
-**Backend** — pytest against a real PostgreSQL:
-
-```bash
-cd backend
-pip install -r requirements-dev.txt
-pytest
-```
-
-With no configuration it starts a throwaway PostgreSQL via the `pgserver` package (nothing to install); set `PM_TEST_DATABASE_URL=postgresql://user:pw@host/postgres` to use an existing server instead (the user needs `CREATE DATABASE`). Each run uses its own database and removes it afterwards. The suite covers auth and user management, projects/categories, private projects and access, tasks, comments, task history, recurring tasks, settings, export/import, the backup endpoints, the migrations (upgrade/downgrade, models vs. migrations, stamping pre-Alembic databases) and the `backup-db.sh`/`restore-db.sh` scripts including rollback — the script tests need `bash` and the PostgreSQL client tools and are skipped without them.
-
-**Frontend** — Jest:
-
-```bash
-cd frontend
-npm test                  # taskFilters (search/filter/sort/archive), projects (tree, grouping), progress, views (board/calendar), labels, dependencies, myday, exportCsv, bulkParse, recurrence, activity, i18n
-```
-
-**Browser tests** — the real app (backend + production build) in Chromium, with Playwright: logging in, creating and editing tasks inline, estimates, deleting and ticking off with Undo (incl. repeating tasks), keyboard shortcuts, search, saved filters, changing several tasks at once (incl. all-or-nothing), templates, the board and calendar (moving cards, dropping on another day), Move up and drag-and-drop reordering, links to a task, My day, the weekly review, German, and the phone layout:
-
-```bash
-cd frontend && npm run build && cd ..
-pip install -r backend/requirements.txt -r e2e/requirements.txt
-python -m playwright install chromium
-pytest e2e
-```
-
-Like the backend tests they use `PM_TEST_DATABASE_URL` or start a throwaway PostgreSQL; `PM_E2E_BUILD=path` tests another build, `PW_CHANNEL=chrome` uses an installed Chrome. Each test makes its own project and tasks, so they don't depend on each other. When one fails, a screenshot lands in `e2e/artifacts/` and the server's output in `e2e/server.log`.
-
-**Translations** — every UI text goes through `t('English text')` (or `tn(n, 'one …', '{n} …')` for plurals) from `frontend/src/i18n.js`; the German text for it lives in `frontend/src/locales/de.js`, keyed by the English text. `i18n.test.js` fails when a text used in the code has no German entry, or when the placeholders (`{name}`) differ. Server error messages stay English.
-
-**CI** — [GitHub Actions](.github/workflows/ci.yml) runs the backend tests (PostgreSQL 16, Python 3.10 and 3.12), the frontend tests and production build, the browser tests (screenshots of failures are kept as a download), and shellcheck on every push to `main`/`dev` and on pull requests.
-
-## Architecture
-
-```
-project-manager/
-├── VERSION                  # Single source of truth for the app version
-├── .github/workflows/ci.yml # Tests, build and shellcheck on every push
-├── .github/workflows/desktop.yml # Windows app: tests, build, installer
-├── desktop/                 # Windows app (Tauri shell; offline layer in frontend/src/desktop)
-├── backend/
-│   ├── app/                 # FastAPI application (routers/, models.py, schemas.py, access.py = who sees what, ...)
-│   ├── alembic/versions/    # Database migrations
-│   ├── tests/               # pytest suite (real PostgreSQL)
-│   └── migrate.py           # Applies migrations; stamps pre-Alembic databases
-├── frontend/
-│   ├── public/              # index.html, web app manifest, app icons
-│   └── src/
-│       ├── components/      # React components (TaskList, Settings, UpdatePanel, ...)
-│       │   └── tasklist/    # Parts of the Tasks page: data, filter bar, groups, select mode, Undo, shortcuts
-│       ├── taskOps.js       # Subtrees, changes to several tasks, reordering (pure, tested)
-│       ├── taskFilters.js   # Pure search/filter/sort/archive logic for the task tree
-│       ├── exportCsv.js     # CSV export of all tasks
-│       ├── i18n.js          # t()/tn(), language detection; texts in locales/de.js
-│       ├── names.js         # Status and priority names
-│       ├── estimate.js      # Time estimates: parse "1h 30m", format, add up
-│       ├── review.js        # Weekly review: done, overdue, due next week, per project
-│       ├── clipboard.js     # Copy text, also on plain-HTTP servers
-│       ├── bulkParse.js     # "One task per line" text → task tree
-│       ├── recurrence.js    # Repeat settings as text
-│       ├── activity.js      # Task history entries as sentences
-│       ├── dependencies.js  # Blockers, waiting tasks, picker suggestions
-│       ├── labels.js        # Label index, readable text color on a label
-│       ├── myday.js         # Sections of the My day page
-│       ├── progress.js      # Per-project progress for the Projects page
-│       ├── views.js         # Board columns, calendar grid and deadlines by day
-│       └── projects.js      # Project tree, colors, grouping tasks by project/category
-├── install.sh               # Installer for a Debian/Ubuntu LXC or VM (idempotent)
-├── proxmox/
-│   └── project-manager-lxc.sh # Run on the PVE host: creates an LXC and runs install.sh
-├── scripts/
-│   ├── update.sh            # In-app updater (fetch, backup, install, migrate, build, sync nginx, restart)
-│   ├── setup-https.sh       # Local CA + server certificate (renews when due / IP changed)
-│   ├── nginx-site.sh        # Prints the Nginx site config (HTTPS or HTTP)
-│   ├── backup-db.sh         # pg_dump to /var/backups/project-manager, keeps the newest N (also nightly via cron)
-│   ├── restore-db.sh        # Safety backup, restore, migrate; rolls back on failure
-│   └── fix-db-encoding.sh   # Converts a SQL_ASCII database to UTF-8 (older installs)
-├── deploy/nginx.conf        # Production Nginx config (static build + /api proxy)
-├── docs/screenshots/        # README screenshots (sample data)
-├── e2e/                     # Browser tests (Playwright): serve.py runs backend + build, test_*.py
-├── CHANGELOG.md             # What changed in each release
-├── docker-compose.yml       # Local dev only, not used in production
-└── DEPLOYMENT.md            # LXC deployment, updates, migrations, troubleshooting
-```
-
-## Branching Strategy
-
-- `main` — production. **Production runs `main`.**
-- `dev` — integration branch for ongoing work
-- To test `dev` on the live instance, use Settings → Updates → *Switch to dev*, then switch back to `main` once it's merged
-- Merge `dev` → `main` (fast-forward) and tag a release when a set of changes is ready to ship
-
-## Versioning
-
-Semantic versioning (`MAJOR.MINOR.PATCH`), tracked in the `VERSION` file at the repo root — the backend reads it at startup and serves it at `/api/health`. The frontend's `package.json` version is kept in sync.
-
-**Bump the `VERSION` file on every behavior-changing commit** (not just docs/comments), update this README and [CHANGELOG.md](CHANGELOG.md) alongside, and tag the corresponding commit on `main` as `vX.Y.Z`:
-- **Patch** (`1.0.x`): bug fixes, no behavior change
-- **Minor** (`1.x.0`): new features, backward-compatible
-- **Major** (`x.0.0`): breaking changes (API contract, data model requiring migration)
-
-```bash
-git tag -a v1.4.0 -m "Description of the release"
-git push origin v1.4.0
-```
-
-A tag alone shows up under *Tags* on GitHub; draft a GitHub Release from it for it to appear under *Releases*.
-
----
-
-**Note**: The LXC only ever pulls from GitHub (via Settings → Updates or the manual steps in [DEPLOYMENT.md](DEPLOYMENT.md)) — never push to it or edit files there directly.
+[MIT](LICENSE)
