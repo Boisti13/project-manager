@@ -1,6 +1,6 @@
 {
   "name": "project-manager-frontend",
-  "version": "1.43.1",
+  "version": "1.43.2",
   "private": true,
   "proxy": "http://localhost:8000",
   "dependencies": {

@@ -16,7 +16,9 @@ export function useTaskData(pendingDelete) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // quiet: refresh in the background (Windows app sync, Undo) without the loading screen
+  // quiet: refresh in the background without the loading screen — used after
+  // every change, so the page keeps its scroll position (only the first load
+  // shows "Loading tasks…")
   const loadData = useCallback(
     async (quiet = false) => {
       try {

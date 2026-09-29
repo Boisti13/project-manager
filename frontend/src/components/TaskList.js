@@ -156,7 +156,7 @@ function TaskList() {
       }
       setShowForm(false);
       setParentTaskForNew(null);
-      await loadData();
+      await loadData(true);
     } catch (err) {
       setError(t('Failed to create task: {error}', { error: err.message }));
     }
@@ -184,7 +184,7 @@ function TaskList() {
         return next;
       });
       closeForm();
-      await loadData();
+      await loadData(true);
     } catch (err) {
       setError(t('Failed to create tasks: {error}', { error: err.message }));
     }
@@ -195,7 +195,7 @@ function TaskList() {
       await sendJson(`/api/tasks/${selectedTask.id}`, 'PUT', formData);
       setSelectedTask(null);
       setShowForm(false);
-      await loadData();
+      await loadData(true);
     } catch (err) {
       setError(t('Failed to update task: {error}', { error: err.message }));
     }
@@ -211,7 +211,7 @@ function TaskList() {
         return next;
       });
       closeForm();
-      await loadData();
+      await loadData(true);
     } catch (err) {
       setError(t('Failed to create tasks: {error}', { error: err.message }));
     }
@@ -293,7 +293,7 @@ function TaskList() {
     if (!(await changeOptimistically(task, { status }, updateFailed))) return;
     if (status === 'done') offerUndoDone(task);
     // A repeating task just created its next occurrence on the server.
-    if (status === 'done' && task.recurrence_unit) await loadData();
+    if (status === 'done' && task.recurrence_unit) await loadData(true);
   };
 
   // Board: move a card to another column.
@@ -301,7 +301,7 @@ function TaskList() {
     if (!(await changeOptimistically(task, { status }, updateFailed))) return;
     if (status === 'done' && task.status !== 'done') offerUndoDone(task);
     // Reload for completed_at (Done column order) and repeating tasks.
-    if (status === 'done' || task.status === 'done') await loadData();
+    if (status === 'done' || task.status === 'done') await loadData(true);
   };
 
   // Timeline: a bar dragged to new dates; Undo puts the old ones back.
@@ -336,7 +336,7 @@ function TaskList() {
     if (updates.length === 0) return;
     try {
       await Promise.all(updates.map((u) => sendJson(`/api/tasks/${u.id}`, 'PUT', { order: u.order })));
-      await loadData();
+      await loadData(true);
     } catch (err) {
       setError(t('Failed to reorder tasks: {error}', { error: err.message }));
     }
@@ -360,7 +360,7 @@ function TaskList() {
     if ((task.project_id ?? null) === projectId) return;
     try {
       await sendJson(`/api/tasks/${task.id}`, 'PUT', { project_id: projectId });
-      await loadData();
+      await loadData(true);
       navigate(`/?task=${task.id}`, { replace: true });
     } catch (err) {
       setError(t('Failed to move task: {error}', { error: err.message }));

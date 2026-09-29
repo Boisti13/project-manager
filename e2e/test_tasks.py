@@ -166,3 +166,32 @@ def test_new_task_from_a_section_opens_the_form_there(page, api):
     page.locator(".project-group > .section-form").wait_for()
     page.keyboard.press("Escape")
     page.locator(".section-form").wait_for(state="detached")
+
+
+def test_adding_tasks_keeps_the_scroll_position(page, api):
+    project = api.project()
+    for i in range(15):
+        api.task(f"Row {i:02d}", project_id=project["id"])
+    parent = api.task("Parent far down", project_id=project["id"], order=99)
+    open_list(page, project)
+    target = row(page, "Parent far down")
+    target.scroll_into_view_if_needed()
+    page.wait_for_timeout(300)
+
+    for name in ("First child", "Second child"):
+        target.locator(".subtask-btn").click()
+        title = page.locator(".inline-form input[name=title]")
+        title.fill(name)
+        before = page.evaluate("window.scrollY")
+        assert before > 200
+        title.press("Enter")
+        row(page, name).wait_for()
+        page.wait_for_timeout(300)
+        after = page.evaluate("window.scrollY")
+        # no jump to the top: the parent stays on screen (the page may move up a
+        # little when the closed form makes it shorter at the very bottom)
+        assert after > 200, (before, after)
+        box = target.bounding_box()
+        assert 0 <= box["y"] < page.viewport_size["height"], box
+    kids = [t["title"] for t in api.tasks() if t["parent_task_id"] == parent["id"]]
+    assert sorted(kids) == ["First child", "Second child"]

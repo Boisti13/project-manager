@@ -3,6 +3,11 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.6.2 — 2026-09-29
+
+### Fixed
+- The task list **stays where you are** after creating or changing a task instead of jumping to the top (server v1.43.2 interface).
+
 ## v0.6.1 — 2026-09-29
 
 ### Changed

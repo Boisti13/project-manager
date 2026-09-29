@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.43.2 — 2026-09-29
+
+### Fixed
+- **The Tasks page no longer jumps to the top** after you create, edit or move a task (also several subtasks in a row, bulk entry, templates, reordering, moving to another project, ticking off a repeating task, the board). The list used to show "Loading tasks…" for a moment after every change, which reset the scroll position; now it refreshes in the background and you stay where you are.
+
 ## v1.43.1 — 2026-09-29
 
 ### Changed
