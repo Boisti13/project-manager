@@ -31,6 +31,12 @@ def normalize_recurrence(task: Task):
         task.recurrence_from = None
 
 
+def check_dates(task: Task):
+    """A start after the deadline makes no sense; dates count, not times."""
+    if task.start_date and task.deadline and task.start_date.date() > task.deadline.date():
+        raise HTTPException(status_code=400, detail="The start can't be after the deadline")
+
+
 def record_spawn(db: Session, task: Task, actor: User):
     nxt = recurrence.spawn_next(db, task)
     if nxt is not None:
@@ -76,6 +82,7 @@ def create_task(task: schemas.TaskCreate, current_user: User = Depends(get_curre
     dependencies.set_blockers(db, current_user, db_task, task.blocked_by_ids)
     normalize_recurrence(db_task)
     sync_completed_at(db_task)
+    check_dates(db_task)
     db.add(db_task)
     db.flush()
     notify.assigned(db, db_task, current_user)
@@ -230,6 +237,7 @@ def apply_update(db: Session, current_user: User, db_task: Task, update_data: di
         access.check_assignee(db, db_task.assignee_id, db_task.project_id)
     normalize_recurrence(db_task)
     sync_completed_at(db_task)
+    check_dates(db_task)
     if db_task.assignee_id != previous_assignee and notify_assignee:
         notify.assigned(db, db_task, current_user)
     activity.changed(db, db_task, before, current_user)

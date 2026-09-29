@@ -4,9 +4,10 @@ import Markdown from './Markdown';
 import LabelChips from './LabelChips';
 import { formatEstimate } from '../estimate';
 import { statusName, priorityName } from '../names';
-import { t, shortDate } from '../i18n';
+import { t } from '../i18n';
 import '../styles/TaskItem.css';
 import '../styles/Shared.css';
+import { dateRangeText } from './TaskItem';
 
 const byOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0) || a.id - b.id;
 const isOverdue = (task) => task.status !== 'done' && task.deadline && new Date(task.deadline) < new Date();
@@ -91,8 +92,8 @@ function SharedProject() {
               </span>
             )}
             {task.estimate_minutes > 0 && <span className="task-estimate">⏱ {formatEstimate(task.estimate_minutes)}</span>}
-            {task.deadline && (
-              <span className={`task-deadline ${isOverdue(task) ? 'overdue' : ''}`}>{shortDate(task.deadline)}</span>
+            {(task.deadline || task.start_date) && (
+              <span className={`task-deadline ${isOverdue(task) ? 'overdue' : ''}`}>{dateRangeText(task)}</span>
             )}
             <span className={`task-status-badge status-${task.status}`}>{statusName(task.status)}</span>
           </span>

@@ -28,10 +28,10 @@ test('CSV export: projects, categories, inherited project, quoting, BOM', () => 
   assert.strictEqual(lines[0].split(';')[1], 'Project');
   assert.strictEqual(
     lines[1],
-    '1;6GHub;Ordering;Order modules;;Done;Critical;bastian;2026-09-20;2026-09-01;2026-09-21;"Größe: ""XL""; 2 Stück";A-team, urgent;1.5'
+    '1;6GHub;Ordering;Order modules;;Done;Critical;bastian;2026-09-20;2026-09-01;2026-09-21;"Größe: ""XL""; 2 Stück";A-team, urgent;1.5;'
   );
-  assert.strictEqual(lines[2], '2;6GHub;Ordering;Check quote;Order modules;To Do;Low;;;2026-09-02;;;;');
+  assert.strictEqual(lines[2], '2;6GHub;Ordering;Check quote;Order modules;To Do;Low;;;2026-09-02;;;;;');
   // The quoted description keeps its own line break inside the field.
-  assert.strictEqual(lines[3], '3;;;Loose task;;Blocked;Medium;;;2026-09-03;;"two\nlines";;');
+  assert.strictEqual(lines[3], '3;;;Loose task;;Blocked;Medium;;;2026-09-03;;"two\nlines";;;');
   assert.strictEqual(lines.length, 5); // header, 3 rows, trailing empty
 });

@@ -107,7 +107,9 @@ def build_calendar(tasks, *, name: str, base_url: str, project_label, label_name
             details += ["", t.description]
         link = f"{base_url}/?task={t.id}"
         details += ["", f"{words['open']}: {link}"]
-        start = t.deadline.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = t.deadline.replace(hour=0, minute=0, second=0, microsecond=0)
+        # With a start date the entry spans start … deadline; otherwise the deadline day.
+        start = t.start_date.replace(hour=0, minute=0, second=0, microsecond=0) if t.start_date and t.start_date <= end else end
         summary = t.title if not parent else f"{t.title} ({parent.title})"
         if t.status == TaskStatus.IN_PROGRESS:
             summary = "▶ " + summary
@@ -117,7 +119,7 @@ def build_calendar(tasks, *, name: str, base_url: str, project_label, label_name
             f"DTSTAMP:{now}",
             f"LAST-MODIFIED:{_stamp(t.updated_at or utcnow())}",
             f"DTSTART;VALUE=DATE:{_date(start)}",
-            f"DTEND;VALUE=DATE:{_date(start + timedelta(days=1))}",
+            f"DTEND;VALUE=DATE:{_date(end + timedelta(days=1))}",
             f"SUMMARY:{escape(summary)}",
             f"DESCRIPTION:{escape(chr(10).join(details))}",
             f"URL:{link}",

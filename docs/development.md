@@ -64,7 +64,7 @@ npm test
 
 The logic without React is tested on its own: Markdown rendering (incl. unsafe links), search/filter/sort (`taskFilters`, incl. archived projects), subtrees, bulk changes and reordering (`taskOps`), projects, progress, board and calendar (`views`), labels, dependencies, My day, the weekly review, estimates, CSV export, bulk entry, repeat rules, the history texts, translations, and the Windows app's offline layer against a fake server.
 
-**Browser tests** — the real app (backend + production build) in Chromium, with Playwright: logging in, creating and editing tasks inline, estimates, description alignment, deleting and ticking off with Undo (incl. repeating tasks), keyboard shortcuts, search, saved filters, changing several tasks at once (incl. all-or-nothing), templates, the board and calendar (moving cards, dropping on another day), Move up and drag-and-drop reordering, links to a task, formatted descriptions and comments, archiving and restoring a project, share links (without login, until stopped), My day, the weekly review, German, and the phone layout:
+**Browser tests** — the real app (backend + production build) in Chromium, with Playwright: logging in, creating and editing tasks inline, estimates, description alignment, deleting and ticking off with Undo (incl. repeating tasks), keyboard shortcuts, search, saved filters, changing several tasks at once (incl. all-or-nothing), templates, the board and calendar (moving cards, dropping on another day), the timeline (bars, arrows, dragging a bar and its end, Undo), Move up and drag-and-drop reordering, links to a task, formatted descriptions and comments, archiving and restoring a project, share links (without login, until stopped), My day, the weekly review, German, and the phone layout:
 
 ```bash
 cd frontend && npm run build && cd ..
@@ -108,6 +108,7 @@ project-manager/
 │       ├── clipboard.js     # Copy text, also on plain-HTTP servers
 │       ├── markdown.js      # The Markdown subset of descriptions and comments → React elements
 │       ├── version.js       # The version the interface was built as, compared with the server's
+│       ├── timeline.js      # Timeline: bars, date range, dragging, dependency arrows
 │       ├── bulkParse.js     # "One task per line" text → task tree
 │       ├── recurrence.js    # Repeat settings as text
 │       ├── activity.js      # Task history entries as sentences

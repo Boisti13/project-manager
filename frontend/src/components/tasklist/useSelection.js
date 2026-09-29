@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { isListView } from '../../views';
 
 /** Ids of the task rows on screen, top to bottom (subtasks after their parent). */
 export const shownTaskIds = () =>
@@ -36,7 +37,7 @@ export function useSelection({ view, tasks, filters }) {
   };
 
   useEffect(() => {
-    if (view === 'board' || view === 'calendar') exit();
+    if (!isListView(view)) exit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 

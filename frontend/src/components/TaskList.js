@@ -27,11 +27,15 @@ import { bulkChanges, siblingsOf, reorderUpdates } from '../taskOps';
 import '../styles/TaskList.css';
 import '../styles/TaskViews.css';
 import { t, tn } from '../i18n';
+import TaskTimeline from './TaskTimeline';
+import { isListView } from '../views';
+import { dateRangeText } from './TaskItem';
 
 const VIEWS = [
   { id: 'list', label: () => t('☰ List') },
   { id: 'board', label: () => t('▦ Board') },
   { id: 'calendar', label: () => t('📅 Calendar') },
+  { id: 'timeline', label: () => t('▤ Timeline') },
 ];
 
 const COLLAPSED_KEY = 'pm.collapsedGroups';
@@ -62,7 +66,7 @@ function TaskList() {
   const navigate = useNavigate();
   const filters = useMemo(() => filtersFromParams(searchParams), [searchParams]);
   const filtering = hasActiveFilters(filters);
-  const listView = filters.view !== 'board' && filters.view !== 'calendar';
+  const listView = isListView(filters.view);
 
   // A delete waiting out its Undo time (useUndoableDelete); its tasks stay hidden on reload.
   const pendingDelete = useRef(null);
@@ -290,6 +294,25 @@ function TaskList() {
     if (status === 'done' && task.status !== 'done') offerUndoDone(task);
     // Reload for completed_at (Done column order) and repeating tasks.
     if (status === 'done' || task.status === 'done') await loadData();
+  };
+
+  // Timeline: a bar dragged to new dates; Undo puts the old ones back.
+  const handleChangeDates = async (task, fields) => {
+    const before = Object.fromEntries(Object.keys(fields).map((k) => [k, task[k] ?? null]));
+    if (!(await changeOptimistically(task, fields, updateFailed))) return;
+    const span = { ...task, ...fields };
+    setUndo({
+      key: Date.now(),
+      message: t('Moved “{title}”: {dates}', { title: task.title, dates: dateRangeText(span) }),
+      onUndo: async () => {
+        try {
+          await sendJson(`/api/tasks/${task.id}`, 'PUT', before);
+        } catch (err) {
+          setError(updateFailed(err.message));
+        }
+        await loadData(true);
+      },
+    });
   };
 
   // Calendar: drop a task on another day.
@@ -650,6 +673,15 @@ function TaskList() {
             handleEditTask(task);
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
+        />
+      )}
+
+      {filters.view === 'timeline' && (
+        <TaskTimeline
+          tasks={flattenVisible(tree)}
+          projectIndex={projectIndex}
+          onOpen={openInList}
+          onChangeDates={handleChangeDates}
         />
       )}
 

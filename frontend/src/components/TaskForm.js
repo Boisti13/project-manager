@@ -94,12 +94,14 @@ function TaskForm({
   // Typed text ("1h 30m"); parsed to minutes on submit.
   const [estimateText, setEstimateText] = useState('');
   const [estimateError, setEstimateError] = useState(false);
+  const [dateError, setDateError] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     status: 'todo',
     priority: 0,
     deadline: '',
+    start_date: '',
     project_id: parentTask ? parentTask.project_id || null : defaultProjectId,
     assignee_id: null,
     parent_task_id: parentTask ? parentTask.id : null,
@@ -120,6 +122,7 @@ function TaskForm({
         status: task.status || 'todo',
         priority: task.priority || 0,
         deadline: task.deadline ? task.deadline.split('T')[0] : '',
+        start_date: task.start_date ? task.start_date.split('T')[0] : '',
         project_id: task.project_id || null,
         assignee_id: task.assignee_id || null,
         recurrence_unit: task.recurrence_unit || null,
@@ -212,10 +215,15 @@ function TaskForm({
       setEstimateError(true);
       return;
     }
+    if (formData.start_date && formData.deadline && formData.start_date > formData.deadline) {
+      setDateError(true);
+      return;
+    }
     onSubmit({
       ...formData,
       estimate_minutes: estimate,
       deadline,
+      start_date: formData.start_date || null,
       recurrence_interval: formData.recurrence_unit ? formData.recurrence_interval : null,
       recurrence_weekdays:
         formData.recurrence_unit === 'week' && formData.recurrence_weekdays.length ? formData.recurrence_weekdays : null,
@@ -451,14 +459,36 @@ function TaskForm({
       </div>
       )}
 
-      <div className="form-row">
+      <div className={`form-row ${mode === 'single' ? 'form-row-3' : ''}`}>
+        {mode === 'single' && (
+          <div className="form-group">
+            <label htmlFor="task-start">{t('Start')}</label>
+            <input
+              id="task-start"
+              type="date"
+              name="start_date"
+              value={formData.start_date}
+              max={formData.deadline || undefined}
+              aria-invalid={dateError}
+              onChange={(e) => {
+                handleChange(e);
+                setDateError(false);
+              }}
+            />
+            {dateError && <small className="estimate-error">{t('The start can’t be after the deadline.')}</small>}
+          </div>
+        )}
         <div className="form-group">
           <label>{t('Deadline')}</label>
           <input
             type="date"
             name="deadline"
             value={formData.deadline}
-            onChange={handleChange}
+            min={mode === 'single' ? formData.start_date || undefined : undefined}
+            onChange={(e) => {
+              handleChange(e);
+              setDateError(false);
+            }}
           />
         </div>
 

@@ -134,6 +134,8 @@ def _copy_subtasks(db: Session, source: Task, target: Task, shift: timedelta):
         copy = Task(
             title=sub.title, description=sub.description, status=TaskStatus.TODO, priority=sub.priority,
             order=sub.order, deadline=(sub.deadline + shift) if sub.deadline else None,
+            start_date=(sub.start_date + shift) if sub.start_date else None,
+            estimate_minutes=sub.estimate_minutes,
             project_id=sub.project_id, parent_task_id=target.id, assignee_id=sub.assignee_id,
             recurrence_unit=sub.recurrence_unit, recurrence_interval=sub.recurrence_interval,
             recurrence_weekdays=sub.recurrence_weekdays, recurrence_monthly=sub.recurrence_monthly,
@@ -190,6 +192,7 @@ def spawn_next(db: Session, task: Task):
     nxt = Task(
         title=task.title, description=task.description, status=TaskStatus.TODO, priority=task.priority,
         estimate_minutes=task.estimate_minutes,
+        start_date=(task.start_date + shift) if task.start_date else None,
         order=task.order, deadline=nxt_deadline, project_id=task.project_id,
         parent_task_id=task.parent_task_id, assignee_id=task.assignee_id,
         recurrence_unit=task.recurrence_unit, recurrence_interval=n, recurrence_weekdays=task.recurrence_weekdays,

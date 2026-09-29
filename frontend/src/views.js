@@ -1,6 +1,9 @@
 // Pure helpers for the Board and Calendar views of the Tasks page.
 
 // Column titles: statusName() in names.js.
+/** The list view (the default); the others are board, calendar and timeline. */
+export const isListView = (view) => !view || view === 'list';
+
 export const BOARD_COLUMNS = [{ status: 'todo' }, { status: 'in_progress' }, { status: 'blocked' }, { status: 'done' }];
 
 /** Top-level tasks by status column, in the list's sort order; Done shows

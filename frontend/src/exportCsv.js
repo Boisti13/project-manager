@@ -15,7 +15,7 @@ const day = (iso) => (iso ? iso.slice(0, 10) : '');
 
 export const csvColumns = () => [
   t('ID'), t('Project'), t('Category'), t('Task'), t('Parent task'), t('Status'), t('Priority'),
-  t('Assignee'), t('Deadline'), t('Created'), t('Completed'), t('Description'), t('Labels'), t('Estimate (hours)'),
+  t('Assignee'), t('Deadline'), t('Created'), t('Completed'), t('Description'), t('Labels'), t('Estimate (hours)'), t('Start'),
 ];
 
 // Hours as a number in the interface language's format, so spreadsheets can add them up.
@@ -56,6 +56,7 @@ export function tasksToCsv(tasks, projectIndex, users, labels = []) {
         t.description,
         (t.label_ids || []).map((id) => labelName.get(id)).filter(Boolean).sort().join(', '),
         hours(t.estimate_minutes),
+        day(t.start_date),
       ];
     });
 

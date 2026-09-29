@@ -13,6 +13,13 @@ import { formatEstimate } from '../estimate';
 import Markdown from './Markdown';
 import { PinIcon } from './icons';
 
+/** "Oct 5 – Oct 9" with a start date, else the deadline ("Oct 9"); "from Oct 5" without a deadline. */
+export function dateRangeText(task) {
+  if (task.start_date && task.deadline) return `${shortDate(task.start_date)} – ${shortDate(task.deadline)}`;
+  if (task.deadline) return shortDate(task.deadline);
+  return task.start_date ? t('from {date}', { date: shortDate(task.start_date) }) : '';
+}
+
 function Highlight({ text, needle }) {
   return highlightParts(text, needle).map((part, i) =>
     part.hit ? <mark key={i}>{part.text}</mark> : <React.Fragment key={i}>{part.text}</React.Fragment>
@@ -112,8 +119,6 @@ function TaskItem({
     blocked: '#FF9800',
     done: '#4CAF50',
   };
-
-  const formatDeadline = (deadline) => (deadline ? shortDate(deadline) : '');
 
   const isOverdue = (deadline) => {
     if (!deadline) return false;
@@ -253,9 +258,9 @@ function TaskItem({
               ↻ {shortRecurrence(task.recurrence_unit, task.recurrence_interval, task)}
             </span>
           )}
-          {task.deadline && (
+          {(task.deadline || task.start_date) && (
             <span className={`task-deadline ${isOverdue(task.deadline) ? 'overdue' : ''}`}>
-              {formatDeadline(task.deadline)}
+              {dateRangeText(task)}
             </span>
           )}
           <span className={`task-status-badge status-${task.status}`}>{statusName(task.status)}</span>

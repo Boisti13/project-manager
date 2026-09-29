@@ -3,6 +3,11 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.6.0 — 2026-09-29
+
+### Added
+- **Timeline view (Gantt chart)** with bars, milestones and dependency arrows; drag bars to change dates — also offline. **Start dates** for tasks (server v1.43.0 interface; needs server v1.43.0 to sync them).
+
 ## v0.5.2 — 2026-09-29
 
 ### Changed

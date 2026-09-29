@@ -2,6 +2,27 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.43.0 — 2026-09-29
+
+### Added
+- **Timeline view (Gantt chart)**: a fourth view next to List, Board and Calendar.
+  - Each task with dates is a **bar from its start to its deadline**, or a **◆ on the deadline** when it has no start; grouped by project, subtasks indented under their parent.
+  - **Arrows** show what a task waits for; an arrow drawn backwards in red dashes means the order doesn't fit the dates.
+  - Late tasks are outlined in red, done ones faded, weekends shaded, today a red line; zoom *Days / Weeks / Months*, *Today* scrolls back.
+  - **Drag a bar** to move a task (start and deadline together), **drag its ends** to change just the start or the deadline, with **Undo**; click to open it in the list.
+  - Task names stay in view while scrolling sideways, the dates while scrolling down; works on phones (horizontal scrolling).
+- **Start date** for tasks (optional), next to the deadline in the form; the list, the share page and the calendar feed show the range (*Oct 5 – Oct 9*). It can't be after the deadline; repeating tasks move it along; it's in the history, the CSV export (*Start*) and export/import.
+
+### Changed
+- The view buttons are a bit tighter on phones so all four fit on one line.
+
+### Fixed
+- Repeating tasks now carry their subtasks' time estimates over to the next occurrence.
+
+### Under the hood
+- Migration `0020`: `tasks.start_date`; `frontend/src/timeline.js` (tested), `components/TaskTimeline.js`.
+- 3 new backend tests, 4 new frontend tests, 1 new browser test.
+
 ## v1.42.2 — 2026-09-29
 
 ### Changed

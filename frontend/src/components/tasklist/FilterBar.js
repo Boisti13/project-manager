@@ -3,6 +3,7 @@ import LabelChips from '../LabelChips';
 import TrashIcon from '../TrashIcon';
 import { t } from '../../i18n';
 import { STATUSES, statusName } from '../../names';
+import { isListView } from '../../views';
 
 /**
  * Above the task list: "Assigned to me", "Select", the search box, saved
@@ -39,7 +40,7 @@ function FilterBar({
             {t('Assigned to me')}
             {myOpenCount > 0 && <span className="mine-count">{myOpenCount}</span>}
           </button>
-          {filters.view !== 'board' && filters.view !== 'calendar' && (
+          {isListView(filters.view) && (
             <button
               className={`mine-toggle ${selection.active ? 'active' : ''}`}
               onClick={() => (selection.active ? selection.exit() : selection.start())}

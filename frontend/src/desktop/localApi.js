@@ -27,7 +27,7 @@ export function normalizeDeadline(value) {
 
 // Fields a task create/update may carry, as the server takes them.
 const TASK_FIELDS = [
-  'title', 'description', 'status', 'priority', 'estimate_minutes', 'order', 'deadline', 'project_id', 'parent_task_id',
+  'title', 'description', 'status', 'priority', 'estimate_minutes', 'order', 'deadline', 'start_date', 'project_id', 'parent_task_id',
   'assignee_id', 'recurrence_unit', 'recurrence_interval', 'recurrence_weekdays', 'recurrence_monthly',
   'recurrence_from', 'label_ids', 'blocked_by_ids',
 ];
@@ -175,6 +175,7 @@ export class LocalApi {
       estimate_minutes: body.estimate_minutes ?? null,
       order: body.order ?? 0,
       deadline: normalizeDeadline(body.deadline),
+      start_date: normalizeDeadline(body.start_date),
       project_id: body.project_id ?? null,
       parent_task_id: body.parent_task_id ?? null,
       assignee_id: body.assignee_id ?? null,
@@ -195,6 +196,7 @@ export class LocalApi {
     const payload = { uid: task.uid };
     for (const f of TASK_FIELDS) if (task[f] !== null && task[f] !== undefined) payload[f] = task[f];
     if (payload.deadline) payload.deadline = task.deadline;
+    if (payload.start_date) payload.start_date = task.start_date;
     store.enqueue({ kind: 'create', entity: 'task', tempId: task.id, method: 'POST', path: '/api/v1/tasks/', body: payload });
     return this.withCount(task);
   }
@@ -227,7 +229,13 @@ export class LocalApi {
     if (!task) return notFound('Task');
     // Apply the request, normalize like the server, then see what really changed.
     const candidate = { ...task };
-    for (const f of UPDATABLE) if (f in body) candidate[f] = f === 'deadline' ? normalizeDeadline(body[f]) : body[f];
+    for (const f of UPDATABLE) {
+      if (f in body) candidate[f] = f === 'deadline' || f === 'start_date' ? normalizeDeadline(body[f]) : body[f];
+    }
+    // Like the server: no start after the deadline.
+    if (candidate.start_date && candidate.deadline && candidate.start_date.slice(0, 10) > candidate.deadline.slice(0, 10)) {
+      return json(400, { detail: "The start can't be after the deadline" });
+    }
     const normalized = normalizeRecurrence(candidate);
     const changes = {};
     for (const f of UPDATABLE) {

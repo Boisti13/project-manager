@@ -29,6 +29,7 @@ class SharedTask(BaseModel):
     priority: int = 0
     order: int = 0
     deadline: Optional[datetime] = None
+    start_date: Optional[datetime] = None
     estimate_minutes: Optional[int] = None
     completed_at: Optional[datetime] = None
     labels: List[SharedLabel] = []
@@ -75,7 +76,7 @@ def shared_project(token: str, db: Session = Depends(get_db)):
             SharedTask(
                 id=t.id, parent_task_id=t.parent_task_id, project_id=t.project_id, title=t.title,
                 description=t.description, status=t.status, priority=t.priority or 0, order=t.order or 0,
-                deadline=t.deadline, estimate_minutes=t.estimate_minutes, completed_at=t.completed_at,
+                deadline=t.deadline, start_date=t.start_date, estimate_minutes=t.estimate_minutes, completed_at=t.completed_at,
                 labels=[SharedLabel(name=label.name, color=label.color) for label in t.labels],
             )
             for t in sorted(tasks, key=lambda t: (t.order or 0, t.id))

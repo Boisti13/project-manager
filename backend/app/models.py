@@ -125,6 +125,9 @@ class Task(Base):
     estimate_minutes = Column(Integer, nullable=True)
     order = Column(Integer, default=0)
     deadline = Column(DateTime, nullable=True)
+    # When work starts (a date, like the deadline); with the deadline it's the
+    # task's bar on the timeline. Optional.
+    start_date = Column(DateTime, nullable=True)
     # Set when the task becomes done, cleared when it's reopened; drives the
     # "Completed" rows and archiving on the Tasks page.
     completed_at = Column(DateTime, nullable=True)

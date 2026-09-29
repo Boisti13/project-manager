@@ -388,8 +388,11 @@
 }
 
 @media (max-width: 600px) {
+  /* four views side by side: a bit tighter, one line each */
   .view-switch button {
-    padding: 8px 10px;
+    padding: 8px 6px;
+    font-size: 13px;
+    white-space: nowrap;
   }
 
   .board {

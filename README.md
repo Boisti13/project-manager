@@ -18,7 +18,7 @@ working offline.
 - **Projects and categories**, color-coded, with progress; **private projects** only their members see
 - **Tasks with subtasks** at any depth — priority, deadline, time estimate, labels, assignee, "waits for" other tasks
 - **Repeating tasks**: every N days/weeks/months, on chosen weekdays, the last workday of the month, the 2nd Tuesday …
-- **List, board and calendar** views; search, filters and **saved filters**
+- **List, board, calendar and timeline (Gantt)** views — drag bars to move dates, arrows for dependencies; search, filters and **saved filters**
 - **My day** start page with your **pinned tasks**, and a **weekly review** with open work per project
 - **Quick**: type and press Enter, several tasks at once (one per line), **templates**, **keyboard shortcuts**, **change several tasks at once**, **Undo**
 - **Comments with @mentions, history and notifications** for working together; descriptions and comments with **formatting and clickable links**
@@ -31,7 +31,7 @@ working offline.
 | | | |
 |---|---|---|
 | ![My day](docs/screenshots/myday-desktop.png) | ![Board view](docs/screenshots/board-desktop.png) | ![Weekly review](docs/screenshots/review-desktop.png) |
-| ![Calendar view](docs/screenshots/calendar-desktop.png) | ![Changing several tasks at once](docs/screenshots/bulk-edit-desktop.png) | ![Tasks on a phone](docs/screenshots/tasks-phone.png) |
+| ![Timeline view](docs/screenshots/timeline-desktop.png) | ![Changing several tasks at once](docs/screenshots/bulk-edit-desktop.png) | ![Tasks on a phone](docs/screenshots/tasks-phone.png) |
 
 More in the **[user guide](docs/user-guide.md)**.
 

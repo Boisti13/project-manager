@@ -10,7 +10,7 @@ export const DEFAULT_FILTERS = {
   label: '', // '' | label id (string)
   due: '', // '' | 'overdue' | 'week' | 'none'
   sort: 'manual', // manual | deadline | priority | created | title
-  view: 'list', // list | board | calendar (not a filter; kept in the URL too)
+  view: 'list', // list | board | calendar | timeline (not a filter; kept in the URL too)
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;

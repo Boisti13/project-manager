@@ -184,6 +184,7 @@ class TaskBase(BaseModel):
     estimate_minutes: Optional[int] = Field(default=None, ge=1, le=ESTIMATE_MAX)
     order: int = 0
     deadline: Optional[datetime] = None
+    start_date: Optional[datetime] = None
     project_id: Optional[int] = None
     parent_task_id: Optional[int] = None
     assignee_id: Optional[int] = None
@@ -253,6 +254,7 @@ class TaskUpdate(BaseModel):
     estimate_minutes: Optional[int] = Field(default=None, ge=1, le=ESTIMATE_MAX)
     order: Optional[int] = None
     deadline: Optional[datetime] = None
+    start_date: Optional[datetime] = None
     project_id: Optional[int] = None
     assignee_id: Optional[int] = None
     recurrence_unit: Optional[RecurrenceUnit] = None

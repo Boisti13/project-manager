@@ -41,6 +41,10 @@ export function describeActivity({ kind, actor, old_value: o, new_value: n }, fm
       if (!n) return t('removed the estimate ({old})', { old: formatEstimate(Number(o)) });
       if (!o) return t('estimated it at {new}', { new: formatEstimate(Number(n)) });
       return t('changed the estimate from {old} to {new}', { old: formatEstimate(Number(o)), new: formatEstimate(Number(n)) });
+    case 'start':
+      if (!n) return t('removed the start date');
+      if (!o) return t('set the start to {date}', { date: fmtDay(n) });
+      return t('moved the start from {old} to {new}', { old: fmtDay(o), new: fmtDay(n) });
     case 'deadline':
       if (!n) return t('removed the deadline');
       if (!o) return t('set the deadline to {date}', { date: fmtDay(n) });

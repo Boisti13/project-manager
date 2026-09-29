@@ -11,7 +11,7 @@ How to use Project Manager, page by page. Running a server is described in
   - [What a task can have](#what-a-task-can-have): priority, deadline, estimate, labels, waiting for other tasks, repeating
   - [Formatting](#formatting): bold, lists, clickable links
   - [Ticking tasks off](#ticking-tasks-off) · [Undo](#undo)
-  - [List, board and calendar](#list-board-and-calendar)
+  - [List, board, calendar and timeline](#list-board-calendar-and-timeline)
   - [Finding tasks](#finding-tasks): search, filters, saved filters
   - [Changing several tasks at once](#changing-several-tasks-at-once)
   - [Templates](#templates)
@@ -117,6 +117,10 @@ yourself, so more subtasks can still be added.
 - **Priority**: *Low*, *Medium*, *High* or *Critical*; above Low it shows as
   a colored badge, and lists can be sorted by it.
 - **Deadline**: shown on the task, red when overdue.
+- **Start** (optional): when work begins. With a start, the task shows its
+  dates as a range (*Oct 5 – Oct 9*) and gets a bar on the
+  [timeline](#list-board-calendar-and-timeline); the start can't be after the
+  deadline. Repeating tasks move their start along with the deadline.
 - **Estimate**: how long it will take — type `2h`, `1.5h`, `45m` or `1:30`
   (a plain number means hours). It shows as ⏱ 1h 30min. A task without its
   own estimate shows what its open subtasks add up to (⏱ Σ …). Each project
@@ -173,7 +177,7 @@ long as nobody has worked on that one yet.
 
 ![Undo after deleting a task](screenshots/undo-desktop.png)
 
-### List, board and calendar
+### List, board, calendar and timeline
 
 The switch at the top shows the tasks as
 
@@ -182,14 +186,26 @@ The switch at the top shows the tasks as
   between columns, or use ◀ ▶,
 - a **month calendar** of deadlines (subtasks included) — drag a task to
   another day to move its deadline; on phones days show colored dots and the
-  tapped day's tasks are listed below.
+  tapped day's tasks are listed below,
+- a **timeline** (Gantt chart): each task with dates as a bar from its
+  start to its deadline, or a ◆ on the deadline when it has no start, grouped
+  by project, with **arrows** from the tasks it waits for. Late tasks are
+  outlined in red, done ones faded, today is a red line; zoom in *Days*,
+  *Weeks* or *Months*. **Drag a bar** to move the task (start and deadline
+  together), **drag its left or right end** to change just the start or the
+  deadline — with Undo. Tasks without any dates aren't shown (a note says how
+  many).
 
-Search and filters apply to all three; clicking a task on the board or in
-the calendar opens it in the list.
+Search and filters apply to all of them; clicking a task on the board, in
+the calendar or on the timeline opens it in the list.
 
 | | | |
 |---|---|---|
 | ![Board](screenshots/board-desktop.png) | ![Calendar](screenshots/calendar-desktop.png) | ![Calendar on a phone](screenshots/calendar-phone.png) |
+
+| | |
+|---|---|
+| ![Timeline](screenshots/timeline-desktop.png) | ![Timeline on a phone](screenshots/timeline-phone.png) |
 
 ### Finding tasks
 
