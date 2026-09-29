@@ -42,6 +42,22 @@ export async function checkForUpdate() {
   return state;
 }
 
+let kind = null;
+/**
+ * How the app was installed: "installer" (Windows) and "appimage" (Linux)
+ * update themselves; "package" (a .deb) is updated by installing the new
+ * package, so the app only points to it.
+ */
+export async function installKind() {
+  if (kind) return kind;
+  try {
+    kind = (await tauri().core.invoke('install_kind')) || 'installer';
+  } catch {
+    kind = 'installer'; // app versions before the Linux build
+  }
+  return kind;
+}
+
 /** Downloads and installs the available update; the app closes and restarts. */
 export async function installUpdate() {
   if (!pending || state.installing) return;

@@ -1,7 +1,7 @@
 [package]
 name = "project-manager-desktop"
-version = "0.6.2"
-description = "Project Manager for Windows: works offline, syncs with your server"
+version = "0.7.0"
+description = "Project Manager for Windows and Linux: works offline, syncs with your server"
 edition = "2021"
 publish = false
 
@@ -16,6 +16,10 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 tauri-plugin-updater = "2"
 tauri-plugin-opener = "2"  # links in descriptions and comments open in the browser
+# Server requests on Linux; kept at the same minor as @tauri-apps/plugin-http in
+# frontend/. Native roots: also trusts CAs added to the system (e.g. the
+# server's own CA from DEPLOYMENT.md -> HTTPS).
+tauri-plugin-http = { version = "~2.7", features = ["rustls-tls-native-roots"] }
 serde_json = "1"  # generate_context! needs it for the plugin config
 
 [profile.release]

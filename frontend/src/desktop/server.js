@@ -1,4 +1,4 @@
-// Talking to the server from the Windows app: which server, which token.
+// Talking to the server from the Windows/Linux app: which server, which token.
 // The token is a personal API token created when connecting (it shows up
 // in the web app under Settings -> API tokens and can be revoked there).
 
@@ -46,12 +46,24 @@ export function versionAtLeast(version, minimum) {
 
 export class OfflineError extends Error {}
 
+// Linux app: WebKitGTK treats the app's own page as secure and would block
+// plain-HTTP requests to the server, so they go through Tauri's HTTP client
+// (Rust) instead. Windows' WebView2 allows them directly.
+const NATIVE_HTTP = typeof navigator !== 'undefined' && /Linux/.test(navigator.userAgent) && !!window.__TAURI__;
+let nativeFetch = null;
+const httpFetch = async (url, options) => {
+  if (!NATIVE_HTTP) return fetch(url, options);
+  if (!nativeFetch) nativeFetch = (await import('@tauri-apps/plugin-http')).fetch;
+  const { keepalive, ...rest } = options; // not supported there (and not needed: the app keeps running)
+  return nativeFetch(url, rest);
+};
+
 /** fetch() against the configured server; OfflineError when it can't be reached. */
 export async function serverFetch(path, options = {}, { server = getServer(), token = getDesktopToken() } = {}) {
   const headers = { ...(options.headers || {}) };
   if (token && !headers.Authorization) headers.Authorization = `Bearer ${token}`;
   try {
-    return await fetch(server + path, { ...options, headers });
+    return await httpFetch(server + path, { ...options, headers });
   } catch (err) {
     throw new OfflineError(err.message);
   }

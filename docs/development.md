@@ -2,13 +2,13 @@
 
 How the code is organized, how to run and test it, and how changes are
 released. For running a server see [DEPLOYMENT.md](../DEPLOYMENT.md); the
-Windows app's build is in [desktop/README.md](../desktop/README.md).
+Windows and Linux app's build is in [desktop/README.md](../desktop/README.md).
 
 ## Tech stack
 
 - **Backend**: FastAPI (Python 3.10+) + SQLAlchemy 2.0 + psycopg 3 + PostgreSQL, schema changes with Alembic; bcrypt password hashes, JWT sessions (PyJWT). Everything is a REST API under `/api/v1` — see [API.md](API.md).
 - **Frontend**: React 18 + React Router (Create React App), dependency versions locked in `package-lock.json`. No UI library; texts in English and German (`i18n.js`, `locales/de.js`).
-- **Windows app**: [Tauri](https://tauri.app) around the same frontend, with an offline layer (`frontend/src/desktop/`).
+- **Windows and Linux app**: [Tauri](https://tauri.app) around the same frontend, with an offline layer (`frontend/src/desktop/`).
 - **Production**: bare metal on an LXC or VM — Supervisor runs the API, Nginx serves the static React build and proxies `/api`. A Docker Compose setup exists for local development only.
 
 ## Setup
@@ -62,7 +62,7 @@ cd frontend
 npm test
 ```
 
-The logic without React is tested on its own: Markdown rendering (incl. unsafe links), search/filter/sort (`taskFilters`, incl. archived projects), subtrees, bulk changes and reordering (`taskOps`), projects, progress, board and calendar (`views`), labels, dependencies, My day, the weekly review, estimates, CSV export, bulk entry, repeat rules, the history texts, translations, and the Windows app's offline layer against a fake server.
+The logic without React is tested on its own: Markdown rendering (incl. unsafe links), search/filter/sort (`taskFilters`, incl. archived projects), subtrees, bulk changes and reordering (`taskOps`), projects, progress, board and calendar (`views`), labels, dependencies, My day, the weekly review, estimates, CSV export, bulk entry, repeat rules, the history texts, translations, and the desktop app's offline layer against a fake server.
 
 **Browser tests** — the real app (backend + production build) in Chromium, with Playwright: logging in, creating and editing tasks inline, estimates, description alignment, deleting and ticking off with Undo (incl. repeating tasks), keyboard shortcuts, search, saved filters, changing several tasks at once (incl. all-or-nothing), templates, the board and calendar (moving cards, dropping on another day), the timeline (bars, arrows, dragging a bar and its end, Undo), Move up and drag-and-drop reordering, links to a task, formatted descriptions and comments, archiving and restoring a project, share links (without login, until stopped), My day, the weekly review, German, and the phone layout:
 
@@ -77,7 +77,7 @@ Like the backend tests they use `PM_TEST_DATABASE_URL` or start a throwaway Post
 
 **Translations** — every UI text goes through `t('English text')` (or `tn(n, 'one …', '{n} …')` for plurals) from `frontend/src/i18n.js`; the German text for it lives in `frontend/src/locales/de.js`, keyed by the English text. `i18n.test.js` fails when a text used in the code has no German entry, or when the placeholders (`{name}`) differ. Server error messages stay English.
 
-**CI** — [GitHub Actions](../.github/workflows/ci.yml) runs the backend tests (PostgreSQL 16, Python 3.10 and 3.12), the frontend tests and production build, the browser tests (screenshots of failures are kept as a download), and shellcheck on every push to `main`/`dev` and on pull requests. [desktop.yml](../.github/workflows/desktop.yml) builds the Windows app.
+**CI** — [GitHub Actions](../.github/workflows/ci.yml) runs the backend tests (PostgreSQL 16, Python 3.10 and 3.12), the frontend tests and production build, the browser tests (screenshots of failures are kept as a download), and shellcheck on every push to `main`/`dev` and on pull requests. [desktop.yml](../.github/workflows/desktop.yml) builds the Windows installer and the Linux AppImages and .deb packages (x86_64 and ARM64).
 
 ## Architecture
 
@@ -85,8 +85,8 @@ Like the backend tests they use `PM_TEST_DATABASE_URL` or start a throwaway Post
 project-manager/
 ├── VERSION                  # Single source of truth for the app version
 ├── .github/workflows/ci.yml # Tests, build, browser tests and shellcheck on every push
-├── .github/workflows/desktop.yml # Windows app: tests, build, installer
-├── desktop/                 # Windows app (Tauri shell; offline layer in frontend/src/desktop)
+├── .github/workflows/desktop.yml # Windows/Linux app: tests, builds, release
+├── desktop/                 # Windows/Linux app (Tauri shell; offline layer in frontend/src/desktop)
 ├── backend/
 │   ├── app/                 # FastAPI application (routers/, models.py, schemas.py, access.py = who sees what, ...)
 │   ├── alembic/versions/    # Database migrations
@@ -97,7 +97,7 @@ project-manager/
 │   └── src/
 │       ├── components/      # React components (TaskList, Settings, UpdatePanel, ...)
 │       │   └── tasklist/    # Parts of the Tasks page: data, filter bar, groups, select mode, Undo, shortcuts
-│       ├── desktop/         # Windows app: local copy, offline API, sync, updater
+│       ├── desktop/         # Windows/Linux app: local copy, offline API, sync, updater
 │       ├── taskOps.js       # Subtrees, changes to several tasks, reordering (pure, tested)
 │       ├── taskFilters.js   # Pure search/filter/sort/archive logic for the task tree
 │       ├── exportCsv.js     # CSV export of all tasks
@@ -151,7 +151,7 @@ The server only ever pulls from GitHub (Settings → Updates or the manual steps
 
 ## Versioning
 
-Semantic versioning (`MAJOR.MINOR.PATCH`), tracked in the `VERSION` file at the repo root — the backend reads it at startup and serves it at `/api/health`. The frontend's `package.json` (and `package-lock.json`) version is kept in sync; `npm run build` stamps it into the interface (`frontend/.env.production` → `REACT_APP_VERSION`, read in `src/version.js`). The web app compares it with the server's to offer a reload after an update; the Windows app compares feature versions (major.minor) to warn when it's older or newer than the server. So a **minor** bump means "the interface changed in a way worth an app update".
+Semantic versioning (`MAJOR.MINOR.PATCH`), tracked in the `VERSION` file at the repo root — the backend reads it at startup and serves it at `/api/health`. The frontend's `package.json` (and `package-lock.json`) version is kept in sync; `npm run build` stamps it into the interface (`frontend/.env.production` → `REACT_APP_VERSION`, read in `src/version.js`). The web app compares it with the server's to offer a reload after an update; the desktop app compares feature versions (major.minor) to warn when it's older or newer than the server. So a **minor** bump means "the interface changed in a way worth an app update".
 
 **Bump `VERSION` on every behavior-changing commit** (not for docs or comments), update the [user guide](user-guide.md) / README, the screenshots and [CHANGELOG.md](../CHANGELOG.md) alongside, and tag the corresponding commit on `main` as `vX.Y.Z`:
 
@@ -164,7 +164,7 @@ git tag -a v1.4.0 -m "Description of the release"
 git push origin v1.4.0
 ```
 
-A tag alone shows up under *Tags* on GitHub; create a GitHub Release from it (with the CHANGELOG section as notes) for it to appear under *Releases*. The Windows app has its own versions and `desktop-vX.Y.Z` tags — see [desktop/README.md](../desktop/README.md#building).
+A tag alone shows up under *Tags* on GitHub; create a GitHub Release from it (with the CHANGELOG section as notes) for it to appear under *Releases*. The Windows/Linux app has its own versions and `desktop-vX.Y.Z` tags — see [desktop/README.md](../desktop/README.md#building).
 
 ## Screenshots
 

@@ -1,7 +1,7 @@
 # User guide
 
 How to use Project Manager, page by page. Running a server is described in
-[DEPLOYMENT.md](../DEPLOYMENT.md), the Windows app in
+[DEPLOYMENT.md](../DEPLOYMENT.md), the Windows and Linux app in
 [desktop/README.md](../desktop/README.md).
 
 - [Getting started](#getting-started)
@@ -150,7 +150,7 @@ Descriptions and comments understand a little Markdown:
 | Type | Shows as |
 |---|---|
 | `**bold**`, `*italic*`, `~~struck~~`, `` `code` `` | **bold**, *italic*, ~~struck~~, `code` |
-| `https://…` or `[the quote](https://…)` | a clickable link (opens in a new tab; in the Windows app, in your browser) |
+| `https://…` or `[the quote](https://…)` | a clickable link (opens in a new tab; in the Windows/Linux app, in your browser) |
 | `- item` or `1. item` on their own lines | a list |
 | `- [ ] open` / `- [x] done` | a checklist (for real subtasks, use subtasks) |
 | `# Heading`, `> quote`, ```` ``` ```` code block ```` ``` ```` | a heading, a quote, a code block |
@@ -402,7 +402,7 @@ which can't reach a server on a private network or VPN.
 - **Backup & export**: export a project (or everything) as a JSON file to
   import into another account or installation, or all tasks as a CSV file
   for Excel; admins also make and restore backups here.
-- **Windows app** (only in the app): connection, sync and updates.
+- **Windows app** / **Linux app** (only in the app): connection, sync and updates.
 
 Admins also see backups, updates and user management — see
 [For admins](#for-admins).
@@ -417,7 +417,7 @@ Open the server's address in the phone's browser and use *Add to Home
 Screen* (iPhone: Share menu; Android/Chrome: ⋮ → *Install app*). It then
 starts full-screen with its own icon. It needs a connection to the server
 (e.g. over VPN/ZeroTier when you're away); for working offline, there's the
-[Windows app](../desktop/README.md).
+[Windows and Linux app](../desktop/README.md).
 
 | | | |
 |---|---|---|

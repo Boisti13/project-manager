@@ -6,7 +6,7 @@ import { SyncEngine } from './sync';
 import {
   getServer, getDesktopToken, setConnection, normalizeServer, serverFetch, versionAtLeast, OfflineError,
 } from './server';
-import { MIN_SERVER_VERSION } from './platform';
+import { MIN_SERVER_VERSION, DESKTOP_OS } from './platform';
 import { t } from '../i18n';
 
 export const store = new Store(typeof indexedDB !== 'undefined' ? new IdbPersistence() : null);
@@ -107,7 +107,7 @@ export async function connect(serverInput, username, password) {
   const device = new Date().toLocaleDateString();
   const created = await call('/api/v1/auth/tokens/', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: t('Windows app ({date})', { date: device }) }),
+    body: JSON.stringify({ name: t('{os} app ({date})', { os: DESKTOP_OS, date: device }) }),
   }, session);
   if (!created.ok) throw new Error(await readError(created, t('Could not create an app token.')));
   const { token } = await created.json();

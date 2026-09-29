@@ -1,7 +1,17 @@
-# Changelog — Windows app
+# Changelog — Windows and Linux app
 
-Versions of the Windows app (`desktop-v…` tags); the server has its own
+Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
+
+## v0.7.0 — 2026-09-29
+
+### Added
+- **Linux app**: the same app for Linux, for **x86_64 and ARM64** (e.g. a Raspberry Pi 4/5 or other ARM boards), each as an **AppImage** (runs anywhere, updates itself like the Windows app) and a **.deb** (Debian, Ubuntu, Mint, Raspberry Pi OS; updated by installing the new package — the app says when there is one and links to the download). Built on Ubuntu 22.04, so it runs on Debian 12 / Ubuntu 22.04 and newer.
+- The Linux app reaches the server through its own HTTP client (the system's web view would block plain-HTTP requests); it trusts certificates from CAs added to the system, e.g. the server's own CA.
+
+### Changed
+- *Settings → Windows app* is *Linux app* on Linux, and the app's API token is named *Linux app (date)* there.
+- Releases now hold all builds: the Windows installer, two AppImages and two .deb packages.
 
 ## v0.6.2 — 2026-09-29
 

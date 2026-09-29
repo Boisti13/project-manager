@@ -82,6 +82,7 @@ When on, the app is served over **HTTPS with a certificate from a local certific
 Download the CA certificate — `http://<server>/ca.crt`, or **Settings → About → CA certificate** — and install it as a *trusted root*:
 
 - **Windows**: open the file → *Install Certificate…* → *Local Machine* (or *Current User*) → *Place all certificates in the following store* → **Trusted Root Certification Authorities** → Finish. Restart the browser. (Chrome and Edge use the Windows store; Firefox: *Settings → Privacy & Security → Certificates → View Certificates → Authorities → Import*, tick *Trust this CA to identify websites*.)
+- **Linux** (also for the Linux app): Debian/Ubuntu/Mint/Raspberry Pi OS: `sudo cp ca.crt /usr/local/share/ca-certificates/project-manager.crt && sudo update-ca-certificates`; Fedora: `sudo cp ca.crt /etc/pki/ca-trust/source/anchors/ && sudo update-ca-trust`. Firefox and Chrome keep their own list: import it there as well (Firefox as above; Chrome: *Settings → Privacy and security → Security → Manage certificates → Authorities → Import*).
 - **macOS**: open the file (Keychain Access) → add to *System* → double-click it → *Trust* → *When using this certificate: Always Trust*.
 - **Android**: *Settings → Security → Encryption & credentials → Install a certificate → CA certificate* → choose the file.
 - **iPhone / iPad**: open `http://<server>/ca.crt` in Safari → *Allow* → *Settings → General → VPN & Device Management* → install the profile → then *Settings → General → About → Certificate Trust Settings* → enable it.

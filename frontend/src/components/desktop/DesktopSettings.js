@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { engine, getServer } from '../../desktop';
-import { DESKTOP_VERSION } from '../../desktop/platform';
-import { canUpdate, checkForUpdate, installUpdate, subscribeUpdates, updateStatus } from '../../desktop/updater';
+import { DESKTOP_OS, DESKTOP_VERSION } from '../../desktop/platform';
+import { canUpdate, checkForUpdate, installKind, installUpdate, subscribeUpdates, updateStatus } from '../../desktop/updater';
 import { parseServerDate } from '../../taskFilters';
 import { t, tn, locale } from '../../i18n';
 import '../../styles/Desktop.css';
 import { APP_VERSION, compareFeatures } from '../../version';
+import { openInBrowser } from '../Markdown';
 
 const fieldNames = {
   title: () => t('Title'), description: () => t('Description'), status: () => t('Status'),
@@ -24,6 +25,10 @@ function DesktopSettings() {
   useEffect(() => engine.subscribe((status) => setS(status)), []);
   const [u, setU] = useState(updateStatus());
   useEffect(() => subscribeUpdates(setU), []);
+  const [kind, setKind] = useState('installer');
+  useEffect(() => {
+    installKind().then(setKind);
+  }, []);
   const gap = compareFeatures(s.serverVersion);
 
   const when = (value) => (value ? parseServerDate(value).toLocaleString(locale()) : '—');
@@ -44,7 +49,7 @@ function DesktopSettings() {
 
   return (
     <div className="settings-section">
-      <h2>{t('Windows app')}</h2>
+      <h2>{t('{os} app', { os: DESKTOP_OS })}</h2>
       <div className="settings-info">
         <div className="info-row">
           <span className="info-label">{t('Server')}</span>
@@ -109,6 +114,21 @@ function DesktopSettings() {
                 <strong>{t('Version {version} is available.', { version: u.available.version })}</strong>
               </p>
               {u.available.notes && <div className="desktop-update-notes">{u.available.notes}</div>}
+              {kind === 'package' ? (
+                <p className="settings-help">
+                  {t('This app was installed as a .deb package: download the new one and install it (your data and connection are kept).')}{' '}
+                  <a
+                    href={`https://github.com/Boisti13/project-manager/releases/tag/desktop-v${u.available.version}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) =>
+                      openInBrowser?.(e, `https://github.com/Boisti13/project-manager/releases/tag/desktop-v${u.available.version}`)
+                    }
+                  >
+                    {t('Open the download page')}
+                  </a>
+                </p>
+              ) : (
               <button type="button" className="btn btn-primary btn-small" onClick={installUpdate} disabled={u.installing}>
                 {u.installing
                   ? u.progress != null && u.progress < 100
@@ -116,6 +136,7 @@ function DesktopSettings() {
                     : t('Installing…')
                   : t('Install and restart')}
               </button>
+              )}
               {s.pending > 0 && !u.installing && (
                 <p className="settings-help">
                   {tn(s.pending, 'One change is still waiting; it’s kept and sent after the update.', '{n} changes are still waiting; they’re kept and sent after the update.')}
