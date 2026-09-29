@@ -127,14 +127,14 @@ function TaskGroups({
                         </button>
                       </div>
                       {!catCollapsed && (
-                        <>
+                        <div className="category-body">
                           {cat.tasks.length === 0 ? (
                             <p className="category-empty">{cat.completed.length ? t('All done ✓') : t('No tasks')}</p>
                           ) : (
                             cat.tasks.map(renderTask)
                           )}
                           {renderCompleted(`${cat.key}-done`, cat.completed)}
-                        </>
+                        </div>
                       )}
                     </div>
                     );

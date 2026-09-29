@@ -77,6 +77,13 @@
   background-color: color-mix(in srgb, var(--project-color) 10%, transparent);
 }
 
+/* A category's tasks indented under its heading */
+.shared-section .category-name ~ .shared-tasks,
+.shared-section .category-name ~ .completed-group,
+.shared-section .category-name ~ .shared-section-desc {
+  margin-left: 22px;
+}
+
 .shared-section-desc {
   margin: 0 0 6px;
   font-size: 13px;
@@ -151,6 +158,12 @@
 @media (max-width: 600px) {
   .shared-badges {
     margin-left: 26px;
+  }
+
+  .shared-section .category-name ~ .shared-tasks,
+  .shared-section .category-name ~ .completed-group,
+  .shared-section .category-name ~ .shared-section-desc {
+    margin-left: 12px;
   }
 
   /* The task list hides it on phones (the checkbox shows done); here it's the only status. */

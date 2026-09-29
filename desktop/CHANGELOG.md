@@ -3,6 +3,11 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.5.2 — 2026-09-29
+
+### Changed
+- **Tasks in a category are indented** under the category's header (server v1.42.2 interface).
+
 ## v0.5.1 — 2026-09-28
 
 ### Changed

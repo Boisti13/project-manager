@@ -264,6 +264,11 @@
   padding: 10px 0 0 14px;
 }
 
+/* A category's tasks sit indented under its header, like a project's under the project. */
+.category-body {
+  padding-left: 22px;
+}
+
 .category-group {
   margin-top: 6px;
   margin-bottom: 10px;
@@ -325,6 +330,10 @@
 @media (max-width: 600px) {
   .project-group-body {
     padding-left: 6px;
+  }
+
+  .category-body {
+    padding-left: 12px;
   }
 }
 

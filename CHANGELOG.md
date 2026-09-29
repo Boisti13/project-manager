@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.42.2 — 2026-09-29
+
+### Changed
+- **Tasks in a category are indented** under the category's header (like a project's own tasks under the project), so it's clear at a glance which category a task belongs to. Also on phones (a smaller step) and on the shared project page.
+
 ## v1.42.1 — 2026-09-28
 
 ### Changed
