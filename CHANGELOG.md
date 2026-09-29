@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.43.1 — 2026-09-29
+
+### Changed
+- **New tasks open where you add them**: the **+** on a project or category header now opens the form right under that header (and scrolls it into view) instead of jumping to the top of the page. The task is created in that project or category. *+ New Task* at the top and the **n** key still open it at the top; Edit and Add subtask already open below their task.
+
 ## v1.43.0 — 2026-09-29
 
 ### Added

@@ -83,6 +83,8 @@ function TaskList() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [parentTaskForNew, setParentTaskForNew] = useState(null);
   const [projectForNew, setProjectForNew] = useState(null);
+  // The project/category section whose + opened the form: it opens right there.
+  const [formSection, setFormSection] = useState(null);
 
   // What's open: project/category sections (remembered), subtasks, Completed rows.
   const [collapsedGroups, setCollapsedGroups] = useState(loadCollapsedGroups);
@@ -143,6 +145,7 @@ function TaskList() {
     setSelectedTask(null);
     setParentTaskForNew(null);
     setProjectForNew(null);
+    setFormSection(null);
   };
 
   const handleCreateTask = async (formData) => {
@@ -229,21 +232,26 @@ function TaskList() {
   const handleEditTask = (task) => {
     setSelectedTask(task);
     setParentTaskForNew(null);
+    setFormSection(null);
     setShowForm(true);
   };
 
   const handleAddSubtask = (task) => {
     setSelectedTask(null);
     setParentTaskForNew(task);
+    setFormSection(null);
     setShowForm(true);
   };
 
-  const openNewTask = (projectId = null) => {
+  // section: the key of the project/category section whose + was used — the
+  // form opens under its header; without one (+ New Task, n) at the top.
+  const openNewTask = (projectId = null, section = null) => {
     setSelectedTask(null);
     setParentTaskForNew(null);
     setProjectForNew(projectId);
+    setFormSection(section);
     setShowForm(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!section) window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // ---- changes from the rows, board and calendar
@@ -540,7 +548,7 @@ function TaskList() {
 
   const taskForm = showForm && (
     <TaskForm
-      key={`${selectedTask?.id}-${parentTaskForNew?.id}-${projectForNew}`}
+      key={`${selectedTask?.id}-${parentTaskForNew?.id}-${projectForNew}-${formSection}`}
       task={selectedTask}
       parentTask={parentTaskForNew}
       defaultProjectId={projectForNew}
@@ -557,6 +565,9 @@ function TaskList() {
     />
   );
   const inlineForm = inlineTargetId != null ? { taskId: inlineTargetId, element: taskForm } : null;
+  // A new task from a section's +: under that section's header.
+  const sectionForm =
+    showForm && listView && !inlineForm && !selectedTask && formSection ? { key: formSection, element: taskForm } : null;
 
   const renderTask = (task) => (
     <TaskItem
@@ -626,7 +637,7 @@ function TaskList() {
 
       {error && <div className="error-message">{error}</div>}
 
-      {showForm && !inlineForm && <div className="form-container">{taskForm}</div>}
+      {showForm && !inlineForm && !sectionForm && <div className="form-container">{taskForm}</div>}
 
       <FilterBar
         filters={filters}
@@ -722,6 +733,7 @@ function TaskList() {
               completedAutoOpen={completedAutoOpen}
               allChildrenOf={allChildrenOf}
               openNewTask={openNewTask}
+              sectionForm={sectionForm}
               renderTask={renderTask}
             />
           </div>

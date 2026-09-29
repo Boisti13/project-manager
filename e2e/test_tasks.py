@@ -138,3 +138,31 @@ def test_description_starts_under_the_title(make_page, api):
         open_list(page, project)
         row(page, "Child").wait_for()  # a project filter shows subtasks expanded
         assert [o for o in offsets(page) if o is not None] == [0, 0, 0], (phone, offsets(page))
+
+
+def test_new_task_from_a_section_opens_the_form_there(page, api):
+    project = api.project()
+    cat = api.project(name="Ordering", parent_id=project["id"])
+    for i in range(12):  # enough to scroll
+        api.task(f"Filler {i}", project_id=project["id"])
+    api.task("Already there", project_id=cat["id"])  # (a filtered list hides empty categories)
+    open_list(page, project)
+
+    category = page.locator(".category-group", has_text="Ordering")
+    category.locator(".category-header .task-action-btn").click()
+    form = category.locator(".section-form")
+    form.wait_for()
+    assert page.locator(".container > .form-container").count() == 0  # not at the top
+    top = form.bounding_box()["y"]
+    assert 0 <= top < page.viewport_size["height"]  # scrolled into view
+    title = form.locator("input[name=title]")
+    title.fill("Order ethernet cables")
+    title.press("Enter")
+    category.locator(".task-item", has_text="Order ethernet cables").wait_for()
+    assert api.find("Order ethernet cables")["project_id"] == cat["id"]
+
+    # the project's own +: under the project header
+    page.locator(".project-group-header .task-action-btn").first.click()
+    page.locator(".project-group > .section-form").wait_for()
+    page.keyboard.press("Escape")
+    page.locator(".section-form").wait_for(state="detached")

@@ -3,6 +3,11 @@
 Versions of the Windows app (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.6.1 — 2026-09-29
+
+### Changed
+- The **+** on a project or category opens the new-task form right there, not at the top (server v1.43.1 interface).
+
 ## v0.6.0 — 2026-09-29
 
 ### Added

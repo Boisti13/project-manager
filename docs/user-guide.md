@@ -81,7 +81,8 @@ can be folded (remembered per browser); done tasks move into a collapsed
 ### Adding tasks
 
 - **+ New Task** puts the cursor in the title: type and press **Enter**.
-  The **+** on a project or category header adds a task there.
+  The **+** on a project or category header adds a task there — the form
+  opens right under that header, so you stay where you are.
 - The form has *Create* and *Cancel* at the top, staying in view while
   scrolling. **Ctrl+Enter** saves from any field, **Esc** cancels.
 - **Several (one per line)** creates many at once: type or paste a list,

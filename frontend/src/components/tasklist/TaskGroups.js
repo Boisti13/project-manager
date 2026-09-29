@@ -1,7 +1,20 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { t } from '../../i18n';
 import { groupTaskCount } from '../../projects';
 import { totalRemaining, formatEstimate } from '../../estimate';
+
+// The task form under a section's header, scrolled into view when it opens.
+function SectionForm({ element }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, []);
+  return (
+    <div className="form-container inline-form section-form" ref={ref}>
+      {element}
+    </div>
+  );
+}
 
 /**
  * The list view's sections: a block per project, its categories, and the
@@ -20,6 +33,7 @@ function TaskGroups({
   allChildrenOf,
   openNewTask,
   renderTask,
+  sectionForm = null, // { key, element }: a new task's form under that section's header
 }) {
   // Open work estimated in a section (tasks shown there, with their subtasks).
   const estimateBadge = (roots) => {
@@ -92,11 +106,13 @@ function TaskGroups({
                 <button
                   className="task-action-btn"
                   title={group.project ? t('New task in {name}', { name: group.project.name }) : t('New task without project')}
-                  onClick={() => openNewTask(group.project ? group.project.id : null)}
+                  onClick={() => openNewTask(group.project ? group.project.id : null, group.key)}
                 >
                   +
                 </button>
               </header>
+
+              {sectionForm?.key === group.key && <SectionForm element={sectionForm.element} />}
 
               {!collapsed && (
                 <div className="project-group-body">
@@ -121,11 +137,12 @@ function TaskGroups({
                         <button
                           className="task-action-btn"
                           title={t('New task in {name}', { name: `${group.project.name} / ${cat.project.name}` })}
-                          onClick={() => openNewTask(cat.project.id)}
+                          onClick={() => openNewTask(cat.project.id, cat.key)}
                         >
                           +
                         </button>
                       </div>
+                      {sectionForm?.key === cat.key && <SectionForm element={sectionForm.element} />}
                       {!catCollapsed && (
                         <div className="category-body">
                           {cat.tasks.length === 0 ? (

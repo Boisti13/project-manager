@@ -625,3 +625,9 @@ kbd {
     display: none;
   }
 }
+
+/* A new task from a section's +: the form right under the section's header */
+.section-form {
+  margin: 8px 0 12px;
+  scroll-margin: 70px 0 20px 0;
+}
