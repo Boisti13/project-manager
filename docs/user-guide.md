@@ -403,6 +403,8 @@ which can't reach a server on a private network or VPN.
   import into another account or installation, or all tasks as a CSV file
   for Excel; admins also make and restore backups here.
 - **Windows app** / **Linux app** (only in the app): connection, sync and updates.
+  In the browser, **Windows and Linux app** has the download links instead
+  (the one for your system marked).
 
 Admins also see backups, updates and user management — see
 [For admins](#for-admins).

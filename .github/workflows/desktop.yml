@@ -242,3 +242,7 @@ jobs:
             --target "$GITHUB_SHA" --title "Desktop apps: update feed" \
             --notes "Not a release: latest.json here tells installed apps which version is current. Downloads are on the desktop-v* releases."
           gh release upload desktop-updates latest.json --clobber
+
+          # The latest server release (what GitHub shows as "Latest") carries
+          # the apps too, under fixed names: that's where people download them.
+          bash scripts/attach-apps.sh "$(gh release view --json tagName --jq .tagName)" "$GITHUB_REF_NAME"

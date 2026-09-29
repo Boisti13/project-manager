@@ -9,6 +9,7 @@ import LabelSettings from './LabelSettings';
 import ApiTokenSettings from './ApiTokenSettings';
 import CalendarFeedSettings from './CalendarFeedSettings';
 import DesktopSettings from './desktop/DesktopSettings';
+import AppDownloads from './AppDownloads';
 import { IS_DESKTOP } from '../desktop/platform';
 import '../styles/Settings.css';
 import { t } from '../i18n';
@@ -106,7 +107,7 @@ function Settings() {
         </div>
       </div>
 
-      {IS_DESKTOP && <DesktopSettings />}
+      {IS_DESKTOP ? <DesktopSettings /> : <AppDownloads />}
 
       <AccountSettings />
 

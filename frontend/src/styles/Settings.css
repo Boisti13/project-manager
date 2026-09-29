@@ -330,3 +330,25 @@
 .feed-howto li {
   margin: 2px 0;
 }
+
+.app-downloads {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+
+.app-downloads li {
+  margin: 4px 0;
+}
+
+.app-download-mine a {
+  font-weight: 600;
+}
+
+.app-download-tag {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 12px;
+  background: var(--color-primary-light, rgba(0, 120, 212, 0.12));
+  color: var(--color-text-secondary);
+}

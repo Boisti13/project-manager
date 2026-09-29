@@ -10,17 +10,21 @@ with a local copy of your data.
 
 ## Installing
 
-Downloads are on the [releases](https://github.com/Boisti13/project-manager/releases?q=desktop-v&expanded=true)
-tagged `desktop-v…` (or the latest build under *Actions → Desktop apps →
-Artifacts*):
+Download the file for your system — these links always get the newest
+version (they're also under *Settings* in the web app, and on the
+[latest release](https://github.com/Boisti13/project-manager/releases/latest)):
 
-| System | File | Updates |
-|---|---|---|
-| Windows 10/11 (x64) | `Project.Manager_<version>_x64-setup.exe` | itself |
-| Linux x86_64, any distribution | `Project.Manager_<version>_amd64.AppImage` | itself |
-| Linux ARM64 (e.g. Raspberry Pi 4/5 with a 64-bit OS) | `Project.Manager_<version>_aarch64.AppImage` | itself |
-| Debian, Ubuntu, Mint, Raspberry Pi OS — x86_64 | `Project.Manager_<version>_amd64.deb` | install the new package |
-| … ARM64 | `Project.Manager_<version>_arm64.deb` | install the new package |
+| System | Download |
+|---|---|
+| Windows 10/11 | [ProjectManager-Windows-x64-setup.exe](https://github.com/Boisti13/project-manager/releases/latest/download/ProjectManager-Windows-x64-setup.exe) |
+| Linux, any distribution (x86_64) | [ProjectManager-Linux-x86_64.AppImage](https://github.com/Boisti13/project-manager/releases/latest/download/ProjectManager-Linux-x86_64.AppImage) |
+| Linux on ARM, e.g. Raspberry Pi 4/5 | [ProjectManager-Linux-arm64.AppImage](https://github.com/Boisti13/project-manager/releases/latest/download/ProjectManager-Linux-arm64.AppImage) |
+| Debian, Ubuntu, Mint (x86_64) | [ProjectManager-Linux-x86_64.deb](https://github.com/Boisti13/project-manager/releases/latest/download/ProjectManager-Linux-x86_64.deb) |
+| Raspberry Pi OS, Debian on ARM | [ProjectManager-Linux-arm64.deb](https://github.com/Boisti13/project-manager/releases/latest/download/ProjectManager-Linux-arm64.deb) |
+
+Each version is also on its own release tagged `desktop-v…`, and the latest
+build under *Actions → Desktop apps → Artifacts*. The Windows app and the
+AppImages update themselves; a `.deb` is updated by installing the new one.
 
 - **Windows**: run the installer. It installs for the current user; no admin
   rights needed. The installer isn't code-signed yet, so on first run Windows
@@ -28,12 +32,12 @@ Artifacts*):
   anyway**. With **Smart App Control** switched on, Windows blocks unsigned
   apps outright; it has to be off to install the app.
 - **AppImage**: make it executable and start it —
-  `chmod +x Project.Manager_*.AppImage && ./Project.Manager_*.AppImage`
+  `chmod +x ProjectManager-Linux-*.AppImage && ./ProjectManager-Linux-*.AppImage`
   (or *Properties → Allow executing as program* in the file manager). Keep it
   somewhere it can be replaced, e.g. `~/Applications`, so it can update
   itself. If it says FUSE is missing, install `libfuse2` (Ubuntu 24.04:
   `libfuse2t64`) or start it with `--appimage-extract-and-run`.
-- **.deb**: `sudo apt install ./Project.Manager_*_amd64.deb` (or `_arm64`).
+- **.deb**: `sudo apt install ./ProjectManager-Linux-x86_64.deb` (or `-arm64`).
   It pulls in WebKitGTK and shows up in the app menu as *Project Manager*.
   Updates: the app shows when there's a new version and links to its
   download page; install the new `.deb` the same way.
@@ -139,7 +143,12 @@ Releases: bump the version in `src-tauri/tauri.conf.json`,
 `src-tauri/Cargo.toml` and `frontend/src/desktop/platform.js` (a test checks
 they match), add a section to [CHANGELOG.md](CHANGELOG.md), and push a tag
 `desktop-vX.Y.Z` — the workflow attaches all five files to one GitHub
-release and updates the update feed, so installed apps offer it.
+release and updates the update feed, so installed apps offer it. It also
+copies them under fixed names (`ProjectManager-Windows-x64-setup.exe`, …) to
+the latest server release, with a download table in its notes
+([`scripts/attach-apps.sh`](../scripts/attach-apps.sh)); every new server
+release gets them the same way ([`release-apps.yml`](../.github/workflows/release-apps.yml)).
+So `…/releases/latest/download/<name>` is always the newest app.
 
 ## Updates
 

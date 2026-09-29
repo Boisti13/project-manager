@@ -1,0 +1,25 @@
+name: App downloads on releases
+
+# Every server release (v*) gets the Windows and Linux app files of the newest
+# desktop-v* release, under fixed names, plus a download table in its notes —
+# so the release GitHub shows as "Latest" is where to download the apps.
+# See scripts/attach-apps.sh.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  attach:
+    if: startsWith(github.event.release.tag_name, 'v')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Attach the apps
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/attach-apps.sh "${{ github.event.release.tag_name }}"

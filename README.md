@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Boisti13/project-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/Boisti13/project-manager/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/Boisti13/project-manager?filter=v*&label=release)](https://github.com/Boisti13/project-manager/releases/latest)
-[![Windows & Linux app](https://img.shields.io/github/v/release/Boisti13/project-manager?filter=desktop-v*&label=windows%20%26%20linux%20app)](https://github.com/Boisti13/project-manager/releases?q=desktop-v&expanded=true)
+[![Windows & Linux app](https://img.shields.io/github/v/release/Boisti13/project-manager?filter=desktop-v*&label=windows%20%26%20linux%20app)](#download-the-app)
 [![License: MIT](https://img.shields.io/github/license/Boisti13/project-manager)](LICENSE)
 
 A self-hosted task manager for a small team: projects with categories,
@@ -12,6 +12,23 @@ works on phones, speaks English and German, and has a Windows and Linux app that
 working offline.
 
 ![Tasks grouped by project and category](docs/screenshots/tasks-desktop.png)
+
+## Download the app
+
+The server is installed on your own machine ([Install](#install));
+the **Windows and Linux app** connects to it and works offline too. These
+links always get the newest version:
+
+| System | Download |
+|---|---|
+| Windows 10/11 | [ProjectManager-Windows-x64-setup.exe](https://github.com/Boisti13/project-manager/releases/latest/download/ProjectManager-Windows-x64-setup.exe) |
+| Linux, any distribution (x86_64) | [ProjectManager-Linux-x86_64.AppImage](https://github.com/Boisti13/project-manager/releases/latest/download/ProjectManager-Linux-x86_64.AppImage) |
+| Linux on ARM, e.g. Raspberry Pi 4/5 | [ProjectManager-Linux-arm64.AppImage](https://github.com/Boisti13/project-manager/releases/latest/download/ProjectManager-Linux-arm64.AppImage) |
+| Debian, Ubuntu, Mint (x86_64) | [ProjectManager-Linux-x86_64.deb](https://github.com/Boisti13/project-manager/releases/latest/download/ProjectManager-Linux-x86_64.deb) |
+| Raspberry Pi OS, Debian on ARM | [ProjectManager-Linux-arm64.deb](https://github.com/Boisti13/project-manager/releases/latest/download/ProjectManager-Linux-arm64.deb) |
+
+How to install and connect: [desktop/README.md](desktop/README.md#installing).
+The web app shows the same links under *Settings*.
 
 ## Highlights
 

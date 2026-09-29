@@ -86,6 +86,7 @@ project-manager/
 ├── VERSION                  # Single source of truth for the app version
 ├── .github/workflows/ci.yml # Tests, build, browser tests and shellcheck on every push
 ├── .github/workflows/desktop.yml # Windows/Linux app: tests, builds, release
+├── .github/workflows/release-apps.yml # attaches the apps to every server release
 ├── desktop/                 # Windows/Linux app (Tauri shell; offline layer in frontend/src/desktop)
 ├── backend/
 │   ├── app/                 # FastAPI application (routers/, models.py, schemas.py, access.py = who sees what, ...)
@@ -164,7 +165,7 @@ git tag -a v1.4.0 -m "Description of the release"
 git push origin v1.4.0
 ```
 
-A tag alone shows up under *Tags* on GitHub; create a GitHub Release from it (with the CHANGELOG section as notes) for it to appear under *Releases*. The Windows/Linux app has its own versions and `desktop-vX.Y.Z` tags — see [desktop/README.md](../desktop/README.md#building).
+A tag alone shows up under *Tags* on GitHub; create a GitHub Release from it (with the CHANGELOG section as notes) for it to appear under *Releases*. A workflow then attaches the newest Windows/Linux app to it ([`scripts/attach-apps.sh`](../scripts/attach-apps.sh)), so the *Latest* release always has the downloads. The Windows/Linux app has its own versions and `desktop-vX.Y.Z` tags — see [desktop/README.md](../desktop/README.md#building).
 
 ## Screenshots
 

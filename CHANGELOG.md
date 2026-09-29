@@ -2,6 +2,16 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.43.4 — 2026-09-29
+
+### Added
+- **Easy to find app downloads**: the release GitHub shows as *Latest* now always carries the Windows and Linux app (fixed file names like `ProjectManager-Windows-x64-setup.exe`) with a download table, and the links `…/releases/latest/download/…` always get the newest version.
+- **Settings → Windows and Linux app** in the web app: the download links, with the one for your computer marked.
+- README: a *Download the app* section right at the top.
+
+### Under the hood
+- `scripts/attach-apps.sh`, run by the new workflow `release-apps.yml` on every server release and by `desktop.yml` on every app release.
+
 ## v1.43.3 — 2026-09-29
 
 ### Added
