@@ -2,6 +2,18 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.43.3 — 2026-09-29
+
+### Added
+- **Linux app** ([desktop v0.7.0](desktop/CHANGELOG.md)): the offline app now also runs on Linux, for **x86_64 and ARM64** (e.g. Raspberry Pi 4/5), as an **AppImage** (updates itself) or a **.deb** package. Install instructions per system in [desktop/README.md](desktop/README.md#installing).
+
+### Changed
+- *Settings* shows *Linux app* instead of *Windows app* in the Linux app; its API token is named *Linux app (date)*. The web app is unchanged.
+- [DEPLOYMENT.md](DEPLOYMENT.md#trusting-the-certificate-on-your-devices-once-per-device): how to trust the server's certificate on Linux.
+
+### Under the hood
+- Workflow *Desktop apps* (was *Windows app*): frontend built once, then Windows plus Linux x86_64/ARM64 builds with a start check; one release with all five files and an update feed for three platforms.
+
 ## v1.43.2 — 2026-09-29
 
 ### Fixed
