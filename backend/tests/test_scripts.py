@@ -137,9 +137,10 @@ def test_restore_rejects_non_dumps(tmp_path):
 
 def test_restore_rolls_back_backup_from_newer_version(client, alice, backup_dir):
     client.post("/api/tasks/", json={"title": "current"}, headers=alice.headers)
+    head = state()[0]
     sql("UPDATE alembic_version SET version_num = '9999'")
     future = backup("future")
-    sql("UPDATE alembic_version SET version_num = '0020'")
+    sql(f"UPDATE alembic_version SET version_num = '{head}'")
     before = state()
     rc, out = script("restore-db.sh", future)
     assert rc == 1
