@@ -70,3 +70,37 @@ def test_limit(client, alice):
 
 def test_requires_login(client):
     assert client.post("/api/tasks/bulk", json={"items": [{"title": "x"}]}).status_code == 401
+
+
+def test_per_line_fields_override_the_shared_ones(client, alice, bob, admin):
+    hw = client.post("/api/v1/labels/", json={"name": "hardware"}, headers=alice.headers).json()["id"]
+    urgent = client.post("/api/v1/labels/", json={"name": "urgent"}, headers=alice.headers).json()["id"]
+    r = bulk(client, alice, [
+        {"title": "Call supplier", "priority": 3, "deadline": "2026-10-05T00:00:00", "assignee_id": bob.id, "label_ids": [urgent]},
+        {"title": "Weekly sync", "recurrence_unit": "week", "recurrence_weekdays": [0], "deadline": "2026-10-05T00:00:00"},
+        {"title": "Fair", "start_date": "2026-10-05T00:00:00", "deadline": "2026-10-09T00:00:00",
+         "children": [{"title": "Book booth", "assignee_id": bob.id}]},
+        {"title": "Plain"},
+    ], priority=1, deadline="2026-10-01T00:00:00", label_ids=[hw], assignee_id=admin.id)
+    assert r.status_code == 200, r.text
+    t = tasks_by_title(client, alice)
+    assert (t["Call supplier"]["priority"], t["Call supplier"]["assignee_id"]) == (3, bob.id)
+    assert t["Call supplier"]["deadline"].startswith("2026-10-05")
+    assert sorted(t["Call supplier"]["label_ids"]) == sorted([hw, urgent])  # added to the shared ones
+    assert (t["Plain"]["priority"], t["Plain"]["assignee_id"], t["Plain"]["label_ids"]) == (1, admin.id, [hw])
+    assert t["Plain"]["deadline"].startswith("2026-10-01")
+    assert (t["Weekly sync"]["recurrence_unit"], t["Weekly sync"]["recurrence_weekdays"]) == ("week", [0])
+    assert t["Fair"]["start_date"].startswith("2026-10-05")
+
+    # one notification per person: bob for his two, admin for the other three
+    bobs = client.get("/api/v1/notifications/", headers=bob.headers).json()["items"]
+    assert [(n["kind"], n["excerpt"]) for n in bobs] == [("assigned", "and 1 more task")]
+    admins = client.get("/api/v1/notifications/", headers=admin.headers).json()["items"]
+    assert [(n["kind"], n["excerpt"]) for n in admins] == [("assigned", "and 2 more tasks")]
+
+
+def test_per_line_checks(client, alice):
+    assert bulk(client, alice, [{"title": "x", "start_date": "2026-10-09T00:00:00", "deadline": "2026-10-05T00:00:00"}]).status_code == 400
+    assert bulk(client, alice, [{"title": "x", "assignee_id": 99999}]).status_code == 400
+    assert bulk(client, alice, [{"title": "x", "recurrence_unit": "week", "recurrence_weekdays": [9]}]).status_code == 422
+    assert client.get("/api/tasks/", headers=alice.headers).json() == []  # all or nothing

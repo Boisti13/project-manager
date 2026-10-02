@@ -220,6 +220,27 @@ test('bulk update offline: applied locally, sent as one update per task', async 
   assert.deepStrictEqual([srv.tasks.get(a.id).priority, srv.tasks.get(b.id).priority], [3, 3]);
 });
 
+test('bulk create offline: each line can carry its own fields (quick entry)', async () => {
+  const { srv, engine, call } = setup();
+  await engine.sync();
+  srv.online = false;
+  const res = call('POST', '/api/tasks/bulk', {
+    priority: 1,
+    deadline: '2026-10-01',
+    label_ids: [7],
+    items: [
+      { title: 'Call', priority: 3, deadline: '2026-10-05', label_ids: [8], children: [] },
+      { title: 'Sync', recurrence_unit: 'week', recurrence_interval: 1, recurrence_weekdays: [0], children: [] },
+      { title: 'Plain', children: [] },
+    ],
+  });
+  assert.strictEqual(res.status, 200);
+  const local = Object.fromEntries(call('GET', '/api/tasks/').data.map((t) => [t.title, t]));
+  assert.deepStrictEqual([local.Call.priority, local.Call.deadline, local.Call.label_ids], [3, '2026-10-05T00:00:00', [7, 8]]);
+  assert.deepStrictEqual([local.Sync.recurrence_unit, local.Sync.recurrence_weekdays], ['week', [0]]);
+  assert.deepStrictEqual([local.Plain.priority, local.Plain.deadline, local.Plain.recurrence_unit], [1, '2026-10-01T00:00:00', null]);
+});
+
 test('repeat rules are passed through and normalized like the server does', async () => {
   const { srv, store, engine, call } = setup();
   await engine.sync();

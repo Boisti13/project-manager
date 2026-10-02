@@ -5,10 +5,10 @@ import { parseBulk, countNested } from '../bulkParse';
 import '../styles/TaskForm.css';
 import { t, tn, locale } from '../i18n';
 import { STATUSES, statusName, PRIORITIES, priorityName } from '../names';
-import { parseQuickEntry } from '../quickEntry';
+import { parseQuickEntry, quickEntryTree } from '../quickEntry';
 import { labelTextColor } from '../labels';
 import { useAuth } from '../context/AuthContext';
-import { WORKDAYS, weekdayName, weekdayOf, ordinal } from '../recurrence';
+import { WORKDAYS, weekdayName, weekdayOf, ordinal, recurrenceHow } from '../recurrence';
 import { parseEstimate, formatEstimate } from '../estimate';
 
 const bulkPlaceholder = () =>
@@ -32,11 +32,24 @@ function unitWord(unit, n) {
   }
 }
 
+// "Fri, Oct 9"; with the year when it isn't this one ("1.10." after October 1st is next year's).
+const chipDate = (iso) => {
+  const d = new Date(`${iso}T00:00:00`);
+  const year = d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {};
+  return d.toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short', ...year });
+};
+
 // What a recognized part of a quick entry sets, as shown on its chip.
 function quickChipText(token) {
   switch (token.kind) {
     case 'deadline':
-      return '📅 ' + new Date(`${token.value}T00:00:00`).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' });
+      return `📅 ${chipDate(token.value)}`;
+    case 'start':
+      return `▶ ${t('from {date}', { date: chipDate(token.value) })}`;
+    case 'range':
+      return `📅 ${chipDate(token.value[0])} – ${chipDate(token.value[1])}`;
+    case 'repeat':
+      return `↻ ${recurrenceHow(token.value.unit, token.value.interval, { recurrence_weekdays: token.value.weekdays })}`;
     case 'priority':
       return `⚑ ${priorityName(token.value)}`;
     case 'label':
@@ -45,6 +58,9 @@ function quickChipText(token) {
       return `👤 ${token.user.username}`;
   }
 }
+
+/** The bulk tree as the API takes it (without the quick-entry details). */
+const stripQuick = (items) => items.map(({ quick, ...item }) => ({ ...item, children: stripQuick(item.children) }));
 
 // A template's tree in the shape BulkPreview shows.
 function templatePreview(node, title) {
@@ -57,6 +73,9 @@ function BulkPreview({ items }) {
       {items.map((item, i) => (
         <li key={i}>
           <span className={item.status === 'done' ? 'bulk-done' : ''}>{item.title}</span>
+          {item.quick && item.quick.tokens.length > 0 && (
+            <span className="bulk-quick"> {item.quick.tokens.map(quickChipText).join(' · ')}</span>
+          )}
           {item.children.length > 0 && <BulkPreview items={item.children} />}
         </li>
       ))}
@@ -111,6 +130,8 @@ function TaskForm({
   const template = templates.find((x) => x.id === templateId) || templates[0] || null;
   const [bulkText, setBulkText] = useState('');
   const bulk = useMemo(() => parseBulk(bulkText), [bulkText]);
+  // Quick entry per line in "Several": dates, !priority, #labels, @names.
+  const [bulkQuick, setBulkQuick] = useState(true);
   // Typed text ("1h 30m"); parsed to minutes on submit.
   const [estimateText, setEstimateText] = useState('');
   const [estimateError, setEstimateError] = useState(false);
@@ -219,7 +240,7 @@ function TaskForm({
     if (mode === 'bulk') {
       if (bulk.count === 0) return;
       onBulkSubmit({
-        items: bulk.items,
+        items: stripQuick(bulkItems),
         project_id: formData.project_id,
         parent_task_id: formData.parent_task_id,
         status: formData.status,
@@ -243,6 +264,14 @@ function TaskForm({
           ...formData,
           title: q.title || formData.title,
           deadline: formData.deadline || q.deadline || '',
+          start_date: formData.start_date || q.startDate || '',
+          ...(!formData.recurrence_unit && q.repeat
+            ? {
+                recurrence_unit: q.repeat.unit,
+                recurrence_interval: q.repeat.interval,
+                recurrence_weekdays: q.repeat.weekdays || [],
+              }
+            : {}),
           priority: formData.priority || (q.priority ?? 0),
           assignee_id: formData.assignee_id ?? q.assigneeId,
           label_ids: [...new Set([...formData.label_ids, ...q.labelIds])],
@@ -278,6 +307,14 @@ function TaskForm({
         ? null
         : parseQuickEntry(formData.title, { labels, users: assignable, me: currentUser?.id, ignore: quickIgnored }),
     [task, mode, formData.title, labels, assignable, currentUser, quickIgnored]
+  );
+  // The lines with what quick entry recognized in each (see quickEntryTree).
+  const bulkItems = useMemo(
+    () =>
+      mode === 'bulk' && bulkQuick
+        ? quickEntryTree(bulk.items, { labels, users: assignable, me: currentUser?.id })
+        : bulk.items,
+    [mode, bulkQuick, bulk.items, labels, assignable, currentUser]
   );
 
   // Ctrl/Cmd+Enter saves from anywhere in the form (Enter alone already does
@@ -422,7 +459,7 @@ function TaskForm({
               </div>
             ) : (
               quick && (
-                <small className="form-hint">{t('Quick: tomorrow, fri, 5.10., in 3 days · !high · #label · @name')}</small>
+                <small className="form-hint">{t('Quick: tomorrow, fri, 5.10., every monday, from 5.10. · !high · #label · @name')}</small>
               )
             )}
           </div>
@@ -457,6 +494,10 @@ function TaskForm({
             <small className="bulk-hint">
               {t('Indent with Tab (Shift+Tab to outdent) or two spaces. The fields below apply to every task.')}
             </small>
+            <label className="bulk-quick-toggle">
+              <input type="checkbox" checked={bulkQuick} onChange={(e) => setBulkQuick(e.target.checked)} />
+              {t('Each line can set its own date, repeat, !priority, #labels and @name')}
+            </label>
           </div>
           <div className="bulk-preview" aria-live="polite">
             <div className="bulk-preview-head">
@@ -468,7 +509,7 @@ function TaskForm({
             {bulk.count === 0 ? (
               <p className="bulk-empty">{t('Type or paste a list on the left.')}</p>
             ) : (
-              <BulkPreview items={bulk.items} />
+              <BulkPreview items={bulkItems} />
             )}
           </div>
         </div>

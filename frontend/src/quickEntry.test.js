@@ -1,4 +1,4 @@
-import { parseQuickEntry } from './quickEntry';
+import { parseQuickEntry, quickEntryTree } from './quickEntry';
 
 // Friday, 2 October 2026
 const today = new Date(2026, 9, 2, 15, 30);
@@ -56,7 +56,8 @@ test('connecting words go with the date', () => {
 
 test('only whole words; the first date and priority count', () => {
   expect(parse('Monday meeting notes').deadline).toBe('2026-10-05');
-  expect(parse('Monthly report').deadline).toBeNull();
+  expect(parse('Monthly report')).toMatchObject({ deadline: null, repeat: null, title: 'Monthly report' });
+  expect(parse('Pay rent monthly')).toMatchObject({ repeat: { unit: 'month' }, title: 'Pay rent' });
   expect(parse('Firmware 1.5 release').deadline).toBeNull();
   expect(parse('Update to 2.5.1').deadline).toBeNull();
   const r = parse('A tomorrow friday !low !high');
@@ -93,4 +94,47 @@ test('ignored tokens stay in the title', () => {
 
 test('nothing recognized: the text as it is', () => {
   expect(parse('  Just a   task ')).toMatchObject({ title: 'Just a task', deadline: null, priority: null, labelIds: [], assigneeId: null, tokens: [] });
+});
+
+test('repeats', () => {
+  const r = (text) => parse(`Sync ${text}`);
+  expect(r('every monday')).toMatchObject({ title: 'Sync', repeat: { unit: 'week', interval: 1, weekdays: [0] }, deadline: '2026-10-05' });
+  expect(r('every mon and thu').repeat.weekdays).toEqual([0, 3]);
+  expect(r('jeden Montag und Donnerstag').repeat.weekdays).toEqual([0, 3]);
+  expect(r('freitags')).toMatchObject({ repeat: { unit: 'week', weekdays: [4] }, deadline: '2026-10-02' }); // today counts
+  expect(r('daily').repeat).toEqual({ unit: 'day', interval: 1, weekdays: null });
+  expect(r('täglich').deadline).toBe('2026-10-02');
+  expect(r('every workday').repeat.weekdays).toEqual([0, 1, 2, 3, 4]);
+  expect(r('werktags').repeat.unit).toBe('week');
+  expect(r('weekly').repeat).toEqual({ unit: 'week', interval: 1, weekdays: null });
+  expect(r('monatlich').repeat.unit).toBe('month');
+  expect(r('every year').repeat.unit).toBe('year');
+  expect(r('every 2 weeks').repeat).toEqual({ unit: 'week', interval: 2, weekdays: null });
+  expect(r('alle 3 Monate').repeat).toEqual({ unit: 'month', interval: 3, weekdays: null });
+  // with its own first date
+  expect(r('every month 15.10.')).toMatchObject({ repeat: { unit: 'month' }, deadline: '2026-10-15', title: 'Sync' });
+});
+
+test('start dates and ranges', () => {
+  expect(parse('Trade fair from 5.10. to 9.10.')).toMatchObject({ title: 'Trade fair', startDate: '2026-10-05', deadline: '2026-10-09' });
+  expect(parse('Messe von 5.10. bis 9.10.')).toMatchObject({ title: 'Messe', startDate: '2026-10-05', deadline: '2026-10-09' });
+  expect(parse('Messe 5.10.–9.10.')).toMatchObject({ title: 'Messe', startDate: '2026-10-05', deadline: '2026-10-09' });
+  expect(parse('Holiday 2026-12-21 - 2027-01-02')).toMatchObject({ startDate: '2026-12-21', deadline: '2027-01-02' });
+  expect(parse('Build from monday')).toMatchObject({ title: 'Build', startDate: '2026-10-05', deadline: null });
+  expect(parse('Report ab morgen bis Donnerstag')).toMatchObject({ startDate: '2026-10-03', deadline: '2026-10-08' });
+  expect(parse('Pages 5-9').startDate).toBeNull(); // not dates
+});
+
+test('a whole list for "Several (one per line)"', () => {
+  const items = [
+    { title: 'Order parts tomorrow #hardware', children: [{ title: 'Cables !high @anna', children: [] }] },
+    { title: 'Plain', children: [] },
+    { title: 'Weekly sync every monday', children: [] },
+  ];
+  const [a, b, c] = quickEntryTree(items, { labels, users, me: 11, today });
+  expect(a).toMatchObject({ title: 'Order parts', deadline: '2026-10-03', label_ids: [1] });
+  expect(a.children[0]).toMatchObject({ title: 'Cables', priority: 2, assignee_id: 10 });
+  expect(b).toEqual(expect.not.objectContaining({ deadline: expect.anything() }));
+  expect(b.title).toBe('Plain');
+  expect(c).toMatchObject({ title: 'Weekly sync', recurrence_unit: 'week', recurrence_interval: 1, recurrence_weekdays: [0], deadline: '2026-10-05' });
 });

@@ -205,15 +205,20 @@ export class LocalApi {
     const ids = [];
     const add = (items, parentId) => {
       for (const item of items || []) {
+        // Per line (quick entry) over the shared values, as on the server.
         const created = this.createTask({
           title: item.title.trim(),
           status: item.status || body.status || 'todo',
-          priority: body.priority || 0,
-          deadline: body.deadline || null,
+          priority: item.priority ?? body.priority ?? 0,
+          deadline: item.deadline || body.deadline || null,
+          start_date: item.start_date || null,
           project_id: parentId == null ? body.project_id ?? null : null,
           parent_task_id: parentId,
-          assignee_id: body.assignee_id ?? null,
-          label_ids: body.label_ids || [],
+          assignee_id: item.assignee_id ?? body.assignee_id ?? null,
+          label_ids: [...new Set([...(body.label_ids || []), ...(item.label_ids || [])])],
+          recurrence_unit: item.recurrence_unit || null,
+          recurrence_interval: item.recurrence_interval || null,
+          recurrence_weekdays: item.recurrence_weekdays || null,
         });
         ids.push(created.id);
         add(item.children, created.id);

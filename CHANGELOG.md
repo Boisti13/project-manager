@@ -2,6 +2,20 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.46.0 — 2026-10-02
+
+### Added
+- **Quick entry understands repeats and start dates**: *every monday*, *every mon and thu*, *every workday*, *daily*, *weekly*, *every 2 weeks* (German *jeden Montag*, *montags*, *werktags*, *alle 2 Wochen* …) set the repeat rule — without a date, the first deadline is the next of those days; *from 5.10. to 9.10.*, *5.10.–9.10.*, *ab morgen* (German *von … bis …*) set the start. *Monthly report* stays a title; *Pay rent monthly* repeats.
+- **Quick entry per line in "Several (one per line)"**: each line can set its own date, repeat, priority, labels and assignee; the preview shows what each line sets. A checkbox switches it off.
+- **Notifications across workspaces**: while one workspace is shown, the bell marks what's elsewhere (*in Work*), sums it up at the top (*3 new in Work*), and opening such an item switches to its workspace first.
+- API: `POST /tasks/bulk` items take their own `priority`, `deadline`, `start_date`, `assignee_id`, `label_ids` and repeat rule; everyone assigned is notified once.
+
+### Changed
+- Quick-entry chips show the year for dates that aren't in this year (*5.10.* after October 5th is next year's).
+
+### Under the hood
+- 2 new backend tests, 4 new frontend tests (incl. offline bulk in the app), 2 new browser tests.
+
 ## v1.45.0 — 2026-10-02
 
 ### Added

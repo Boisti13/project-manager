@@ -123,28 +123,44 @@ def create_tasks_bulk(data: schemas.BulkTaskCreate, current_user: User = Depends
 
     created = []
     labels = resolve_labels(db, data.label_ids)
+    by_assignee = {}  # assignee id -> ids of the tasks they got
 
     def add(items, parent_id):
         order = next_order(parent_id)
         for item in items:
+            assignee = data.assignee_id if item.assignee_id is None else item.assignee_id
+            if item.assignee_id is not None:
+                if not db.get(User, item.assignee_id):
+                    raise HTTPException(status_code=400, detail="Assignee not found")
+                access.check_assignee(db, item.assignee_id, project_id)
+            extra = [lb for lb in resolve_labels(db, item.label_ids) if lb not in labels] if item.label_ids else []
             task = Task(
-                title=item.title.strip(), status=item.status or data.status, priority=data.priority,
-                deadline=data.deadline, project_id=project_id, parent_task_id=parent_id,
-                assignee_id=data.assignee_id, order=order, labels=list(labels),
+                title=item.title.strip(), status=item.status or data.status,
+                priority=data.priority if item.priority is None else item.priority,
+                deadline=item.deadline or data.deadline, start_date=item.start_date,
+                project_id=project_id, parent_task_id=parent_id,
+                assignee_id=assignee, order=order, labels=list(labels) + extra,
+                recurrence_unit=item.recurrence_unit, recurrence_interval=item.recurrence_interval,
+                recurrence_weekdays=item.recurrence_weekdays,
             )
+            normalize_recurrence(task)
             sync_completed_at(task)
+            check_dates(task)
             db.add(task)
             db.flush()
             activity.created(db, task, current_user)
+            record_spawn(db, task, current_user)
             created.append(task.id)
+            if assignee is not None:
+                by_assignee.setdefault(assignee, []).append(task.id)
             order += 1
             if item.children:
                 add(item.children, task.id)
 
     add(data.items, data.parent_task_id)
-    if data.assignee_id is not None and created:
-        # One notification for the whole batch, pointing at the first task.
-        notify.assigned(db, db.get(Task, created[0]), current_user, count=len(created))
+    for ids in by_assignee.values():
+        # One notification per person, pointing at their first task.
+        notify.assigned(db, db.get(Task, ids[0]), current_user, count=len(ids))
     db.commit()
     return {"created": len(created), "ids": created}
 

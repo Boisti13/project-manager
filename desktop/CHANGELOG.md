@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.10.0 — 2026-10-02
+
+### Added
+- Quick entry with repeats and start dates, and per line in *Several (one per line)* — also offline; the bell marks notifications from other workspaces (server v1.46.0 interface; per-line fields need server v1.46.0).
+
 ## v0.9.0 — 2026-10-02
 
 ### Added

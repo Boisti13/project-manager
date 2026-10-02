@@ -373,3 +373,18 @@
 .quick-chip button:hover {
   opacity: 1;
 }
+
+.bulk-quick {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.form-group .bulk-quick-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--color-text-secondary);
+}

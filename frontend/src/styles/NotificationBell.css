@@ -179,3 +179,25 @@
     width: auto;
   }
 }
+
+/* Showing one workspace: what's elsewhere (NotificationBell). */
+.bell-elsewhere {
+  margin: 0;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background-color: var(--color-primary-bg, rgba(33, 150, 243, 0.08));
+}
+
+.bell-item-where {
+  margin-left: 6px;
+  padding: 0 6px 0 4px;
+  border-left: 3px solid var(--ws-color, var(--color-border));
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background-color: rgba(127, 127, 127, 0.12);
+  white-space: nowrap;
+}

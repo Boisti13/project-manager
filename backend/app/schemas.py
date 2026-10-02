@@ -270,6 +270,21 @@ class BulkTaskItem(BaseModel):
     title: str = Field(min_length=1, max_length=500)
     status: Optional[TaskStatus] = None  # overrides the shared status (e.g. "[x]" lines)
     children: List["BulkTaskItem"] = []
+    # Per line (quick entry in the app); unset: the shared value. label_ids
+    # are added to the shared ones.
+    priority: Optional[int] = None
+    deadline: Optional[datetime] = None
+    start_date: Optional[datetime] = None
+    assignee_id: Optional[int] = None
+    label_ids: List[int] = []
+    recurrence_unit: Optional[RecurrenceUnit] = None
+    recurrence_interval: Optional[int] = Field(default=None, ge=1, le=365)
+    recurrence_weekdays: Optional[List[int]] = None  # weeks only; 0 = Monday
+
+    @field_validator("recurrence_weekdays")
+    @classmethod
+    def _weekdays(cls, v):
+        return _check_weekdays(v)
 
     @field_validator("title")
     @classmethod

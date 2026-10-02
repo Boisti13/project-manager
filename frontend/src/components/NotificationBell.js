@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authFetch, useAuth } from '../context/AuthContext';
 import { timeAgo } from './TaskComments';
@@ -7,6 +7,7 @@ import '../styles/NotificationBell.css';
 import { t, tn, locale } from '../i18n';
 import { useSyncRefresh } from '../desktop/useSyncRefresh';
 import { buildProjectIndex, withoutArchived } from '../projects';
+import { useWorkspace } from '../context/WorkspaceContext';
 
 const UPCOMING_WINDOW_DAYS = 3;
 const POLL_INTERVAL_MS = 60000;
@@ -38,6 +39,7 @@ function NotificationBell() {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
   const navigate = useNavigate();
+  const workspace = useWorkspace();
 
   const load = useCallback(async () => {
     try {
@@ -88,6 +90,36 @@ function NotificationBell() {
     if (!opening) load();
   };
 
+  // The bell covers all workspaces. Showing one, items from elsewhere say
+  // where they are, and opening one switches there first.
+  const taskById = useMemo(() => new Map(tasks.map((x) => [x.id, x])), [tasks]);
+  const projectIndex = useMemo(() => buildProjectIndex(projects), [projects]);
+  const elsewhere = (taskId) => {
+    const { scope } = workspace;
+    if (!scope || taskId == null || !taskById.has(taskId)) return null;
+    let top = null;
+    for (let cur = taskById.get(taskId); cur; cur = taskById.get(cur.parent_task_id)) {
+      if (cur.project_id != null) {
+        top = projectIndex.topOf(cur.project_id)?.id ?? null;
+        break;
+      }
+    }
+    if (scope.includes(top)) return null;
+    // Not in any workspace (shown only under "All"): go to All.
+    return workspace.workspaceOf(top) || { id: null, name: t('All workspaces'), color: null };
+  };
+  const newElsewhere = new Map(); // workspace name -> unread count
+  for (const n of notes.items) {
+    const where = !n.read && elsewhere(n.task_id);
+    if (where) newElsewhere.set(where.name, (newElsewhere.get(where.name) || 0) + 1);
+  }
+  const whereTag = (where) =>
+    where && (
+      <span className="bell-item-where" style={where.color ? { '--ws-color': where.color } : undefined}>
+        {t('in {name}', { name: where.name })}
+      </span>
+    );
+
   // Deadlines for tasks that are yours, or nobody's.
   const now = new Date();
   const upcomingCutoff = new Date(now.getTime() + UPCOMING_WINDOW_DAYS * 24 * 60 * 60 * 1000);
@@ -108,6 +140,8 @@ function NotificationBell() {
 
   const goTo = (taskId, withComments = false) => {
     setOpen(false);
+    const where = elsewhere(taskId);
+    if (where) workspace.setCurrent(where.id);
     load();
     navigate(`/?task=${taskId}${withComments ? '&comments=1' : ''}`);
   };
@@ -127,6 +161,13 @@ function NotificationBell() {
       {open && (
         <div className="bell-dropdown">
           <div className="bell-dropdown-header">{t('Notifications')}</div>
+          {newElsewhere.size > 0 && (
+            <p className="bell-elsewhere">
+              {[...newElsewhere]
+                .map(([name, n]) => tn(n, 'one new in {name}', '{n} new in {name}', { name }))
+                .join(' · ')}
+            </p>
+          )}
           {notes.items.length === 0 ? (
             <p className="bell-empty">{t("Nothing yet — you'll see new assignments and comments here.")}</p>
           ) : (
@@ -140,6 +181,7 @@ function NotificationBell() {
                 >
                   <span className="bell-item-meta">
                     {describeNotification(n)} · <span title={parseServerDate(n.created_at)?.toLocaleString()}>{timeAgo(n.created_at)}</span>
+                    {whereTag(elsewhere(n.task_id))}
                   </span>
                   <span className="bell-item-title">{n.task_title || t('Deleted task')}</span>
                   {n.excerpt && <span className="bell-item-excerpt">{notificationExcerpt(n)}</span>}
@@ -155,7 +197,10 @@ function NotificationBell() {
             <div className="bell-list">
               {overdue.map((task) => (
                 <button className="bell-item" key={task.id} onClick={() => goTo(task.id)}>
-                  <span className="bell-item-title">{task.title}</span>
+                  <span className="bell-item-title">
+                    {task.title}
+                    {whereTag(elsewhere(task.id))}
+                  </span>
                   <span className="bell-item-badge bell-overdue">
                     {t('Overdue · {date}', { date: formatDeadline(task) })}
                   </span>
@@ -163,7 +208,10 @@ function NotificationBell() {
               ))}
               {upcoming.map((task) => (
                 <button className="bell-item" key={task.id} onClick={() => goTo(task.id)}>
-                  <span className="bell-item-title">{task.title}</span>
+                  <span className="bell-item-title">
+                    {task.title}
+                    {whereTag(elsewhere(task.id))}
+                  </span>
                   <span className="bell-item-badge bell-upcoming">{t('Due {date}', { date: formatDeadline(task) })}</span>
                 </button>
               ))}

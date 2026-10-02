@@ -93,7 +93,10 @@ can be folded (remembered per browser); done tasks move into a collapsed
   indent lines (Tab or two spaces) to make subtasks at any depth. Bullets
   and Markdown checkboxes (`- [x] done`) are understood, a preview shows the
   resulting tree, and project, status, priority, deadline and assignee apply
-  to all of them. From a task's **+**, all lines become its subtasks.
+  to all of them. Each line can also set its own date, repeat, priority,
+  labels and assignee with [quick entry](#quick-entry) — the preview shows
+  what each line sets (untick *Each line can set …* to take the text as it
+  is). From a task's **+**, all lines become its subtasks.
 - **From template** creates a saved task with its subtasks again — see
   [Templates](#templates).
 
@@ -292,16 +295,21 @@ On the Tasks page (not while typing in a field); **?** shows the list.
 When creating a task, the title can carry its details; chips under the field
 show what was recognized, and the rest becomes the title. A chip's **×**
 keeps that word as plain text (e.g. *Prepare monday meeting* when the meeting
-isn't due on Monday). Fields set in the form below win over the title.
+isn't due on Monday). Fields set in the form below win over the title. It
+works in **Several (one per line)** too, for every line on its own.
 
 | Type | Sets |
 |---|---|
 | `today`, `tomorrow`, `day after tomorrow`, `friday` / `fri`, `next friday`, `in 3 days` / `weeks` / `months`, `next week`, `end of month`, `5.10.`, `5.10.2026`, `2026-10-05` — German too: `heute`, `morgen`, `übermorgen`, `Freitag`, `in 3 Tagen`, `nächste Woche`, `Monatsende` | the deadline (weekdays: the next one, today counts); a leading *due*, *by*, *on*, *bis*, *am* goes with it |
+| `from monday`, `from 5.10. to 9.10.`, `5.10.–9.10.` — German `ab morgen`, `von 5.10. bis 9.10.` | the start (and with *to* / *bis* or a range, the deadline) |
+| `every monday`, `every mon and thu`, `every workday`, `daily`, `weekly`, `monthly`, `yearly`, `every 2 weeks` — German `jeden Montag (und Donnerstag)`, `montags`, `jeden Werktag` / `werktags`, `täglich`, `wöchentlich`, `monatlich`, `jährlich`, `alle 2 Wochen` | the repeat rule; without a date the first deadline is the next of those days (or today). Words like *monthly* count once the title has begun — *Monthly report* stays a title, *Pay rent monthly* repeats |
 | `!low` `!medium` `!high` `!critical` (or `!0`–`!3`, `!urgent`; German `!niedrig` `!mittel` `!hoch` `!kritisch` `!dringend`) | the priority |
 | `#hardware`, `#waiting-for-supplier` (spaces as `-` or `_`), or the start of a name when only one label begins like that | labels (existing ones) |
 | `@anna`, `@me` / `@ich` | the assignee |
 
 ![Quick entry: what the title sets, as chips](screenshots/quick-entry-desktop.png)
+
+![Several at once: what each line sets](screenshots/bulk-quick-desktop.png)
 
 ## Comments and history
 
@@ -393,7 +401,9 @@ one at a time, or **All workspaces**.
 - **What follows the switch**: My day, the Tasks page (list, board, calendar,
   timeline, search and filters), the Projects page, the weekly review and the
   project choices in forms. Categories and subtasks go with their project.
-  Notifications, the calendar feed and exports still cover everything.
+  Notifications (marked with their workspace, see [Notifications](#notifications)),
+  the calendar feed (unless you pick a workspace for it) and exports still
+  cover everything.
 - **Projects in no workspace** (and tasks without a project) show in every
   workspace, or — set under *Settings → Workspaces* — only under *All
   workspaces*.
@@ -416,7 +426,13 @@ you're assigned to or have commented on, or **finishes the last task one of your
 overdue and soon-due deadlines of your (and unassigned) tasks. Clicking one
 opens the task, with its project, parents and comments opened on the way.
 
-![Notifications](screenshots/bell-desktop.png)
+The bell covers **all [workspaces](#workspaces)**. While one is shown, what
+belongs to another says so (*in Work*), the top of the list sums it up
+(*3 new in Work*), and clicking such an item switches to its workspace first.
+
+| | |
+|---|---|
+| ![Notifications](screenshots/bell-desktop.png) | ![Notifications from another workspace](screenshots/bell-workspace-desktop.png) |
 
 ## Weekly review
 

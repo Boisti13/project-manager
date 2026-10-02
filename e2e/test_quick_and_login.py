@@ -84,3 +84,46 @@ def test_calendar_feed_link_per_workspace(page, api):
         assert link.inner_text().endswith(f".ics?workspace={ws['id']}")
     finally:
         api.call("DELETE", f"/api/v1/workspaces/{ws['id']}")
+
+
+def test_quick_entry_per_line_and_repeats(page, api, users):
+    project = api.project()
+    open_list(page, project)
+    page.get_by_role("button", name="+ New Task").first.click()
+    page.get_by_role("tab", name="Several (one per line)").click()
+    page.locator("#bulk-text").fill("Weekly sync every monday\nTrade fair 5.10.–9.10. !high\n  Book booth @anna\nPlain one")
+    preview = page.locator(".bulk-preview")
+    preview.locator(".bulk-quick").nth(2).wait_for()
+    assert "Weekly sync" in preview.inner_text() and "every monday" not in preview.inner_text()
+    page.get_by_role("button", name="Create 4 tasks").click()
+
+    tasks = wait_for(lambda: {t["title"]: t for t in api.tasks() if t["project_id"] == project["id"] or t["title"] == "Book booth"}
+                     if len([t for t in api.tasks() if t["title"] in ("Weekly sync", "Trade fair", "Book booth", "Plain one")]) == 4 else None)
+    assert (tasks["Weekly sync"]["recurrence_unit"], tasks["Weekly sync"]["recurrence_weekdays"]) == ("week", [0])
+    assert tasks["Trade fair"]["priority"] == 2 and tasks["Trade fair"]["start_date"] and tasks["Trade fair"]["deadline"]
+    assert tasks["Book booth"]["assignee_id"] == users["anna"].me["id"]
+    assert tasks["Plain one"]["deadline"] is None and tasks["Plain one"]["recurrence_unit"] is None
+
+
+def test_bell_says_what_is_in_another_workspace(page, api, users):
+    anna = users["anna"]
+    here = api.post("/api/v1/workspaces/", name="Here")
+    there = api.post("/api/v1/workspaces/", name="There")
+    p_here, p_there = api.project(name="Here P"), api.project(name="There P")
+    api.put(f"/api/v1/workspaces/projects/{p_here['id']}", workspace_id=here["id"])
+    api.put(f"/api/v1/workspaces/projects/{p_there['id']}", workspace_id=there["id"])
+    api.post("/api/v1/notifications/read")
+    anna.post("/api/v1/tasks/", title="Elsewhere job", project_id=p_there["id"], assignee_id=api.me["id"])
+    try:
+        page.goto("/")
+        page.locator(".workspace-switcher").select_option(label="Here")
+        page.locator(".bell-btn").click()
+        page.locator(".bell-elsewhere", has_text="one new in There").wait_for()
+        item = page.locator(".bell-item", has_text="Elsewhere job").first
+        assert "in There" in item.inner_text()
+        item.click()
+        wait_for(lambda: page.locator(".workspace-switcher").input_value() == str(there["id"]))
+        row(page, "Elsewhere job").wait_for()
+    finally:
+        for w in (here, there):
+            api.call("DELETE", f"/api/v1/workspaces/{w['id']}")
