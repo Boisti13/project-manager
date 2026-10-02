@@ -61,6 +61,14 @@ def test_workspaces_show_one_area_at_a_time(page, api):
         page.locator(".workspace-switcher").select_option(label="All workspaces")
         row(page, "Loose WS task").wait_for()
         row(page, "Write the WS report").wait_for()
+
+        # the overview in Settings files projects in one place
+        page.goto("/settings")
+        page.get_by_label("only those in no workspace").check()
+        page.get_by_label("Workspace of Loose WS").select_option(label="Job")
+        wait_for(lambda: loose["id"] in {w["name"]: w for w in api.get("/api/v1/workspaces/")["workspaces"]}["Job"]["project_ids"])
+        page.get_by_label("Workspace of Loose WS").wait_for(state="detached")  # filed, so no longer listed
+        assert page.get_by_label("Workspace of Office WS").count() == 0
     finally:
         api.put("/api/v1/workspaces/settings", unassigned_everywhere=True)
         for w in api.get("/api/v1/workspaces/")["workspaces"]:

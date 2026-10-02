@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { authFetch } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import TrashIcon from './TrashIcon';
+import { buildProjectIndex } from '../projects';
 import '../styles/Labels.css';
 import { t, tn } from '../i18n';
 
@@ -18,6 +19,91 @@ const send = async (url, method, body) => {
   });
   if (!res.ok) throw new Error(await errorText(res));
 };
+
+// Every top-level project with a workspace choice, to sort them all in one
+// place; a choice is saved right away. Archived projects come last.
+function WorkspaceProjects({ setStatus }) {
+  const { workspaces, workspaceOf, assignProject } = useWorkspace();
+  const [projects, setProjects] = useState(null);
+  const [onlyUnfiled, setOnlyUnfiled] = useState(false);
+  const [saving, setSaving] = useState({}); // projectId -> workspace id (or null) being saved
+
+  const load = useCallback(async () => {
+    try {
+      const res = await authFetch('/api/projects/');
+      if (res.ok) setProjects(await res.json());
+    } catch {
+      // offline: no list
+    }
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const index = useMemo(() => buildProjectIndex(projects || []), [projects]);
+  if (!projects || index.allTopLevel.length === 0) return null;
+
+  const current = (id) => (id in saving ? saving[id] : workspaceOf(id)?.id ?? null);
+  const all = [...index.topLevel, ...index.archived];
+  const unfiled = all.filter((p) => workspaceOf(p.id) == null).length;
+  const shown = onlyUnfiled ? all.filter((p) => current(p.id) == null || p.id in saving) : all;
+
+  const choose = async (project, value) => {
+    const workspaceId = value === '' ? null : Number(value);
+    setStatus(null);
+    setSaving((s) => ({ ...s, [project.id]: workspaceId }));
+    try {
+      await assignProject(project.id, workspaceId);
+    } catch (err) {
+      setStatus({ ok: false, text: t('Failed to save: {error}', { error: err.message }) });
+    }
+    setSaving((s) => {
+      const next = { ...s };
+      delete next[project.id];
+      return next;
+    });
+  };
+
+  return (
+    <div className="workspace-projects">
+      <div className="workspace-projects-head">
+        <h3>{t('Your projects')}</h3>
+        <span className="label-usage">
+          {unfiled ? tn(unfiled, 'one in no workspace', '{n} in no workspace') : t('all filed')}
+        </span>
+        <label className="workspace-projects-filter">
+          <input type="checkbox" checked={onlyUnfiled} onChange={(e) => setOnlyUnfiled(e.target.checked)} />
+          {t('only those in no workspace')}
+        </label>
+      </div>
+      <ul className="workspace-project-list">
+        {shown.map((p) => (
+          <li key={p.id} style={{ '--project-color': index.colorOf(p.id) }}>
+            <span className="workspace-project-name">
+              {p.name}
+              {p.archived_at && <span className="label-usage">{t('archived')}</span>}
+            </span>
+            <select
+              value={current(p.id) ?? ''}
+              onChange={(e) => choose(p, e.target.value)}
+              aria-label={t('Workspace of {name}', { name: p.name })}
+            >
+              <option value="">{t('— none —')}</option>
+              {workspaces.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          </li>
+        ))}
+      </ul>
+      <p className="settings-help workspace-projects-note">
+        {t('Categories, tasks and subtasks always go with their project. Tasks without a project follow the setting above.')}
+      </p>
+    </div>
+  );
+}
 
 // Settings → Workspaces: the user's own groups of projects (name, color,
 // order, delete), and where projects in none of them show up.
@@ -79,7 +165,7 @@ function WorkspaceSettings() {
       <h2>{t('Workspaces')}</h2>
       <p className="settings-help">
         {t(
-          'Separate areas like work and private: the switch in the top bar shows one workspace at a time — its projects and their tasks in every view — or all of them. Put a project into a workspace when creating or editing it. Workspaces are just for you; everyone files projects their own way.'
+          'Separate areas like work and private: the switch in the top bar shows one workspace at a time — its projects and their tasks in every view — or all of them. Put projects into a workspace in the list below, or when creating or editing one. Workspaces are just for you; everyone files projects their own way.'
         )}
       </p>
 
@@ -172,6 +258,7 @@ function WorkspaceSettings() {
           </label>
         </fieldset>
       )}
+      {workspaces.length > 0 && <WorkspaceProjects setStatus={setStatus} />}
       {status && <p className={status.ok ? 'settings-ok' : 'error-message'}>{status.text}</p>}
     </div>
   );

@@ -7,7 +7,7 @@ All notable changes, newest first. Versions follow [semantic versioning](docs/de
 ### Added
 - **Workspaces**: keep work and private (or any other areas) apart. A switch in the top bar shows one workspace at a time — My day, the Tasks page with all views, search and filters, the Projects page, the weekly review and the project choices follow it — or **All workspaces**.
   - Set them up under **Settings → Workspaces**: your own names and colors, reorder, delete (projects stay).
-  - Put a project into a workspace in the project form; new projects go into the workspace being shown, and under *All workspaces* the Projects page shows each project's workspace.
+  - Sort all projects in one place under *Settings → Workspaces → Your projects* (a workspace choice next to each, *only those in no workspace* to find the rest), or in the project form; new projects go into the workspace being shown, and under *All workspaces* the Projects page shows each project's workspace.
   - **Projects in no workspace**: shown in every workspace or only under *All workspaces* — your choice in Settings.
   - Personal: everyone files projects into their own workspaces; the one shown is remembered per device. **W** switches to the next one.
 - API: `/api/v1/workspaces/…`.

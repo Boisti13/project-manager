@@ -363,9 +363,14 @@ one at a time, or **All workspaces**.
 - **Set them up** under *Settings → Workspaces*: add, rename, recolor,
   reorder (↑ ↓) and delete them. Deleting one keeps its projects; they're
   just in no workspace then.
-- **Put a project into one** in the project form (*Workspace*), when creating
-  or editing it. A new project goes into the workspace being shown. Under
+- **Put projects into one** under *Settings → Workspaces → Your projects*:
+  every project with a workspace choice, saved right away (tick *only those
+  in no workspace* to sort the rest). Or in the project form (*Workspace*)
+  when creating or editing one; a new project goes into the workspace being
+  shown. A project's categories, tasks and subtasks always go with it. Under
   *All workspaces* the Projects page shows each project's workspace.
+
+  ![Settings → Workspaces](screenshots/workspaces-settings.png)
 - **What follows the switch**: My day, the Tasks page (list, board, calendar,
   timeline, search and filters), the Projects page, the weekly review and the
   project choices in forms. Categories and subtasks go with their project.
