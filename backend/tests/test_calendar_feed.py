@@ -117,3 +117,31 @@ def test_long_lines_are_folded_without_splitting_characters():
     folded = fold(line)
     assert all(len(part.encode("utf-8")) <= 75 for part in folded.split("\r\n"))
     assert folded.replace("\r\n ", "") == line
+
+
+def test_feed_per_workspace(client, alice, bob):
+    work = post(client, alice, "/api/v1/workspaces/", name="Work")
+    office = post(client, alice, "/api/v1/projects/", name="Office")
+    garden = post(client, alice, "/api/v1/projects/", name="Garden")
+    loose = post(client, alice, "/api/v1/projects/", name="Loose")
+    client.put(f"/api/v1/workspaces/projects/{office['id']}", json={"workspace_id": work["id"]}, headers=alice.headers)
+    home = post(client, alice, "/api/v1/workspaces/", name="Home")
+    client.put(f"/api/v1/workspaces/projects/{garden['id']}", json={"workspace_id": home["id"]}, headers=alice.headers)
+    report = post(client, alice, "/api/v1/tasks/", title="Report", project_id=office["id"], deadline="2026-10-05T00:00:00")
+    post(client, alice, "/api/v1/tasks/", title="Report draft", parent_task_id=report["id"], deadline="2026-10-04T00:00:00")
+    post(client, alice, "/api/v1/tasks/", title="Mow", project_id=garden["id"], deadline="2026-10-06T00:00:00")
+    post(client, alice, "/api/v1/tasks/", title="Loose end", project_id=loose["id"], deadline="2026-10-07T00:00:00")
+    path = feed_path(client, alice)
+
+    titles = lambda **p: sorted(e["SUMMARY"] for e in events(get_feed(client, path, **p)))
+    assert titles() == ["Loose end", "Mow", "Report", "Report draft (Report)"]
+    assert titles(workspace=work["id"]) == ["Loose end", "Report", "Report draft (Report)"]  # subtasks follow; unfiled too
+    assert "X-WR-CALNAME:Project Manager (alice · Work)" in get_feed(client, path, workspace=work["id"])
+    client.put("/api/v1/workspaces/settings", json={"unassigned_everywhere": False}, headers=alice.headers)
+    assert titles(workspace=work["id"]) == ["Report", "Report draft (Report)"]
+
+    # someone else's workspace, or one that's gone: unknown
+    bobs = post(client, bob, "/api/v1/workspaces/", name="Bob's")
+    assert client.get(path, params={"workspace": bobs["id"]}).status_code == 404
+    client.delete(f"/api/v1/workspaces/{home['id']}", headers=alice.headers)
+    assert client.get(path, params={"workspace": home["id"]}).status_code == 404

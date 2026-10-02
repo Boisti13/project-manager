@@ -250,4 +250,8 @@ pct exec 113 -- supervisorctl status
 
 **`git pull` refuses because `frontend/package-lock.json` would be overwritten**: older installs have an untracked lockfile from `npm install`; since v1.15.0 it's part of the repo. Remove it once (`rm frontend/package-lock.json`) and pull again. The in-app updater and `install.sh` handle this themselves.
 
+**"Too many failed logins"**: after 5 wrong passwords (or two-factor codes) for an account from one address within 15 minutes, or 20 for any accounts, the login refuses for the rest of the 15 minutes; it lifts by itself. To lift it at once: `sudo -u postgres psql projectmanager -c "DELETE FROM login_failures"`. The address is the one Nginx passes on (`X-Real-IP`).
+
+**Locked out by two-factor login** (phone and recovery codes gone): another admin can switch it off under *Settings → User Management → Turn off 2FA*. The only admin: `sudo -u postgres psql projectmanager -c "UPDATE users SET totp_secret=NULL, totp_enabled_at=NULL, totp_last_step=NULL, totp_recovery=NULL WHERE username='NAME'"`.
+
 **Backend 500s after a model change**: check `cd backend && venv/bin/alembic current` shows `(head)`; if not, run `venv/bin/python migrate.py`.

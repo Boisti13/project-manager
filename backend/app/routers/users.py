@@ -4,7 +4,7 @@ from app.database import get_db
 from app.models import User
 from app import schemas
 from app.auth import get_current_user, get_current_admin_user, get_password_hash
-from app.routers.auth import ensure_unique
+from app.routers.auth import clear_two_factor, ensure_unique
 
 router = APIRouter()
 
@@ -34,7 +34,18 @@ def set_password(user_id: int, data: schemas.PasswordSet, current_user: User = D
     return {"ok": True}
 
 
-@router.get("/admin/all", response_model=list[schemas.User])
+@router.delete("/{user_id}/two-factor")
+def reset_two_factor(user_id: int, current_user: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+    """Admins switch someone's two-factor login off (lost phone and recovery codes)."""
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    clear_two_factor(user)
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/admin/all", response_model=list[schemas.UserAdminView])
 def list_all_users(current_user: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
     return db.query(User).order_by(User.id).all()
 

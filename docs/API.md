@@ -40,7 +40,13 @@ Every request sends `Authorization: Bearer <token>`. Two kinds of token:
    Only a hash is stored on the server.
 2. **Login token** — `POST /api/v1/auth/login` with the form fields
    `username` and `password` returns `{"access_token": "…"}`, valid for 7
-   days. Handy for a desktop app that asks for the password once.
+   days. Handy for a desktop app that asks for the password once. For an
+   account with **two-factor login**, also send `otp` (the 6-digit code from
+   the authenticator app, or a recovery code); without it the answer is
+   `401` with `"detail": "Two-factor code required"`. After 5 failed logins
+   for an account from one address within 15 minutes (or 20 for any
+   accounts), logins from there get `429` with `Retry-After` until the 15
+   minutes are over. API tokens aren't affected by either.
 
 A token acts as its user: it sees and changes exactly what that user can
 (private projects included or not, admin endpoints only for admins).
@@ -100,6 +106,7 @@ api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via
 |---|---|
 | `/auth/login`, `/auth/me`, `/auth/me/preferences` | log in, current user, language |
 | `/auth/tokens/` | personal API tokens (password login only) |
+| `/auth/2fa`, `/auth/2fa/setup`, `/auth/2fa/enable`, `/auth/2fa/recovery-codes`, `/auth/2fa/disable` | two-factor login (password login only): status (`enabled`, `recovery_left`); `setup` gives a new `secret`, its `uri` (otpauth://) and `qr_svg`; `enable` (`code`) switches it on and answers 10 `recovery_codes` (shown once); `recovery-codes` and `disable` take the `password` |
 | `/tasks/`, `/tasks/{id}`, `/tasks/bulk`, `/tasks/{id}/activity` | tasks (fields incl. `label_ids`, `blocked_by_ids`, `estimate_minutes`, `start_date` (not after the `deadline`), repeat rule: `recurrence_unit`, `recurrence_interval`, `recurrence_weekdays` (0 = Monday), `recurrence_monthly`, `recurrence_from`) and their history |
 | `/tasks/bulk-update` | change several tasks in one request, all or nothing: `{"updates": [{"id": 1, "status": "done"}, {"id": 2, "priority": 3, "expected": {...}}]}` — each item takes the fields of `PUT /tasks/{id}` (incl. `expected`); someone who gets several tasks assigned is notified once |
 | `/tasks/{id}/comments`, `/comments/{id}`, `/comments/search` | comments; `@username` in a comment notifies that user (`kind: "mention"`) |
@@ -112,9 +119,9 @@ api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via
 | `/templates/`, `/templates/{id}`, `/templates/{id}/use` | task templates (shared): save a task with its subtasks (`name`, `task_id`), list them (with the `tree`), delete (who saved it, or an admin), and create the tasks (`title`, `project_id`, `parent_task_id`, `deadline`, `assignee_id`; returns their `ids`, the top one first) |
 | `/saved-filters/`, `/saved-filters/{id}` | the current user's saved task-list filters: `name` and `query` (the Tasks page URL query, e.g. `assignee=me&sort=deadline`); saving under an existing name replaces it |
 | `/notifications/`, `/notifications/read` | the current user's notifications |
-| `/users/` | users (admins: `/users/admin/all`, create, change) |
+| `/users/` | users (admins: `/users/admin/all` incl. `two_factor`, create, change, `DELETE /users/{id}/two-factor` switches someone's two-factor login off) |
 | `/transfer/export`, `/transfer/import` | project export/import (JSON) |
-| `/calendar/feed`, `/calendar/feed/reset`, `/calendar/{token}.ics?scope=mine\|all` | the user's calendar feed link, and the feed itself (no login: the token in the link is the key) |
+| `/calendar/feed`, `/calendar/feed/reset`, `/calendar/{token}.ics?scope=mine\|all&workspace={id}` | the user's calendar feed link, and the feed itself (no login: the token in the link is the key); `workspace` (optional): only that workspace of the user's |
 | `/sync/?since=…` | everything visible, or what changed since a cursor — for offline clients |
 | `/deletions/?since=…` | what was deleted (tasks, comments, projects, labels), for clients that keep a copy |
 | `/settings/`, `/system/…` | instance settings, version/updates, backups (admins) |

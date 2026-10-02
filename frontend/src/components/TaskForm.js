@@ -3,8 +3,11 @@ import LabelPicker from './LabelPicker';
 import DependencyPicker from './DependencyPicker';
 import { parseBulk, countNested } from '../bulkParse';
 import '../styles/TaskForm.css';
-import { t, tn } from '../i18n';
+import { t, tn, locale } from '../i18n';
 import { STATUSES, statusName, PRIORITIES, priorityName } from '../names';
+import { parseQuickEntry } from '../quickEntry';
+import { labelTextColor } from '../labels';
+import { useAuth } from '../context/AuthContext';
 import { WORKDAYS, weekdayName, weekdayOf, ordinal } from '../recurrence';
 import { parseEstimate, formatEstimate } from '../estimate';
 
@@ -26,6 +29,20 @@ function unitWord(unit, n) {
       return tn(n, 'year', 'years');
     default:
       return unit;
+  }
+}
+
+// What a recognized part of a quick entry sets, as shown on its chip.
+function quickChipText(token) {
+  switch (token.kind) {
+    case 'deadline':
+      return '📅 ' + new Date(`${token.value}T00:00:00`).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' });
+    case 'priority':
+      return `⚑ ${priorityName(token.value)}`;
+    case 'label':
+      return token.label.name;
+    default:
+      return `👤 ${token.user.username}`;
   }
 }
 
@@ -84,8 +101,11 @@ function TaskForm({
   onTemplateSubmit = null,
   onCancel,
 }) {
+  const { currentUser } = useAuth();
   // 'single' | 'bulk' | 'template'; the last two only when creating, not editing.
   const [mode, setMode] = useState('single');
+  // Quick-entry parts the user chose to keep as plain text (their keys).
+  const [quickIgnored, setQuickIgnored] = useState(() => new Set());
   const [templateId, setTemplateId] = useState(null);
   const [templateTitle, setTemplateTitle] = useState('');
   const template = templates.find((x) => x.id === templateId) || templates[0] || null;
@@ -215,15 +235,28 @@ function TaskForm({
       setEstimateError(true);
       return;
     }
-    if (formData.start_date && formData.deadline && formData.start_date > formData.deadline) {
+    // Quick entry ("… tomorrow !high #label @name"): what the title says,
+    // unless the field below was set by hand.
+    const q = quick && quick.tokens.length ? quick : null;
+    const data = q
+      ? {
+          ...formData,
+          title: q.title || formData.title,
+          deadline: formData.deadline || q.deadline || '',
+          priority: formData.priority || (q.priority ?? 0),
+          assignee_id: formData.assignee_id ?? q.assigneeId,
+          label_ids: [...new Set([...formData.label_ids, ...q.labelIds])],
+        }
+      : formData;
+    if (data.start_date && data.deadline && data.start_date > data.deadline) {
       setDateError(true);
       return;
     }
     onSubmit({
-      ...formData,
+      ...data,
       estimate_minutes: estimate,
-      deadline,
-      start_date: formData.start_date || null,
+      deadline: data.deadline || null,
+      start_date: data.start_date || null,
       recurrence_interval: formData.recurrence_unit ? formData.recurrence_interval : null,
       recurrence_weekdays:
         formData.recurrence_unit === 'week' && formData.recurrence_weekdays.length ? formData.recurrence_weekdays : null,
@@ -238,6 +271,14 @@ function TaskForm({
   const effectiveProject = formData.project_id ?? parentTask?.project_id ?? null;
   const privateProject = effectiveProject != null && projectIndex.isPrivate(effectiveProject);
   const assignable = projectIndex.assignableUsers(effectiveProject, users);
+  // Recognized parts of the title of a new task (quickEntry.js).
+  const quick = useMemo(
+    () =>
+      task || mode !== 'single'
+        ? null
+        : parseQuickEntry(formData.title, { labels, users: assignable, me: currentUser?.id, ignore: quickIgnored }),
+    [task, mode, formData.title, labels, assignable, currentUser, quickIgnored]
+  );
 
   // Ctrl/Cmd+Enter saves from anywhere in the form (Enter alone already does
   // in single-line fields); Esc cancels unless a picker used it to close.
@@ -357,8 +398,33 @@ function TaskForm({
               onChange={handleChange}
               required
               autoFocus
-              placeholder={t('Enter task title')}
+              placeholder={task ? t('Enter task title') : t('e.g. Call supplier tomorrow !high #hardware')}
             />
+            {quick && quick.tokens.length > 0 ? (
+              <div className="quick-chips" aria-live="polite">
+                {quick.tokens.map((tok) => (
+                  <span
+                    key={tok.key}
+                    className={`quick-chip quick-${tok.kind}`}
+                    style={tok.kind === 'label' ? { backgroundColor: tok.label.color, color: labelTextColor(tok.label.color) } : undefined}
+                  >
+                    {quickChipText(tok)}
+                    <button
+                      type="button"
+                      onClick={() => setQuickIgnored((prev) => new Set([...prev, tok.key]))}
+                      title={t('Keep “{text}” in the title', { text: tok.text })}
+                      aria-label={t('Keep “{text}” in the title', { text: tok.text })}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              quick && (
+                <small className="form-hint">{t('Quick: tomorrow, fri, 5.10., in 3 days · !high · #label · @name')}</small>
+              )
+            )}
           </div>
 
           <div className="form-group">

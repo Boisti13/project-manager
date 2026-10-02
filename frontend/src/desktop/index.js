@@ -1,6 +1,7 @@
 // Wiring for the Windows app: one local store, one sync engine, and
 // desktopFetch() in place of the web app's fetch (see AuthContext.authFetch).
 import { Store, IdbPersistence } from './store';
+import { loginError } from '../loginErrors';
 import { LocalApi } from './localApi';
 import { SyncEngine } from './sync';
 import {
@@ -78,7 +79,7 @@ async function readError(res, fallback) {
  * personal API token for this app (visible and revocable in the web app
  * under Settings -> API tokens) and download everything.
  */
-export async function connect(serverInput, username, password) {
+export async function connect(serverInput, username, password, otp = '') {
   const server = normalizeServer(serverInput);
   if (!server) throw new Error(t('Enter the server address.'));
   const call = (path, options, auth) => serverFetch(path, options, { server, token: auth || '' });
@@ -98,10 +99,11 @@ export async function connect(serverInput, username, password) {
   }
 
   const form = new URLSearchParams({ username, password });
+  if (otp) form.append('otp', otp); // two-factor login (loginErrors.js)
   const login = await call('/api/v1/auth/login', {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form,
   });
-  if (!login.ok) throw new Error(await readError(login, t('Login failed')));
+  if (!login.ok) throw await loginError(login, t('Login failed'));
   const { access_token: session } = await login.json();
 
   const device = new Date().toLocaleDateString();

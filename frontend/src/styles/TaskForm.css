@@ -338,3 +338,38 @@
   font-size: 12px;
   color: var(--color-text-muted);
 }
+
+/* Quick entry: what the title sets (TaskForm, quickEntry.js). */
+.quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 9px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background-color: var(--color-primary-bg, rgba(33, 150, 243, 0.12));
+}
+
+.quick-chip button {
+  border: none;
+  background: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.quick-chip button:hover {
+  opacity: 1;
+}

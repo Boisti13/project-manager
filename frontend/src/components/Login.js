@@ -11,6 +11,9 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  // Two-factor login: the password was right, now the code is needed.
+  const [needCode, setNeedCode] = useState(false);
+  const [code, setCode] = useState('');
   // null while loading; the Register tab only shows when sign-up is open.
   const [registrationOpen, setRegistrationOpen] = useState(null);
   const { login, register } = useAuth();
@@ -32,13 +35,18 @@ function Login() {
     setSubmitting(true);
     try {
       if (mode === 'login') {
-        await login(username, password);
+        await login(username, password, needCode ? code.trim() : '');
       } else {
         await register(username, email, password);
       }
       navigate('/');
     } catch (err) {
-      setError(err.message);
+      if (err.twoFactor) {
+        setNeedCode(true);
+        setError(null);
+      } else {
+        setError(err.message);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -71,20 +79,21 @@ function Login() {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label>{t('Username')}</label>
-            <input value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
+            <label htmlFor="login-username">{t('Username')}</label>
+            <input id="login-username" value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
           </div>
 
           {mode === 'register' && (
             <div className="form-group">
-              <label>{t('Email')}</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <label htmlFor="login-email">{t('Email')}</label>
+              <input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
           )}
 
           <div className="form-group">
-            <label>{t('Password')}</label>
+            <label htmlFor="login-password">{t('Password')}</label>
             <input
+              id="login-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -94,6 +103,23 @@ function Login() {
             />
             {mode === 'register' && <small className="login-hint">{t('At least 8 characters.')}</small>}
           </div>
+
+
+          {needCode && mode === 'login' && (
+            <div className="form-group">
+              <label htmlFor="login-code">{t('Code from your authenticator app')}</label>
+              <input
+                id="login-code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                required
+                autoFocus
+              />
+              <small className="login-hint">{t('Lost your phone? Enter one of your recovery codes instead.')}</small>
+            </div>
+          )}
 
           <button type="submit" className="btn btn-primary" disabled={submitting}>
             {submitting ? t('Please wait...') : mode === 'login' ? t('Log In') : t('Create Account')}

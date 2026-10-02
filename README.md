@@ -38,12 +38,13 @@ The web app shows the same links under *Settings*.
 - **List, board, calendar and timeline (Gantt)** views — drag bars to move dates, arrows for dependencies; search, filters and **saved filters**
 - **Workspaces** to keep work and private apart — one switch, every view follows
 - **My day** start page with your **pinned tasks**, and a **weekly review** with open work per project
-- **Quick**: type and press Enter, several tasks at once (one per line), **templates**, **keyboard shortcuts**, **change several tasks at once**, **Undo**
+- **Quick**: type and press Enter — *"Call supplier tomorrow !high #hardware @anna"* sets the deadline, priority, label and assignee — several tasks at once (one per line), **templates**, **keyboard shortcuts**, **change several tasks at once**, **Undo**
 - **Comments with @mentions, history and notifications** for working together; descriptions and comments with **formatting and clickable links**
 - **Archive** finished projects (still searchable), **share a project read-only** with a link — no account needed
-- **Calendar feed** for Outlook, Apple Calendar, Thunderbird or Android
+- **Calendar feed** for Outlook, Apple Calendar, Thunderbird or Android — all tasks or one workspace
 - **Phone-friendly**, installable to the home screen; **dark mode**
 - **Windows and Linux app** (x86_64 and ARM64; installer, AppImage, .deb) with a local copy: works offline, syncs when back online, updates itself
+- **Secure logins**: optional **two-factor login** with an authenticator app (with recovery codes), and repeated wrong passwords are slowed down
 - **For the server**: one-command install, updates, nightly backups and one-click restore from the app; optional HTTPS; a documented **REST API** with personal tokens
 
 | | | |

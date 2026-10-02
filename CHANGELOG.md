@@ -2,6 +2,21 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.45.0 — 2026-10-02
+
+### Added
+- **Quick entry**: a new task's title can set its details — *"Call supplier tomorrow !high #hardware @anna"* gives the deadline, priority, label and assignee; English and German (*morgen*, *Freitag*, *in 3 Tagen*, *5.10.*, *!hoch* …). Chips under the title show what was recognized; × keeps a word as plain text.
+- **Two-factor login** (*Settings → Two-factor login*): a code from an authenticator app after the password, set up with a QR code; 10 one-time recovery codes; turning it off needs the password; admins can switch it off for someone who lost their phone (*User Management → Turn off 2FA*). The login page and the Windows/Linux app's *Connect* ask for the code. API tokens, connected apps and the calendar feed keep working.
+- **Repeated wrong passwords are slowed down**: after 5 failed logins for an account from one address within 15 minutes (20 for any accounts), logins from there wait the 15 minutes out (`429`); logging in elsewhere still works.
+- **Calendar feed per workspace**: *Settings → Calendar feed → Workspace* gives a link with just that workspace's tasks (`&workspace=<id>`).
+
+### Changed
+- The login page's fields are labelled for screen readers.
+
+### Under the hood
+- Migration `0022`: `login_failures`, `users.totp_*`; `app/two_factor.py` (TOTP per RFC 6238, tested against its test vectors), new dependency `segno` (QR codes, pure Python); `frontend/src/quickEntry.js` (tested).
+- 7 new backend tests, 7 new frontend tests, 3 new browser tests.
+
 ## v1.44.0 — 2026-10-02
 
 ### Added

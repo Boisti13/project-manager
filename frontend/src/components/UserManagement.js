@@ -67,6 +67,18 @@ function UserManagement() {
     }
   };
 
+  const resetTwoFactor = async (user) => {
+    if (!window.confirm(t('Turn off two-factor login for {name}? They can then log in with their password alone (and turn it on again).', { name: user.username }))) return;
+    try {
+      const res = await authFetch(`/api/v1/users/${user.id}/two-factor`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(await parseApiError(res));
+      setUsers(users.map((u) => (u.id === user.id ? { ...u, two_factor: false } : u)));
+      setNotice(t('Two-factor login is off for {name}.', { name: user.username }));
+    } catch (err) {
+      setError(t('Failed to update user: {error}', { error: err.message }));
+    }
+  };
+
   const toggleAdmin = (user) => updateUser(user.id, { is_admin: !user.is_admin });
   const toggleActive = (user) => updateUser(user.id, { is_active: !user.is_active });
 
@@ -229,6 +241,11 @@ function UserManagement() {
                   <span className={`user-badge ${user.is_active ? 'badge-active' : 'badge-inactive'}`}>
                     {user.is_active ? t('Active') : t('Inactive')}
                   </span>
+                  {user.two_factor && (
+                    <span className="user-badge badge-2fa" title={t('Two-factor login is on')}>
+                      {t('2FA')}
+                    </span>
+                  )}
                 </div>
                 <div className="user-actions">
                   <button
@@ -242,6 +259,15 @@ function UserManagement() {
                   >
                     {t('Set password')}
                   </button>
+                  {user.two_factor && !isSelf && (
+                    <button
+                      className="btn btn-secondary btn-small"
+                      onClick={() => resetTwoFactor(user)}
+                      title={t('For someone who lost their phone and recovery codes')}
+                    >
+                      {t('Turn off 2FA')}
+                    </button>
+                  )}
                   <button
                     className="btn btn-secondary btn-small"
                     onClick={() => toggleAdmin(user)}

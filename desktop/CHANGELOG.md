@@ -3,6 +3,12 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.9.0 — 2026-10-02
+
+### Added
+- *Connect* asks for the code from your authenticator app when two-factor login is on.
+- **Quick entry** in a new task's title (*tomorrow !high #label @name*), also offline; the calendar feed link per workspace (server v1.45.0 interface; two-factor login needs server v1.45.0).
+
 ## v0.8.0 — 2026-10-02
 
 ### Added

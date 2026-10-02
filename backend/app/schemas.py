@@ -36,6 +36,30 @@ class User(UserBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+class Me(User):
+    two_factor: bool = False  # two-factor login switched on
+
+class UserAdminView(User):
+    two_factor: bool = False
+
+class TwoFactorSetup(BaseModel):
+    secret: str  # for typing into the authenticator app
+    uri: str  # otpauth://...
+    qr_svg: str  # the same as a QR code
+
+class TwoFactorCode(BaseModel):
+    code: str = Field(min_length=1, max_length=20)
+
+class PasswordConfirm(BaseModel):
+    password: str = Field(min_length=1, max_length=200)
+
+class RecoveryCodes(BaseModel):
+    recovery_codes: List[str]  # shown once
+
+class TwoFactorStatus(BaseModel):
+    enabled: bool
+    recovery_left: int
+
 class UserAdminUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_admin: Optional[bool] = None

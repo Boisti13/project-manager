@@ -51,9 +51,11 @@ Mint 21, Fedora 36, Raspberry Pi OS Bookworm or newer). If the server uses
 
 1. Install the app (see above).
 2. On first start, enter the **server address** (e.g. `192.168.100.113`),
-   your username and password. The password is used once to create an **app
-   token** — it shows up in the web app under *Settings → API tokens*
-   ("Windows app (date)" or "Linux app (date)") and can be revoked there.
+   your username and password — and, with two-factor login switched on,
+   the code from your authenticator app (from v0.9.0). The password is used
+   once to create an **app token** — it shows up in the web app under
+   *Settings → API tokens* ("Windows app (date)" or "Linux app (date)") and
+   can be revoked there.
 3. Work as usual. The **status in the top bar** shows whether the app is
    online, how many changes are waiting, and when it last synced; click it to
    sync now.

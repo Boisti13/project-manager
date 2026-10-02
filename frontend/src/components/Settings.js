@@ -15,6 +15,7 @@ import '../styles/Settings.css';
 import { t } from '../i18n';
 import TemplateSettings from './TemplateSettings';
 import WorkspaceSettings from './WorkspaceSettings';
+import TwoFactorSettings from './TwoFactorSettings';
 
 function Settings() {
   const { currentUser } = useAuth();
@@ -111,6 +112,9 @@ function Settings() {
       {IS_DESKTOP ? <DesktopSettings /> : <AppDownloads />}
 
       <AccountSettings />
+
+      {/* Needs a password login; the Windows/Linux app uses a token itself. */}
+      {!IS_DESKTOP && <TwoFactorSettings />}
 
       <WorkspaceSettings />
 

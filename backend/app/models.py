@@ -43,8 +43,19 @@ class User(Base):
     # Projects in none of the user's workspaces: shown in every workspace
     # (True) or only under "All" (routers/workspaces.py).
     workspace_unassigned_everywhere = Column(Boolean, nullable=False, default=True, server_default=true())
+    # Two-factor login (app/two_factor.py): the authenticator secret (set up
+    # but not yet confirmed while totp_enabled_at is None), the last time step
+    # used (a code works once), and the hashes of unused recovery codes (JSON).
+    totp_secret = Column(String(64), nullable=True)
+    totp_enabled_at = Column(DateTime, nullable=True)
+    totp_last_step = Column(Integer, nullable=True)
+    totp_recovery = Column(Text, nullable=True)
 
     tasks = relationship("Task", back_populates="assignee")
+
+    @property
+    def two_factor(self) -> bool:
+        return self.totp_enabled_at is not None
 
 # Members of private projects (app/access.py). Only top-level projects have
 # members; categories follow their project.
@@ -336,6 +347,17 @@ class ProjectWorkspace(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True, index=True)
     workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
+
+
+class LoginFailure(Base):
+    """A failed login (wrong password or two-factor code), to slow down
+    guessing (routers/auth.py). Kept for a day."""
+    __tablename__ = "login_failures"
+
+    id = Column(Integer, primary_key=True)
+    username = Column(String(150), nullable=False, index=True)
+    ip = Column(String(64), nullable=False, index=True)
+    at = Column(DateTime, nullable=False, default=utcnow, index=True)
 
 
 class AppSetting(Base):

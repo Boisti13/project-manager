@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { authFetch } from '../context/AuthContext';
+import { useWorkspace } from '../context/WorkspaceContext';
 import { t } from '../i18n';
 import { copyText } from '../clipboard';
 
@@ -7,6 +8,8 @@ import { copyText } from '../clipboard';
 function CalendarFeedSettings() {
   const [path, setPath] = useState(null);
   const [scope, setScope] = useState('mine');
+  const { workspaces } = useWorkspace();
+  const [workspace, setWorkspace] = useState(''); // '' = all workspaces
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState(null);
 
@@ -17,7 +20,12 @@ function CalendarFeedSettings() {
       .catch((err) => setError(err.message));
   }, []);
 
-  const url = path ? `${window.location.origin}${path}${scope === 'all' ? '?scope=all' : ''}` : '';
+  // A workspace that was deleted counts as "all".
+  const workspaceId = workspaces.some((w) => String(w.id) === workspace) ? workspace : '';
+  const query = new URLSearchParams();
+  if (scope === 'all') query.set('scope', 'all');
+  if (workspaceId) query.set('workspace', workspaceId);
+  const url = path ? `${window.location.origin}${path}${query.toString() ? `?${query}` : ''}` : '';
 
   const copy = async () => {
     setCopied(await copyText(url)); // false: select it by hand
@@ -49,7 +57,32 @@ function CalendarFeedSettings() {
               <option value="mine">{t('Mine and unassigned')}</option>
               <option value="all">{t('Everything I can see')}</option>
             </select>
+            {workspaces.length > 0 && (
+              <>
+                <label htmlFor="feed-workspace">{t('Workspace')}</label>
+                <select
+                  id="feed-workspace"
+                  value={workspaceId}
+                  onChange={(e) => {
+                    setWorkspace(e.target.value);
+                    setCopied(false);
+                  }}
+                >
+                  <option value="">{t('All workspaces')}</option>
+                  {workspaces.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
           </div>
+          {workspaceId && (
+            <p className="settings-help">
+              {t('One link per workspace: subscribe to each one you want, e.g. “Work” in Outlook and “Private” on your phone.')}
+            </p>
+          )}
           <div className="token-value feed-link">
             <code>{url}</code>
             <button type="button" className="btn btn-secondary btn-small" onClick={copy}>

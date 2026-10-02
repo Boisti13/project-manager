@@ -15,16 +15,24 @@ function ConnectScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  // Two-factor login: the password was right, now the code is needed.
+  const [needCode, setNeedCode] = useState(false);
+  const [code, setCode] = useState('');
 
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
     setBusy(true);
     try {
-      await connect(server, username, password);
+      await connect(server, username, password, needCode ? code.trim() : '');
       navigate('/', { replace: true });
     } catch (err) {
-      setError(err.message);
+      if (err.twoFactor) {
+        setNeedCode(true);
+        setError(null);
+      } else {
+        setError(err.message);
+      }
     } finally {
       setBusy(false);
     }
@@ -74,6 +82,23 @@ function ConnectScreen() {
               autoComplete="current-password"
             />
           </div>
+
+          {needCode && (
+            <div className="form-group">
+              <label htmlFor="connect-code">{t('Code from your authenticator app')}</label>
+              <input
+                id="connect-code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                required
+                autoFocus
+              />
+              <small className="login-hint">{t('Lost your phone? Enter one of your recovery codes instead.')}</small>
+            </div>
+          )}
+
           <button type="submit" className="btn btn-primary" disabled={busy}>
             {busy ? t('Connecting…') : t('Connect')}
           </button>

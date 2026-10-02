@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { loginError } from '../loginErrors';
 import { t } from '../i18n';
 import { IS_DESKTOP } from '../desktop/platform';
 import * as desktop from '../desktop';
@@ -74,19 +75,20 @@ export function AuthProvider({ children }) {
     init();
   }, []);
 
-  const login = async (username, password) => {
+  // otp: the code from the authenticator app (or a recovery code), for
+  // accounts with two-factor login; without it such a login throws an error
+  // with .twoFactor set (loginErrors.js).
+  const login = async (username, password, otp = '') => {
     const body = new URLSearchParams();
     body.append('username', username);
     body.append('password', password);
+    if (otp) body.append('otp', otp);
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body,
     });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.detail || t('Login failed'));
-    }
+    if (!res.ok) throw await loginError(res, t('Login failed'));
     const data = await res.json();
     setToken(data.access_token);
     const meRes = await fetch('/api/auth/me', {
@@ -121,8 +123,8 @@ export function AuthProvider({ children }) {
   };
 
   // Windows app: connect to a server (see desktop/index.js).
-  const connect = async (server, username, password) => {
-    const me = await desktop.connect(server, username, password);
+  const connect = async (server, username, password, otp = '') => {
+    const me = await desktop.connect(server, username, password, otp);
     setCurrentUser(me);
     return me;
   };

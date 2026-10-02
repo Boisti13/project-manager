@@ -22,7 +22,8 @@ How to use Project Manager, page by page. Running a server is described in
 - [Notifications](#notifications)
 - [Weekly review](#weekly-review)
 - [Calendar feed](#calendar-feed)
-- [Settings](#settings)
+- [Settings](#settings): [two-factor login](#two-factor-login)
+- [Quick entry](#quick-entry): dates, priority, labels and people right in the title
 - [On your phone](#on-your-phone)
 - [For admins](#for-admins)
 
@@ -82,6 +83,8 @@ can be folded (remembered per browser); done tasks move into a collapsed
 ### Adding tasks
 
 - **+ New Task** puts the cursor in the title: type and press **Enter**.
+  The title can also set the deadline, priority, labels and assignee —
+  *Call supplier tomorrow !high #hardware @anna*; see [Quick entry](#quick-entry).
   The **+** on a project or category header adds a task there — the form
   opens right under that header, so you stay where you are.
 - The form has *Create* and *Cancel* at the top, staying in view while
@@ -284,6 +287,22 @@ On the Tasks page (not while typing in a field); **?** shows the list.
 
 ![The list of shortcuts](screenshots/shortcuts-desktop.png)
 
+### Quick entry
+
+When creating a task, the title can carry its details; chips under the field
+show what was recognized, and the rest becomes the title. A chip's **×**
+keeps that word as plain text (e.g. *Prepare monday meeting* when the meeting
+isn't due on Monday). Fields set in the form below win over the title.
+
+| Type | Sets |
+|---|---|
+| `today`, `tomorrow`, `day after tomorrow`, `friday` / `fri`, `next friday`, `in 3 days` / `weeks` / `months`, `next week`, `end of month`, `5.10.`, `5.10.2026`, `2026-10-05` — German too: `heute`, `morgen`, `übermorgen`, `Freitag`, `in 3 Tagen`, `nächste Woche`, `Monatsende` | the deadline (weekdays: the next one, today counts); a leading *due*, *by*, *on*, *bis*, *am* goes with it |
+| `!low` `!medium` `!high` `!critical` (or `!0`–`!3`, `!urgent`; German `!niedrig` `!mittel` `!hoch` `!kritisch` `!dringend`) | the priority |
+| `#hardware`, `#waiting-for-supplier` (spaces as `-` or `_`), or the start of a name when only one label begins like that | labels (existing ones) |
+| `@anna`, `@me` / `@ich` | the assignee |
+
+![Quick entry: what the title sets, as chips](screenshots/quick-entry-desktop.png)
+
 ## Comments and history
 
 💬 on a task opens its discussion (the count is shown on the row). Authors
@@ -428,9 +447,15 @@ Calendar (iPhone, Mac), Thunderbird, and **ICSx⁵** on Android. Google
 Calendar, Outlook.com and the new Outlook fetch from their own servers,
 which can't reach a server on a private network or VPN.
 
+With [workspaces](#workspaces), pick one under *Workspace* for a link with
+just its tasks (plus the projects in no workspace, if those show
+everywhere) — e.g. *Work* in Outlook and *Private* on your phone, each its
+own subscription.
+
 ## Settings
 
 - **Your account**: language, password.
+- **Two-factor login**: see below.
 - **Workspaces**: see [above](#workspaces).
 - **API tokens**: personal tokens for scripts and other apps
   (see [docs/API.md](API.md)).
@@ -446,6 +471,32 @@ which can't reach a server on a private network or VPN.
 
 Admins also see backups, updates and user management — see
 [For admins](#for-admins).
+
+### Two-factor login
+
+*Settings → Two-factor login* adds a second step to logging in: after the
+password, a 6-digit code from an **authenticator app** on your phone (Google
+or Microsoft Authenticator, Aegis, 2FAS, or a password manager like
+1Password or Bitwarden). Someone who learns your password still can't get in.
+
+1. **Set up two-factor login**, scan the QR code with the app (or type the
+   key shown below it), and enter the code the app shows → **Turn on**.
+2. Save the **10 recovery codes** shown then (password manager or paper).
+   Each one logs you in once without the app, for when your phone is lost;
+   **New recovery codes** (with your password) replaces them.
+3. From then on, the login and the Windows/Linux app's *Connect* ask for the
+   code after the password. Already connected apps, API tokens and the
+   calendar feed keep working.
+
+**Turn off** needs your password. Lost both phone and recovery codes? An
+admin can switch it off for you (*User Management → Turn off 2FA*).
+
+![Setting up two-factor login](screenshots/two-factor-desktop.png)
+
+**Wrong passwords**: after 5 failed logins for an account from the same
+device or network address within 15 minutes — or 20 for any accounts —
+logins from there wait until the 15 minutes are over. Logging in elsewhere
+still works.
 
 ## On your phone
 
@@ -466,8 +517,9 @@ starts full-screen with its own icon. It needs a connection to the server
 ## For admins
 
 - **Users** (*Settings → User Management*): add accounts, set passwords,
-  make admins, deactivate users (locked out at once), and open or close
-  self-registration.
+  make admins, deactivate users (locked out at once), switch off someone's
+  [two-factor login](#two-factor-login) (*2FA* badge → *Turn off 2FA*), and
+  open or close self-registration.
 - **Updates** (*Settings → Updates*): shows the running version; admins
   update or switch branches with a live log (backup first, then fetch,
   migrate, rebuild, restart).
