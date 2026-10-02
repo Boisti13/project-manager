@@ -7,6 +7,7 @@ import { ArchiveIcon, LinkIcon } from './icons';
 import { parseServerDate } from '../taskFilters';
 import { authFetch, useAuth } from '../context/AuthContext';
 import { buildProjectIndex } from '../projects';
+import { useWorkspace } from '../context/WorkspaceContext';
 import { progressByProject, combineProgress, percentDone } from '../progress';
 import '../styles/TaskList.css';
 import '../styles/ProjectList.css';
@@ -75,7 +76,8 @@ function ProjectList() {
   const [shareOpen, setShareOpen] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
 
-  const projectIndex = useMemo(() => buildProjectIndex(projects), [projects]);
+  const workspace = useWorkspace();
+  const projectIndex = useMemo(() => buildProjectIndex(projects, workspace.scope), [projects, workspace.scope]);
 
   const parseApiError = async (response) => {
     try {
@@ -119,20 +121,26 @@ function ProjectList() {
   }, []);
   useSyncRefresh(loadData);
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async ({ workspace_id: workspaceId, ...formData }) => {
     try {
+      let saved;
       if (form.project) {
-        await fetchJson(`/api/projects/${form.project.id}`, {
+        saved = await fetchJson(`/api/projects/${form.project.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         });
       } else {
-        await fetchJson('/api/projects/', {
+        saved = await fetchJson('/api/projects/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         });
+      }
+      // The workspace is the user's own filing, saved separately.
+      const before = form.project ? workspace.workspaceOf(form.project.id)?.id ?? null : null;
+      if (workspaceId !== undefined && saved.parent_id == null && workspaceId !== before) {
+        await workspace.assignProject(saved.id, workspaceId);
       }
       setForm(null);
       await loadData();
@@ -312,6 +320,9 @@ function ProjectList() {
             projectIndex={projectIndex}
             users={users}
             currentUser={currentUser}
+            workspaces={workspace.workspaces}
+            // New projects go into the workspace being shown.
+            workspaceId={form.project ? workspace.workspaceOf(form.project.id)?.id ?? null : workspace.current?.id ?? null}
             onSubmit={handleSubmit}
             onCancel={() => setForm(null)}
           />
@@ -320,7 +331,11 @@ function ProjectList() {
 
       <div className="project-list">
         {projectIndex.topLevel.length === 0 ? (
-          <p className="no-tasks">{t('No projects yet')}</p>
+          <p className="no-tasks">
+            {workspace.current
+              ? t('No projects in “{name}” yet. New projects go into it; to move one, edit it under “All workspaces”.', { name: workspace.current.name })
+              : t('No projects yet')}
+          </p>
         ) : (
           projectIndex.topLevel.map((project) => {
             const categories = projectIndex.categoriesOf(project.id);
@@ -338,6 +353,11 @@ function ProjectList() {
                           title={t('Private: visible to {names} and admins', { names: memberNames(project) || t('nobody but admins') })}
                         >
                           {t('🔒 Private')}
+                        </span>
+                      )}
+                      {!workspace.current && workspace.workspaceOf(project.id) && (
+                        <span className="workspace-badge" style={{ '--ws-color': workspace.workspaceOf(project.id).color }}>
+                          {workspace.workspaceOf(project.id).name}
                         </span>
                       )}
                     </h3>

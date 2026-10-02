@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authFetch, useAuth } from '../context/AuthContext';
-import { buildProjectIndex, withoutArchived } from '../projects';
+import { buildProjectIndex, withinScope, withoutArchived } from '../projects';
+import { useWorkspace } from '../context/WorkspaceContext';
 import { buildLabelIndex } from '../labels';
 import { buildDependencyIndex } from '../dependencies';
 import { buildMyDay, recentNotifications, greeting } from '../myday';
@@ -73,11 +74,12 @@ function MyDay() {
   }, [load]);
   useSyncRefresh(load);
 
-  const projectIndex = useMemo(() => buildProjectIndex(data?.projects || []), [data]);
+  const { scope } = useWorkspace();
+  const projectIndex = useMemo(() => buildProjectIndex(data?.projects || [], scope), [data, scope]);
   const labelIndex = useMemo(() => buildLabelIndex(data?.labels || []), [data]);
   const depIndex = useMemo(() => buildDependencyIndex(data?.tasks || []), [data]);
   const day = useMemo(
-    () => buildMyDay(withoutArchived(data?.tasks || [], projectIndex), { userId: currentUser?.id, includeUnassigned }),
+    () => buildMyDay(withoutArchived(withinScope(data?.tasks || [], projectIndex), projectIndex), { userId: currentUser?.id, includeUnassigned }),
     [data, currentUser, includeUnassigned, projectIndex]
   );
   const taskById = useMemo(() => new Map((data?.tasks || []).map((t) => [t.id, t])), [data]);
@@ -175,7 +177,7 @@ function MyDay() {
   const assigned = recentNotifications(data.notes, 'assigned').filter((n) => taskById.get(n.task_id)?.status !== 'done');
   const comments = recentNotifications(data.notes, ['comment', 'mention']).slice(0, 8);
   // Pinned tasks (in the order they were pinned); done ones only counted.
-  const activeIds = new Set(withoutArchived(data.tasks, projectIndex).map((x) => x.id));
+  const activeIds = new Set(withoutArchived(withinScope(data.tasks, projectIndex), projectIndex).map((x) => x.id));
   const pinnedTasks = pins.ids.map((id) => taskById.get(id)).filter((x) => x && activeIds.has(x.id));
   const pinnedOpen = pinnedTasks.filter((x) => x.status !== 'done');
   const pinnedDone = pinnedTasks.filter((x) => x.status === 'done');

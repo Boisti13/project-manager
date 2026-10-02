@@ -21,7 +21,8 @@ import { buildLabelIndex } from '../labels';
 import { buildDependencyIndex } from '../dependencies';
 import { authFetch, useAuth } from '../context/AuthContext';
 import { DEFAULT_FILTERS, buildTaskTree, filtersFromParams, filtersToParams, hasActiveFilters } from '../taskFilters';
-import { buildProjectIndex, groupTasksByProject } from '../projects';
+import { buildProjectIndex, groupTasksByProject, withinScope } from '../projects';
+import { useWorkspace } from '../context/WorkspaceContext';
 import { childIndex, remainingMinutes } from '../estimate';
 import { bulkChanges, siblingsOf, reorderUpdates } from '../taskOps';
 import '../styles/TaskList.css';
@@ -70,8 +71,12 @@ function TaskList() {
 
   // A delete waiting out its Undo time (useUndoableDelete); its tasks stay hidden on reload.
   const pendingDelete = useRef(null);
-  const { tasks, setTasks, projects, users, labels, setLabels, archiveAfterDays, loading, error, setError, loadData } =
+  const { tasks: allTasks, setTasks, projects, users, labels, setLabels, archiveAfterDays, loading, error, setError, loadData } =
     useTaskData(pendingDelete);
+  // Only the current workspace's projects and tasks (everything under "All").
+  const { scope } = useWorkspace();
+  const projectIndex = useMemo(() => buildProjectIndex(projects, scope), [projects, scope]);
+  const tasks = useMemo(() => withinScope(allTasks, projectIndex), [allTasks, projectIndex]);
   const [templates, reloadTemplates] = useOptionalList('/api/v1/templates/');
   // The bar at the bottom: { key, message, onUndo? }.
   const [undo, setUndo] = useState(null);
@@ -273,7 +278,7 @@ function TaskList() {
 
   // Changes the row right away and rolls back if the request fails.
   const changeOptimistically = async (task, fields, failureText) => {
-    const previous = tasks;
+    const previous = allTasks;
     setTasks((ts) => ts.map((x) => (x.id === task.id ? { ...x, ...fields } : x)));
     try {
       await sendJson(`/api/tasks/${task.id}`, 'PUT', fields);
@@ -428,12 +433,12 @@ function TaskList() {
       return next;
     });
 
-  const projectIndex = useMemo(() => buildProjectIndex(projects), [projects]);
   // Estimates add up over all subtasks, also the ones a filter hides.
   const allChildrenOf = useMemo(() => childIndex(tasks), [tasks]);
   const remainingOf = useCallback((task) => remainingMinutes(task, allChildrenOf), [allChildrenOf]);
   const labelIndex = useMemo(() => buildLabelIndex(labels), [labels]);
-  const dependencyIndex = useMemo(() => buildDependencyIndex(tasks), [tasks]);
+  // Across workspaces: a task may wait for one that's filed elsewhere.
+  const dependencyIndex = useMemo(() => buildDependencyIndex(allTasks), [allTasks]);
   const filterByLabel = (label) => setFilter('label', String(label.id));
 
   const myOpenCount = useMemo(

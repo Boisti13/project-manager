@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import (
     users, tasks, projects, auth, system, settings, transfer, comments, notifications, labels, tokens, deletions, sync,
-    calendar, saved_filters, templates, shared, pins,
+    calendar, saved_filters, templates, shared, pins, workspaces,
 )
 from app.version import APP_VERSION
 
@@ -55,6 +55,7 @@ ROUTES = [
     (templates.router, "/templates", "task templates"),
     (shared.router, "/share", "share links"),
     (pins.router, "/pins", "pinned tasks"),
+    (workspaces.router, "/workspaces", "workspaces"),
     (sync.router, "/sync", "sync"),
     (deletions.router, "/deletions", "sync"),
     (system.router, "/system", "system"),

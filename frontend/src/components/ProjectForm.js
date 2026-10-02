@@ -7,7 +7,19 @@ import { t } from '../i18n';
 // defaultParentId: pre-selected parent for a new category
 // projectIndex: from buildProjectIndex, for the parent choices
 // users/currentUser: for the members of a private project
-function ProjectForm({ project, defaultParentId = null, projectIndex, users = [], currentUser, onSubmit, onCancel }) {
+// workspaces/workspaceId: the user's workspaces and the one the project is in
+// (null: none); the choice is submitted as workspace_id, only for top-level projects
+function ProjectForm({
+  project,
+  defaultParentId = null,
+  projectIndex,
+  users = [],
+  currentUser,
+  workspaces = [],
+  workspaceId = null,
+  onSubmit,
+  onCancel,
+}) {
   const [formData, setFormData] = useState({
     name: project?.name || '',
     description: project?.description || '',
@@ -16,6 +28,7 @@ function ProjectForm({ project, defaultParentId = null, projectIndex, users = []
     is_private: !!project?.is_private,
     // A new project starts with its creator as the only member.
     member_ids: project ? project.member_ids || [] : currentUser ? [currentUser.id] : [],
+    workspace_id: workspaceId,
   });
 
   const hasCategories = project ? projectIndex.categoriesOf(project.id).length > 0 : false;
@@ -43,6 +56,7 @@ function ProjectForm({ project, defaultParentId = null, projectIndex, users = []
       color: isCategory ? null : formData.color || null,
       // Categories follow their project's visibility.
       ...(isCategory ? {} : { is_private: formData.is_private, member_ids: formData.member_ids }),
+      ...(isCategory || !workspaces.length ? {} : { workspace_id: formData.workspace_id }),
     });
   };
 
@@ -134,6 +148,24 @@ function ProjectForm({ project, defaultParentId = null, projectIndex, users = []
           {!formData.color && (
             <small className="color-hint">{t('None picked — one will be assigned automatically.')}</small>
           )}
+        </div>
+      )}
+
+      {!isCategory && workspaces.length > 0 && (
+        <div className="form-group">
+          <label>{t('Workspace')}</label>
+          <select
+            value={formData.workspace_id ?? ''}
+            onChange={(e) => set('workspace_id', e.target.value === '' ? null : Number(e.target.value))}
+          >
+            <option value="">{t('— none —')}</option>
+            {workspaces.map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.name}
+              </option>
+            ))}
+          </select>
+          <small className="color-hint">{t('Just for you: everyone files projects into their own workspaces.')}</small>
         </div>
       )}
 

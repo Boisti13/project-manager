@@ -18,6 +18,7 @@ How to use Project Manager, page by page. Running a server is described in
   - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Comments and history](#comments-and-history)
 - [Projects and categories](#projects-and-categories): private projects, [archiving](#archiving-finished-projects), [sharing a read-only link](#sharing-a-project-read-only)
+- [Workspaces](#workspaces): work and private (or whatever you like) apart
 - [Notifications](#notifications)
 - [Weekly review](#weekly-review)
 - [Calendar feed](#calendar-feed)
@@ -279,6 +280,7 @@ On the Tasks page (not while typing in a field); **?** shows the list.
 | **Del** | Delete it (the selected ones, when selecting) |
 | **Esc** | Clear the selection |
 | **Ctrl+Enter** | Save the form |
+| **w** | Next workspace (on every page, once you have [workspaces](#workspaces)) |
 
 ![The list of shortcuts](screenshots/shortcuts-desktop.png)
 
@@ -352,6 +354,36 @@ before sharing those.
 
 ![The shared project page](screenshots/shared-desktop.png)
 
+## Workspaces
+
+Keep areas apart — e.g. **Work** and **Private**, or *Club*, *Studies*, …:
+each workspace is a group of projects, and the switch in the top bar shows
+one at a time, or **All workspaces**.
+
+- **Set them up** under *Settings → Workspaces*: add, rename, recolor,
+  reorder (↑ ↓) and delete them. Deleting one keeps its projects; they're
+  just in no workspace then.
+- **Put a project into one** in the project form (*Workspace*), when creating
+  or editing it. A new project goes into the workspace being shown. Under
+  *All workspaces* the Projects page shows each project's workspace.
+- **What follows the switch**: My day, the Tasks page (list, board, calendar,
+  timeline, search and filters), the Projects page, the weekly review and the
+  project choices in forms. Categories and subtasks go with their project.
+  Notifications, the calendar feed and exports still cover everything.
+- **Projects in no workspace** (and tasks without a project) show in every
+  workspace, or — set under *Settings → Workspaces* — only under *All
+  workspaces*.
+- **They're yours**: workspaces are personal. A shared project can be in your
+  *Work* and in a colleague's *Lab*; nobody else sees how you filed it.
+- The workspace shown is remembered **per device** (e.g. *Work* on the office
+  PC, *All* on the phone). **w** switches to the next one.
+- The Windows and Linux app shows them offline too; changing them needs a
+  connection.
+
+| | |
+|---|---|
+| ![A workspace in the top bar](screenshots/workspaces-desktop.png) | ![On a phone](screenshots/workspaces-phone.png) |
+
 ## Notifications
 
 The 🔔 in the top bar tells you when someone **assigns you a task** (several
@@ -394,6 +426,7 @@ which can't reach a server on a private network or VPN.
 ## Settings
 
 - **Your account**: language, password.
+- **Workspaces**: see [above](#workspaces).
 - **API tokens**: personal tokens for scripts and other apps
   (see [docs/API.md](API.md)).
 - **Calendar feed**: see [above](#calendar-feed).

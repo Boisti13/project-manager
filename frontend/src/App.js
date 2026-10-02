@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { WorkspaceProvider } from './context/WorkspaceContext';
 import Nav from './components/Nav';
 import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -126,7 +127,9 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <LanguageGate>
-            <AppShell />
+            <WorkspaceProvider>
+              <AppShell />
+            </WorkspaceProvider>
           </LanguageGate>
         </AuthProvider>
       </ThemeProvider>

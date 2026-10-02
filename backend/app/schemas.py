@@ -75,6 +75,37 @@ class SavedFilter(SavedFilterCreate):
 
     model_config = ConfigDict(from_attributes=True)
 
+HEX_COLOR = r"^#[0-9a-fA-F]{6}$"
+
+class WorkspaceCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=40)
+    color: Optional[str] = Field(default=None, pattern=HEX_COLOR)  # None: the next free palette color
+
+class WorkspaceUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=40)
+    color: Optional[str] = Field(default=None, pattern=HEX_COLOR)
+
+class Workspace(BaseModel):
+    id: int
+    name: str
+    color: Optional[str] = None
+    position: int
+    project_ids: List[int] = []  # top-level projects in it (that the user can see)
+
+class Workspaces(BaseModel):
+    workspaces: List[Workspace]
+    # Projects in no workspace: shown in every workspace, or only under "All".
+    unassigned_everywhere: bool
+
+class WorkspaceOrder(BaseModel):
+    ids: List[int]
+
+class WorkspaceSettings(BaseModel):
+    unassigned_everywhere: bool
+
+class ProjectWorkspaceSet(BaseModel):
+    workspace_id: Optional[int] = None  # None: in no workspace
+
 class TemplateNode(BaseModel):
     title: str
     description: Optional[str] = None

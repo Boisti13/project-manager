@@ -3,6 +3,8 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import NotificationBell from './NotificationBell';
+import WorkspaceSwitcher from './WorkspaceSwitcher';
+import { useWorkspace } from '../context/WorkspaceContext';
 import SyncStatus from './desktop/SyncStatus';
 import { IS_DESKTOP } from '../desktop/platform';
 import { engine } from '../desktop';
@@ -13,6 +15,7 @@ function Nav() {
   const { currentUser, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const { workspaces } = useWorkspace();
 
   const handleLogout = async () => {
     if (IS_DESKTOP) {
@@ -30,8 +33,10 @@ function Nav() {
   };
 
   return (
-    <nav className="app-nav">
-      <span className="nav-brand">📋 Project Manager</span>
+    <nav className={workspaces.length ? 'app-nav has-workspaces' : 'app-nav'}>
+      <span className="nav-brand">
+        📋<span className="nav-brand-name"> Project Manager</span>
+      </span>
       <div className="nav-links">
         <NavLink to="/today" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
           <span className="nav-icon" aria-hidden="true">☀</span>
@@ -55,6 +60,7 @@ function Nav() {
         </NavLink>
       </div>
       <div className="nav-user">
+        <WorkspaceSwitcher />
         {IS_DESKTOP && <SyncStatus />}
         <NotificationBell />
         <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? t('Switch to light mode') : t('Switch to dark mode')}>

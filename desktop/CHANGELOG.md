@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.8.0 — 2026-10-02
+
+### Added
+- **Workspaces** (server v1.44.0 interface; needs server v1.44.0): the switch in the top bar shows one workspace at a time, also offline (the last known list is kept); setting them up needs a connection.
+
 ## v0.7.0 — 2026-09-29
 
 ### Added

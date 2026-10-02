@@ -386,3 +386,16 @@
 .archived-row .project-actions {
   margin-left: auto;
 }
+
+/* The workspace a project is in (shown under "All workspaces"). */
+.workspace-badge {
+  margin-left: 8px;
+  padding: 1px 7px 1px 5px;
+  border-radius: 10px;
+  border-left: 4px solid var(--ws-color, var(--color-border));
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: middle;
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface-alt, rgba(127, 127, 127, 0.12));
+}

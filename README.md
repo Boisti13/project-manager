@@ -36,6 +36,7 @@ The web app shows the same links under *Settings*.
 - **Tasks with subtasks** at any depth — priority, deadline, time estimate, labels, assignee, "waits for" other tasks
 - **Repeating tasks**: every N days/weeks/months, on chosen weekdays, the last workday of the month, the 2nd Tuesday …
 - **List, board, calendar and timeline (Gantt)** views — drag bars to move dates, arrows for dependencies; search, filters and **saved filters**
+- **Workspaces** to keep work and private apart — one switch, every view follows
 - **My day** start page with your **pinned tasks**, and a **weekly review** with open work per project
 - **Quick**: type and press Enter, several tasks at once (one per line), **templates**, **keyboard shortcuts**, **change several tasks at once**, **Undo**
 - **Comments with @mentions, history and notifications** for working together; descriptions and comments with **formatting and clickable links**

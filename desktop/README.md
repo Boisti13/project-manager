@@ -84,7 +84,7 @@ Mint 21, Fedora 36, Raspberry Pi OS Bookworm or newer). If the server uses
   The changes wait in a queue and are sent in order once the server is
   reachable — within a few seconds of any change, every 30 seconds, and when
   the window gets focus.
-- **Needs a connection**: projects and categories, labels, settings, users,
+- **Needs a connection**: projects and categories, labels, workspaces (switching works offline), settings, users,
   updates, backups, export/import, the task history and notifications.
   Offline, these say so instead of failing silently.
 - **Conflicts**: if someone changed the same field of a task on the server

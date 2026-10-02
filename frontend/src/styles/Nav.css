@@ -21,6 +21,24 @@
   background-color: rgba(255, 255, 255, 0.15);
 }
 
+.workspace-switcher {
+  max-width: 180px;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-left: 5px solid var(--ws-color, rgba(255, 255, 255, 0.4));
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.workspace-switcher option {
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+}
+
 .nav-links {
   display: flex;
   gap: 4px;
@@ -119,6 +137,17 @@
 
   .nav-user {
     gap: 6px;
+  }
+
+  /* With the workspace switch, the name makes room (the icon stays). */
+  .has-workspaces .nav-brand-name {
+    display: none;
+  }
+
+  .workspace-switcher {
+    max-width: 130px;
+    padding: 6px 4px;
+    font-size: 12px;
   }
 
   .bell-btn,

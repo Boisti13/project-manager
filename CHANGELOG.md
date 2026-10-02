@@ -2,6 +2,23 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.44.0 — 2026-10-02
+
+### Added
+- **Workspaces**: keep work and private (or any other areas) apart. A switch in the top bar shows one workspace at a time — My day, the Tasks page with all views, search and filters, the Projects page, the weekly review and the project choices follow it — or **All workspaces**.
+  - Set them up under **Settings → Workspaces**: your own names and colors, reorder, delete (projects stay).
+  - Put a project into a workspace in the project form; new projects go into the workspace being shown, and under *All workspaces* the Projects page shows each project's workspace.
+  - **Projects in no workspace**: shown in every workspace or only under *All workspaces* — your choice in Settings.
+  - Personal: everyone files projects into their own workspaces; the one shown is remembered per device. **W** switches to the next one.
+- API: `/api/v1/workspaces/…`.
+
+### Changed
+- On phones the top bar shows just the app icon instead of its name once you have workspaces, to make room for the switch.
+
+### Under the hood
+- Migration `0021`: `workspaces`, `project_workspaces`, `users.workspace_unassigned_everywhere`; `frontend/src/workspaces.js` (tested), `context/WorkspaceContext.js`.
+- 4 new backend tests, 4 new frontend tests, 1 new browser test.
+
 ## v1.43.4 — 2026-09-29
 
 ### Added

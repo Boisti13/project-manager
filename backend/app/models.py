@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import (
     Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Table, UniqueConstraint, Uuid, Enum as SQLEnum, false, text,
+    true,
 )
 from sqlalchemy.orm import relationship, backref
 from app.database import Base
@@ -39,6 +40,9 @@ class User(Base):
     language = Column(String(5), nullable=True)
     # Secret in the user's calendar feed URL (routers/calendar.py); None until first shown.
     calendar_token = Column(String(64), nullable=True, unique=True)
+    # Projects in none of the user's workspaces: shown in every workspace
+    # (True) or only under "All" (routers/workspaces.py).
+    workspace_unassigned_everywhere = Column(Boolean, nullable=False, default=True, server_default=true())
 
     tasks = relationship("Task", back_populates="assignee")
 
@@ -307,6 +311,31 @@ class TaskPin(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), primary_key=True, index=True)
     created_at = Column(DateTime, default=utcnow)
+
+
+class Workspace(Base):
+    """A user's own group of projects, e.g. "Work" or "Private"; the app shows
+    one at a time, or all (routers/workspaces.py)."""
+    __tablename__ = "workspaces"
+    __table_args__ = (UniqueConstraint("user_id", "name", name="workspaces_user_name_key"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(40), nullable=False)
+    color = Column(String(7), nullable=True)
+    position = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, default=utcnow)
+
+
+class ProjectWorkspace(Base):
+    """The workspace a top-level project is in -- per user, since everyone
+    groups projects for themselves (a shared project can be "Work" for one
+    and "Private" for another). Categories follow their project."""
+    __tablename__ = "project_workspaces"
+
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
 
 
 class AppSetting(Base):

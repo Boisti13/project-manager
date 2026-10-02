@@ -14,6 +14,7 @@ import { IS_DESKTOP } from '../desktop/platform';
 import '../styles/Settings.css';
 import { t } from '../i18n';
 import TemplateSettings from './TemplateSettings';
+import WorkspaceSettings from './WorkspaceSettings';
 
 function Settings() {
   const { currentUser } = useAuth();
@@ -110,6 +111,8 @@ function Settings() {
       {IS_DESKTOP ? <DesktopSettings /> : <AppDownloads />}
 
       <AccountSettings />
+
+      <WorkspaceSettings />
 
       {/* Managing tokens needs a password login; the Windows app uses a token itself. */}
       {!IS_DESKTOP && <ApiTokenSettings />}

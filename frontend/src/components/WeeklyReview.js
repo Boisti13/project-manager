@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authFetch, useAuth } from '../context/AuthContext';
-import { buildProjectIndex, withoutArchived } from '../projects';
+import { buildProjectIndex, withinScope, withoutArchived } from '../projects';
+import { useWorkspace } from '../context/WorkspaceContext';
 import { weekStart, addDays, buildReview, deadlineDay } from '../review';
 import { childIndex, formatEstimate } from '../estimate';
 import { copyText } from '../clipboard';
@@ -53,7 +54,8 @@ function WeeklyReview() {
   }, [load]);
   useSyncRefresh(load);
 
-  const projectIndex = useMemo(() => buildProjectIndex(data?.projects || []), [data]);
+  const { scope } = useWorkspace();
+  const projectIndex = useMemo(() => buildProjectIndex(data?.projects || [], scope), [data, scope]);
   const byId = useMemo(() => new Map((data?.tasks || []).map((x) => [x.id, x])), [data]);
   // Subtasks without their own project belong to their parent's.
   const projectOf = useCallback(
@@ -65,22 +67,22 @@ function WeeklyReview() {
     },
     [byId, projectIndex]
   );
-  const activeIds = useMemo(
-    () => new Set(withoutArchived(data?.tasks || [], projectIndex).map((x) => x.id)),
-    [data, projectIndex]
-  );
+  // The current workspace's tasks (all under "All"), and of those the ones in active projects.
+  const scoped = useMemo(() => withinScope(data?.tasks || [], projectIndex), [data, projectIndex]);
+  const scopedIds = useMemo(() => new Set(scoped.map((x) => x.id)), [scoped]);
+  const activeIds = useMemo(() => new Set(withoutArchived(scoped, projectIndex).map((x) => x.id)), [scoped, projectIndex]);
   const review = useMemo(
     () =>
       data &&
-      // Done tasks count wherever they are; open ones only in active projects.
-      buildReview(data.tasks.filter((x) => x.status === 'done' || activeIds.has(x.id)), {
+      // Done tasks count in archived projects too; open ones only in active projects.
+      buildReview(data.tasks.filter((x) => (x.status === 'done' && scopedIds.has(x.id)) || activeIds.has(x.id)), {
         start,
         mine,
         userId: currentUser?.id,
         projectOf,
         childrenOf: childIndex(data.tasks),
       }),
-    [data, start, mine, currentUser, projectOf, activeIds]
+    [data, start, mine, currentUser, projectOf, activeIds, scopedIds]
   );
 
   const setWeek = (next) => {

@@ -12,7 +12,12 @@ export const NO_PROJECT_COLOR = '#9e9e9e';
 
 const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }) || a.id - b.id;
 
-export function buildProjectIndex(projects) {
+/**
+ * scope (optional): the current workspace (workspaceScope in workspaces.js);
+ * then `topLevel` and `archived` -- what lists and choices offer -- only
+ * hold its projects, and inScope(id) says whether a project is in it.
+ */
+export function buildProjectIndex(projects, scope = null) {
   const byId = new Map(projects.map((p) => [p.id, p]));
   const children = new Map();
   const topLevel = [];
@@ -34,12 +39,17 @@ export function buildProjectIndex(projects) {
     return p.parent_id != null && byId.has(p.parent_id) ? byId.get(p.parent_id) : p;
   };
 
+  // Is project `id` (or the project of category `id`; null: no project) in the current workspace?
+  const inScope = (id) => !scope || scope.includes(id == null ? null : topOf(id)?.id ?? null);
+
   return {
     byId,
+    scoped: !!scope,
+    inScope,
     // Active top-level projects: what lists and choices offer. Archived ones
     // are kept apart (the Projects page shows them; search still finds their tasks).
-    topLevel: topLevel.filter((p) => !p.archived_at),
-    archived: topLevel.filter((p) => p.archived_at),
+    topLevel: topLevel.filter((p) => !p.archived_at && inScope(p.id)),
+    archived: topLevel.filter((p) => p.archived_at && inScope(p.id)),
     allTopLevel: topLevel,
     categoriesOf: (id) => children.get(id) || [],
     topOf,
@@ -144,6 +154,17 @@ export function withoutArchived(tasks, index) {
     const p = projectOf(x);
     return p == null || !index.isArchived(p);
   });
+}
+
+/** Tasks in the current workspace of `index` (all without one); subtasks follow their parent's project. */
+export function withinScope(tasks, index) {
+  if (!index.scoped) return tasks;
+  const byId = new Map(tasks.map((x) => [x.id, x]));
+  const projectOf = (task) => {
+    for (let cur = task; cur; cur = byId.get(cur.parent_task_id)) if (cur.project_id != null) return cur.project_id;
+    return null;
+  };
+  return tasks.filter((x) => index.inScope(projectOf(x)));
 }
 
 /** Open (not done) root tasks in a project section, categories included. */

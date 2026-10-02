@@ -5,6 +5,7 @@ import { t } from '../../i18n';
 const SHORTCUTS = () => [
   ['n', t('New task')],
   ['/', t('Search')],
+  ['w', t('Next workspace (when you have some)')],
   ['j / k', t('Next / previous task')],
   ['e', t('Edit')],
   ['x', t('Mark done / not done')],

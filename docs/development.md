@@ -118,7 +118,8 @@ project-manager/
 │       ├── myday.js         # Sections of the My day page
 │       ├── progress.js      # Per-project progress for the Projects page
 │       ├── views.js         # Board columns, calendar grid and deadlines by day
-│       └── projects.js      # Project tree, colors, grouping tasks by project/category
+│       ├── workspaces.js    # Which projects a workspace shows (state: context/WorkspaceContext.js)
+│       └── projects.js      # Project tree, colors, grouping tasks by project/category; the workspace scope
 ├── e2e/                     # Browser tests (Playwright): serve.py runs backend + build, test_*.py
 ├── install.sh               # Installer for a Debian/Ubuntu LXC or VM (idempotent)
 ├── proxmox/
