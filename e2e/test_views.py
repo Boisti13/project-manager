@@ -36,15 +36,21 @@ def test_move_up_and_drag_to_reorder(page, api):
         return [t["title"] for t in sorted((t for t in api.tasks() if t["project_id"] == project["id"]),
                                            key=lambda t: (t["order"], t["id"]))]
 
+    def shown(titles):
+        page.wait_for_function(
+            "(want) => [...document.querySelectorAll('.task-list .task-title')].map(e => e.textContent).join() === want",
+            arg=titles,
+        )
+
     row(page, "C").locator(".menu-btn").click()
     page.get_by_role("menuitem", name="Move up").click()
     wait_for(lambda: order() == ["A", "C", "B"])
+    # The drag works on what the page shows: wait until it has the new order too.
+    shown("A,C,B")
 
     page.locator(".task-item", has_text="B").first.drag_to(page.locator(".task-item", has_text="A").first)
     wait_for(lambda: order() == ["B", "A", "C"])
-    page.wait_for_function(
-        "() => [...document.querySelectorAll('.task-list .task-title')].map(e => e.textContent).join() === 'B,A,C'"
-    )
+    shown("B,A,C")
 
 
 def test_link_to_a_subtask_opens_the_way_to_it(page, api):
