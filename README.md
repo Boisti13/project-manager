@@ -71,7 +71,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Boisti13/project-manager
 
 Both install PostgreSQL, Nginx, Supervisor and Node.js (no Docker) and print
 the address. Register the first account to become admin; later updates are
-one click in *Settings → Updates*. Options, HTTPS, backups and moving to a
+one click in *Settings → Updates & users*. Options, HTTPS, backups and moving to a
 new server: [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Documentation

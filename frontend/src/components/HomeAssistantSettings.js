@@ -246,7 +246,7 @@ function HomeAssistantSettings() {
 
       <h3>{t('Let Home Assistant fetch them (REST)')}</h3>
       <ol className="settings-help ha-steps">
-        <li>{t('Create an API token under “API tokens” (e.g. named “Home Assistant”).')}</li>
+        <li>{t('Create an API token under Settings → Account → API tokens (e.g. named “Home Assistant”).')}</li>
         <li>
           {t('In Home Assistant’s secrets.yaml:')} <code>project_manager_token: "Bearer pm_…"</code>
         </li>

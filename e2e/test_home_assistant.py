@@ -3,7 +3,7 @@ from conftest import wait_for
 
 
 def test_home_assistant_settings(page, api):
-    page.goto("/settings")
+    page.goto("/settings/integrations")
     section = page.locator(".settings-section", has_text="Let Home Assistant fetch them")
     yaml = section.locator(".ha-yaml")
     assert "/api/v1/summary/" in yaml.inner_text() and "!secret project_manager_token" in yaml.inner_text()

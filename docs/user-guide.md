@@ -33,12 +33,12 @@ Screenshots use sample data.
 
 Open the server's address in a browser (e.g. `http://192.168.100.113`). The
 **first account registered becomes the admin**; after that registration is
-closed and admins add further users under *Settings → User Management*
+closed and admins add further users under *Settings → Updates & users → User Management*
 (or open registration there).
 
 The interface is in **English or German** (*Deutsch*): texts, dates,
 weekdays, the task history and the CSV export. Each user picks the language
-under *Settings → Your account*; until then it follows the browser. The 🌙
+under *Settings → Account*; until then it follows the browser. The 🌙
 button in the top bar switches to **dark mode** (remembered per browser;
 by default it follows the system).
 
@@ -137,7 +137,7 @@ yourself, so more subtasks can still be added.
   counted twice.
 - **Labels**: colored tags like *urgent* or *waiting for supplier*, shared
   across all projects. Pick or create them in the form, manage them under
-  *Settings → Labels*. Clicking a label filters by it.
+  *Settings → Labels & templates*. Clicking a label filters by it.
 - **Waits for**: other tasks this one depends on. It shows **⏳ waiting**
   until they're done; then its assignee gets a *Ready to start*
   notification. Tasks can't wait for each other in a circle.
@@ -170,7 +170,7 @@ text.
 ### Ticking tasks off
 
 The checkbox marks a task done; it moves into its section's *✓ Completed*
-row (newest first). After a number of days (*Settings → Completed tasks*,
+row (newest first). After a number of days (*Settings → Labels & templates → Completed tasks*,
 default 30) done tasks are **archived**: hidden from the list, but search
 and the *Done* filter still find them. Nothing is deleted.
 
@@ -262,7 +262,7 @@ checklist you repeat, for example.
   optionally a new title, and the project, deadline and assignee for this
   round. Titles, descriptions, priorities, estimates and labels come along;
   everything starts as *To Do*. It also works below a task (as subtasks).
-- Templates are shared by everyone. *Settings → Task templates* lists them;
+- Templates are shared by everyone. *Settings → Labels & templates* lists them;
   whoever saved one (or an admin) can delete it.
 
 ![Creating tasks from a template](screenshots/template-desktop.png)
@@ -452,7 +452,7 @@ belongs to another says so (*in Work*), the top of the list sums it up
 
 ## Calendar feed
 
-*Settings → Calendar feed* gives you a private link that calendar apps
+*Settings → Calendar & Home Assistant → Calendar feed* gives you a private link that calendar apps
 subscribe to: your open tasks with a deadline as all-day entries, repeating
 tasks as series, updated about every hour. Choose *Mine and unassigned* or
 *Everything I can see*. **New link** replaces it (the old one stops
@@ -470,30 +470,31 @@ own subscription.
 
 ## Settings
 
-- **Your account**: language, password.
-- **Two-factor login**: see below.
-- **Workspaces**: see [above](#workspaces).
-- **API tokens**: personal tokens for scripts and other apps
-  (see [docs/API.md](API.md)).
-- **Calendar feed**: see [above](#calendar-feed).
-- **Home Assistant**: your numbers, task lists and notifications in Home
-  Assistant — fetched with an API token, or pushed over MQTT (each user opts
-  in; admins set up the broker). See [Home Assistant](home-assistant.md).
-- **Completed tasks**: after how many days done tasks are archived.
-- **Labels** and **Task templates**: rename, recolor, delete.
-- **Backup & export**: export a project (or everything) as a JSON file to
-  import into another account or installation, or all tasks as a CSV file
-  for Excel; admins also make and restore backups here.
-- **Windows app** / **Linux app** (only in the app): connection, sync and updates.
-  In the browser, **Windows and Linux app** has the download links instead
-  (the one for your system marked).
+Settings has a page per topic — a menu on the left (on phones, tabs to
+scroll at the top). Each page has its own address, e.g. `/settings/account`,
+to bookmark or send to someone.
 
-Admins also see backups, updates and user management — see
-[For admins](#for-admins).
+| Page | |
+|---|---|
+| **Account** | language and password, [two-factor login](#two-factor-login), **API tokens** — personal tokens for scripts and other apps (see [docs/API.md](API.md)) |
+| **Workspaces** | add, rename, recolor and sort them, file your projects, where projects in no workspace show up — see [Workspaces](#workspaces) |
+| **Labels & templates** | rename, recolor and delete labels and task templates; **Completed tasks**: after how many days done tasks are archived |
+| **Calendar & Home Assistant** | the [calendar feed](#calendar-feed); [Home Assistant](home-assistant.md): your numbers, task lists and notifications there — fetched with an API token, or pushed over MQTT (each user opts in; admins set up the broker) |
+| **Windows and Linux app** | the download links, the one for your system marked; in the app itself (*Windows app* / *Linux app*, first in the menu): connection, sync and updates |
+| **Backup & export** | export a project (or everything) as a JSON file to import into another account or installation, or all tasks as a CSV file for Excel; admins also make and restore backups here |
+| **Updates & users** | the running version and updates; for admins also user management — see [For admins](#for-admins) |
+| **About** | a few numbers, the version, the connection (and the CA certificate with HTTPS) |
+
+In the Windows/Linux app, two-factor login, API tokens and the calendar feed
+link aren't shown — they need a password login; use the web app for them.
+
+| | |
+|---|---|
+| ![Settings: a page per topic](screenshots/settings-account-desktop.png) | ![Settings on a phone](screenshots/settings-phone.png) |
 
 ### Two-factor login
 
-*Settings → Two-factor login* adds a second step to logging in: after the
+*Settings → Account → Two-factor login* adds a second step to logging in: after the
 password, a 6-digit code from an **authenticator app** on your phone (Google
 or Microsoft Authenticator, Aegis, 2FAS, or a password manager like
 1Password or Bitwarden). Someone who learns your password still can't get in.
@@ -535,11 +536,11 @@ starts full-screen with its own icon. It needs a connection to the server
 
 ## For admins
 
-- **Users** (*Settings → User Management*): add accounts, set passwords,
+- **Users** (*Settings → Updates & users → User Management*): add accounts, set passwords,
   make admins, deactivate users (locked out at once), switch off someone's
   [two-factor login](#two-factor-login) (*2FA* badge → *Turn off 2FA*), and
   open or close self-registration.
-- **Updates** (*Settings → Updates*): shows the running version; admins
+- **Updates** (*Settings → Updates & users*): shows the running version; admins
   update or switch branches with a live log (backup first, then fetch,
   migrate, rebuild, restart).
 - **Backups** (*Settings → Backup & export*): a backup every night and

@@ -5,14 +5,17 @@ All notable changes, newest first. Versions follow [semantic versioning](docs/de
 ## v1.47.0 — 2026-10-03
 
 ### Added
-- **Home Assistant** (*Settings → Home Assistant*, guide in [docs/home-assistant.md](docs/home-assistant.md)), two ways, usable together:
+- **Home Assistant** (*Settings → Calendar & Home Assistant*, guide in [docs/home-assistant.md](docs/home-assistant.md)), two ways, usable together:
   - **Let Home Assistant fetch**: `GET /api/v1/summary/` (with an API token) gives unread notifications, overdue / due today / due soon with the tasks, and open tasks assigned to you — optionally for one workspace. Settings shows the ready-made REST sensor YAML for your server.
   - **Push over MQTT** (switch on/off in Settings): an admin enters the broker (e.g. the Mosquitto add-on); each user opts in, optionally for one workspace. Sensors and a notification event entity appear by themselves (MQTT Discovery) as the device *Project Manager (you)*; events for *assigned*, *mentioned*, *comment*, *ready to start*, and a daily deadline reminder at a set time. Test connection, connection status, the server's clock shown for the reminder; the broker password isn't shown again.
 - Example automations: push to your phone, morning reminder, a lamp for overdue tasks, a dashboard card.
 
+### Changed
+- **Settings has a page per topic** instead of one long page: *Account*, *Workspaces*, *Labels & templates*, *Calendar & Home Assistant*, *Windows and Linux app*, *Backup & export*, *Updates & users*, *About* — a menu on the left, tabs to scroll on phones. Each page has its own address (`/settings/account`, …); `/settings` opens *Account* (in the Windows/Linux app: the app's own page).
+
 ### Under the hood
 - `app/summary.py`, `app/mqtt.py` (background bridge, reconnects by itself; idle when off), routers `summary`, `homeassistant`; migration `0023`: `users.mqtt_enabled`, `users.mqtt_workspace_id`; new dependency `paho-mqtt`.
-- 6 new backend tests (MQTT with a fake broker client; also checked once against a real broker), 1 new frontend test, 1 new browser test.
+- 6 new backend tests (MQTT with a fake broker client; also checked once against a real broker), 2 new frontend tests, 2 new browser tests.
 
 ## v1.46.0 — 2026-10-02
 

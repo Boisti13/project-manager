@@ -35,7 +35,7 @@ Browsers and .NET's `HttpClient` don't need this.
 Every request sends `Authorization: Bearer <token>`. Two kinds of token:
 
 1. **Personal API token** (`pm_…`) — for scripts and apps. Create one under
-   **Settings → API tokens** in the web app; it's shown once, copy it then.
+   **Settings → Account → API tokens** in the web app; it's shown once, copy it then.
    Optionally it expires after 30/90/365 days. Revoke it there at any time.
    Only a hash is stored on the server.
 2. **Login token** — `POST /api/v1/auth/login` with the form fields

@@ -57,19 +57,19 @@ function SyncStatus() {
       <button
         type="button"
         className={`sync-pill sync-${tone}`}
-        onClick={() => (s.authError ? navigate('/settings') : engine.sync())}
+        onClick={() => (s.authError ? navigate('/settings/app') : engine.sync())}
         title={t('Sync now')}
       >
         <span className="sync-dot" aria-hidden="true" />
         <span className="sync-text">{text}</span>
       </button>
       {problems > 0 && (
-        <button type="button" className="sync-pill sync-bad" onClick={() => navigate('/settings')}>
+        <button type="button" className="sync-pill sync-bad" onClick={() => navigate('/settings/app')}>
           ⚠ {tn(problems, 'one change not saved', '{n} changes not saved')}
         </button>
       )}
       {u.available && (
-        <button type="button" className="sync-pill sync-update" onClick={() => navigate('/settings')}>
+        <button type="button" className="sync-pill sync-update" onClick={() => navigate('/settings/app')}>
           ⬆ {t('Update {version}', { version: u.available.version })}
         </button>
       )}
@@ -78,7 +78,7 @@ function SyncStatus() {
         <button
           type="button"
           className="sync-pill sync-warn"
-          onClick={() => navigate('/settings')}
+          onClick={() => navigate('/settings/app')}
           title={t('The server runs version {version}, which has features this app doesn’t show yet.', { version: s.serverVersion })}
         >
           ⚠ {t('App older than the server')}
@@ -88,7 +88,7 @@ function SyncStatus() {
         <button
           type="button"
           className="sync-pill sync-warn"
-          onClick={() => navigate('/settings')}
+          onClick={() => navigate('/settings/app')}
           title={t('The server runs version {version}; some features of this app need a newer one.', { version: s.serverVersion })}
         >
           ⚠ {t('Server older than the app')}

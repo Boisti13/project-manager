@@ -10,7 +10,7 @@ def test_workspaces_show_one_area_at_a_time(page, api):
     page.on("dialog", lambda d: d.accept())
     try:
         # create two in Settings; the switch appears in the top bar
-        page.goto("/settings")
+        page.goto("/settings/workspaces")
         assert page.locator(".workspace-switcher").count() == 0
         for name in ("Job", "Home"):
             page.locator("#new-workspace").fill(name)
@@ -50,7 +50,7 @@ def test_workspaces_show_one_area_at_a_time(page, api):
         api.task("Loose WS task", project_id=loose["id"])
         page.reload()
         row(page, "Loose WS task").wait_for()
-        page.goto("/settings")
+        page.goto("/settings/workspaces")
         page.get_by_label("show only under “All workspaces”").check()
         wait_for(lambda: api.get("/api/v1/workspaces/")["unassigned_everywhere"] is False)
         page.goto("/")
@@ -63,7 +63,7 @@ def test_workspaces_show_one_area_at_a_time(page, api):
         row(page, "Write the WS report").wait_for()
 
         # the overview in Settings files projects in one place
-        page.goto("/settings")
+        page.goto("/settings/workspaces")
         page.get_by_label("only those in no workspace").check()
         page.get_by_label("Workspace of Loose WS").select_option(label="Job")
         wait_for(lambda: loose["id"] in {w["name"]: w for w in api.get("/api/v1/workspaces/")["workspaces"]}["Job"]["project_ids"])

@@ -107,6 +107,14 @@ function AppShell() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/settings/:section"
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
       <footer className="App-footer">

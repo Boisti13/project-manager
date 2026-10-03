@@ -60,3 +60,19 @@ def test_phone_layout_and_task_menu(make_page, api):
     row(page, "On the go").locator(".menu-btn").click()
     menu = page.locator(".task-menu-list")
     assert "Delete" in menu.inner_text() and "Edit" in menu.inner_text()
+
+
+def test_settings_sub_pages(make_page):
+    page = make_page()
+    page.goto("/settings")
+    page.wait_for_url("**/settings/account")
+    page.locator(".settings-section", has_text="Two-factor login").first.wait_for()
+    assert page.locator(".settings-section", has_text="Home Assistant").count() == 0  # on its own page
+    page.locator(".settings-menu").get_by_role("link", name="Calendar & Home Assistant").click()
+    page.wait_for_url("**/settings/integrations")
+    page.locator(".ha-broker").wait_for()  # admin: the broker settings
+    assert page.locator(".settings-menu a.active").inner_text().endswith("Calendar & Home Assistant")
+    page.goto("/settings/nonsense")
+    page.wait_for_url("**/settings/account")
+    page.locator(".settings-menu").get_by_role("link", name="Updates & users").click()
+    page.get_by_role("heading", name="User Management").wait_for()

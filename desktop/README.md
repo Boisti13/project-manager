@@ -54,7 +54,7 @@ Mint 21, Fedora 36, Raspberry Pi OS Bookworm or newer). If the server uses
    your username and password — and, with two-factor login switched on,
    the code from your authenticator app (from v0.9.0). The password is used
    once to create an **app token** — it shows up in the web app under
-   *Settings → API tokens* ("Windows app (date)" or "Linux app (date)") and
+   *Settings → Account → API tokens* ("Windows app (date)" or "Linux app (date)") and
    can be revoked there.
 3. Work as usual. The **status in the top bar** shows whether the app is
    online, how many changes are waiting, and when it last synced; click it to

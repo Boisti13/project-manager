@@ -44,7 +44,7 @@ def test_two_factor_login(make_page, users):
     anna = users["anna"]
     page = make_page(user="anna")
     try:
-        page.goto("/settings")
+        page.goto("/settings/account")
         page.get_by_role("button", name="Set up two-factor login").click()
         secret = page.locator(".twofa-secret").inner_text().strip()
         assert page.locator(".twofa-qr svg").count() == 1
@@ -76,7 +76,7 @@ def test_two_factor_login(make_page, users):
 def test_calendar_feed_link_per_workspace(page, api):
     ws = api.post("/api/v1/workspaces/", name="FeedWS")
     try:
-        page.goto("/settings")
+        page.goto("/settings/integrations")
         section = page.locator(".settings-section", has_text="Calendar feed")
         section.get_by_label("Workspace").select_option(label="FeedWS")
         link = section.locator(".feed-link code")

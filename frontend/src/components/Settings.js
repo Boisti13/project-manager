@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { NavLink, Navigate, useParams } from 'react-router-dom';
 import { authFetch, useAuth } from '../context/AuthContext';
 import UserManagement from './UserManagement';
 import UpdatePanel from './UpdatePanel';
@@ -10,7 +11,7 @@ import ApiTokenSettings from './ApiTokenSettings';
 import CalendarFeedSettings from './CalendarFeedSettings';
 import DesktopSettings from './desktop/DesktopSettings';
 import AppDownloads from './AppDownloads';
-import { IS_DESKTOP } from '../desktop/platform';
+import { IS_DESKTOP, DESKTOP_OS } from '../desktop/platform';
 import '../styles/Settings.css';
 import { t } from '../i18n';
 import TemplateSettings from './TemplateSettings';
@@ -18,7 +19,8 @@ import WorkspaceSettings from './WorkspaceSettings';
 import TwoFactorSettings from './TwoFactorSettings';
 import HomeAssistantSettings from './HomeAssistantSettings';
 
-function Settings() {
+// Settings → About: a few numbers, the version, how you're connected.
+function About() {
   const { currentUser } = useAuth();
   const [stats, setStats] = useState({ tasks: 0, projects: 0, users: 0 });
   const [version, setVersion] = useState(null);
@@ -48,13 +50,7 @@ function Settings() {
   }, []);
 
   return (
-    <div className="container">
-      <div className="task-list-header">
-        <div className="header-left">
-          <h1>{t('Settings')}</h1>
-        </div>
-      </div>
-
+    <>
       <div className="settings-section">
         <h2>{t('Overview')}</h2>
         <div className="stats-grid">
@@ -109,34 +105,114 @@ function Settings() {
           </div>
         </div>
       </div>
+    </>
+  );
+}
 
-      {IS_DESKTOP ? <DesktopSettings /> : <AppDownloads />}
+/**
+ * The sub-pages of Settings, in menu order: /settings/<key>. Password-only
+ * things (two-factor login, API tokens) and the calendar feed link aren't
+ * offered in the Windows/Linux app, which logs in with a token itself.
+ */
+export function settingsPages({ admin = false, desktop = IS_DESKTOP } = {}) {
+  const app = {
+    key: 'app',
+    icon: '💻',
+    label: desktop ? t('{os} app', { os: DESKTOP_OS }) : t('Windows and Linux app'),
+    content: desktop ? <DesktopSettings /> : <AppDownloads />,
+  };
+  const pages = [
+    {
+      key: 'account',
+      icon: '👤',
+      label: t('Account'),
+      content: (
+        <>
+          <AccountSettings />
+          {!desktop && <TwoFactorSettings />}
+          {!desktop && <ApiTokenSettings />}
+        </>
+      ),
+    },
+    { key: 'workspaces', icon: '🗂', label: t('Workspaces'), content: <WorkspaceSettings /> },
+    {
+      key: 'tasks',
+      icon: '🏷',
+      label: t('Labels & templates'),
+      content: (
+        <>
+          <LabelSettings />
+          <TemplateSettings />
+          <ArchiveSettings />
+        </>
+      ),
+    },
+    {
+      key: 'integrations',
+      icon: '🔌',
+      label: t('Calendar & Home Assistant'),
+      content: (
+        <>
+          {!desktop && <CalendarFeedSettings />}
+          <HomeAssistantSettings />
+        </>
+      ),
+    },
+    { key: 'backup', icon: '💾', label: t('Backup & export'), content: <BackupSettings /> },
+    {
+      key: 'system',
+      icon: '⚙',
+      label: admin ? t('Updates & users') : t('Updates'),
+      content: (
+        <>
+          <UpdatePanel />
+          {admin && <UserManagement />}
+        </>
+      ),
+    },
+    { key: 'about', icon: 'ℹ', label: t('About'), content: <About /> },
+  ];
+  // In the app its own settings (sync, updates, conflicts) come first.
+  return desktop ? [app, ...pages] : [...pages.slice(0, 4), app, ...pages.slice(4)];
+}
 
-      <AccountSettings />
+function Settings() {
+  const { currentUser } = useAuth();
+  const { section } = useParams();
+  const pages = settingsPages({ admin: !!currentUser?.is_admin });
+  const page = pages.find((p) => p.key === section);
+  const menuRef = useRef(null);
+  // Phones: the menu is a row of tabs to scroll -- keep the open one in view
+  // (sideways only, the page stays where it is).
+  useEffect(() => {
+    const menu = menuRef.current;
+    const active = menu?.querySelector('a.active');
+    if (menu && active && menu.scrollWidth > menu.clientWidth) {
+      menu.scrollLeft = active.offsetLeft - menu.offsetLeft - (menu.clientWidth - active.offsetWidth) / 2;
+    }
+  }, [section]);
+  if (!page) return <Navigate to={`/settings/${pages[0].key}`} replace />;
 
-      {/* Needs a password login; the Windows/Linux app uses a token itself. */}
-      {!IS_DESKTOP && <TwoFactorSettings />}
-
-      <WorkspaceSettings />
-
-      {/* Managing tokens needs a password login; the Windows app uses a token itself. */}
-      {!IS_DESKTOP && <ApiTokenSettings />}
-
-      {!IS_DESKTOP && <CalendarFeedSettings />}
-
-      <HomeAssistantSettings />
-
-      <ArchiveSettings />
-
-      <LabelSettings />
-
-      <TemplateSettings />
-
-      <BackupSettings />
-
-      <UpdatePanel />
-
-      {currentUser?.is_admin && <UserManagement />}
+  return (
+    <div className="container">
+      <div className="task-list-header">
+        <div className="header-left">
+          <h1>{t('Settings')}</h1>
+        </div>
+      </div>
+      <div className="settings-layout">
+        <nav className="settings-menu" aria-label={t('Settings')} ref={menuRef}>
+          {pages.map((p) => (
+            <NavLink key={p.key} to={`/settings/${p.key}`} className={({ isActive }) => (isActive ? 'active' : '')}>
+              <span className="settings-menu-icon" aria-hidden="true">
+                {p.icon}
+              </span>
+              {p.label}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="settings-content">{page.content}</div>
+      </div>
     </div>
   );
 }

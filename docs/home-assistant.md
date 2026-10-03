@@ -16,10 +16,10 @@ There are two ways, and you can use both:
 | Sensors appear by themselves | — (YAML) | ✓ (MQTT Discovery) |
 | Needs | HA reaching the app | the app reaching the broker |
 
-Both live in the app under **Settings → Home Assistant**, which shows the
+Both live in the app under **Settings → Calendar & Home Assistant**, which shows the
 YAML for your account, ready to copy.
 
-![Settings → Home Assistant](screenshots/home-assistant-settings.png)
+![Settings → Calendar & Home Assistant](screenshots/home-assistant-settings.png)
 
 - [Let Home Assistant fetch (REST)](#let-home-assistant-fetch-rest)
 - [Push over MQTT](#push-over-mqtt)
@@ -32,7 +32,7 @@ YAML for your account, ready to copy.
 Home Assistant's [RESTful integration](https://www.home-assistant.io/integrations/rest/)
 calls `GET /api/v1/summary/` with a personal API token and turns the answer into sensors.
 
-1. **API token**: in the app, *Settings → API tokens*, create one named e.g.
+1. **API token**: in the app, *Settings → Account → API tokens*, create one named e.g.
    *Home Assistant* (no expiry, or renew it in time). Copy it — it's shown once.
 2. **secrets.yaml** in Home Assistant's config folder (File editor or Studio
    Code Server add-on):
@@ -42,7 +42,7 @@ calls `GET /api/v1/summary/` with a personal API token and turns the answer into
    ```
 
 3. **configuration.yaml** — replace the address with your server's (the one
-   in *Settings → Home Assistant* is filled in already):
+   in *Settings → Calendar & Home Assistant* is filled in already):
 
    ```yaml
    rest:
@@ -76,7 +76,7 @@ calls `GET /api/v1/summary/` with a personal API token and turns the answer into
 Options:
 
 - **Only one [workspace](user-guide.md#workspaces)**: add `?workspace=<id>`
-  to the address — *Settings → Home Assistant* puts it in when you pick one.
+  to the address — *Settings → Calendar & Home Assistant* puts it in when you pick one.
 - **HTTPS with the server's own CA**: add `verify_ssl: false` under the
   resource, or add the CA to Home Assistant.
 - Each user who wants their own sensors makes their own token and block
@@ -100,7 +100,7 @@ the device **Project Manager (username)**. Needs Home Assistant 2025.10 or newer
 
 ### In the app (admins)
 
-*Settings → Home Assistant → MQTT broker (admins)*:
+*Settings → Calendar & Home Assistant → MQTT broker (admins)*:
 
 | Field | |
 |---|---|
@@ -118,7 +118,7 @@ status shows *● Connected*.
 
 ### Each user
 
-*Settings → Home Assistant → Push over MQTT*: tick **Send my notifications
+*Settings → Calendar & Home Assistant → Push over MQTT*: tick **Send my notifications
 and task numbers to Home Assistant**, optionally for one workspace. Untick it
 and the device disappears from Home Assistant again.
 
@@ -269,4 +269,4 @@ to the broker and Home Assistant. Limit it to one workspace if that matters.
 - **REST: sensors unavailable** — Home Assistant's log names the reason; try
   the address with the token: `curl -H "Authorization: Bearer pm_…" http://<server>/api/v1/summary/`.
 - **The reminder comes at the wrong time** — it goes by the server's clock;
-  *Settings → Home Assistant* shows the server's current time.
+  *Settings → Calendar & Home Assistant* shows the server's current time.

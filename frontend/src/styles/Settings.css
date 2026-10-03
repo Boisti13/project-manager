@@ -545,3 +545,71 @@
   font-size: 13px;
   color: var(--color-warning-text, #b26a00);
 }
+
+/* Settings sub-pages: a menu on the left, tabs to scroll on phones. */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.settings-menu {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-menu a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.settings-menu a:hover {
+  color: var(--color-text-primary);
+  background-color: rgba(127, 127, 127, 0.1);
+}
+
+.settings-menu a.active {
+  font-weight: 600;
+  color: var(--color-primary);
+  background-color: var(--color-primary-bg, rgba(33, 150, 243, 0.12));
+}
+
+.settings-menu-icon {
+  width: 20px;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .settings-menu {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .settings-menu a {
+    flex-shrink: 0;
+    padding: 7px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+}
