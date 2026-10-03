@@ -58,13 +58,16 @@ CONNECTION_KEYS = ("mqtt_enabled", "mqtt_host", "mqtt_port", "mqtt_username", "m
 REMINDER_SENT_KEY = "mqtt_reminder_sent"  # date of the last daily reminder
 EVENT_TYPES = ["assigned", "mention", "comment", "unblocked", "deadlines"]
 SENSORS = [
-    # key, name, icon, attribute list in the summary
-    ("unread_notifications", "Unread notifications", "mdi:bell", "latest_notification"),
-    ("overdue", "Overdue tasks", "mdi:alert-circle-outline", "overdue_tasks"),
-    ("due_today", "Due today", "mdi:calendar-today", "due_today_tasks"),
-    ("due_soon", "Due soon", "mdi:calendar-clock", "due_soon_tasks"),
+    # key, name, icon, what the attributes hold (summary keys)
+    ("unread_notifications", "Unread notifications", "mdi:bell", {"notification": "latest_notification"}),
+    ("overdue", "Overdue tasks", "mdi:alert-circle-outline", {"titles": "overdue_titles", "tasks": "overdue_tasks"}),
+    ("due_today", "Due today", "mdi:calendar-today", {"titles": "due_today_titles", "tasks": "due_today_tasks"}),
+    ("due_soon", "Due soon", "mdi:calendar-clock", {"titles": "due_soon_titles", "tasks": "due_soon_tasks"}),
     ("open_assigned", "Assigned to me", "mdi:clipboard-account-outline", None),
+    ("next_task", "Next task", "mdi:clipboard-text-clock-outline", {"task": "next_task"}),
 ]
+# Sensors whose state is text, not a count (no state_class).
+TEXT_SENSORS = {"next_task": "{{ value_json.next_task_title if value_json.next_task_title else '—' }}"}
 
 TEXTS = {
     "en": {
@@ -353,13 +356,15 @@ class Bridge:
         common = {"device": device, "availability_topic": f"{base}/status"}
         state = f"{base}/{s}/state"
         out = {}
-        for key, name, icon, attr in SENSORS:
+        for key, name, icon, attrs in SENSORS:
             entity = {"name": name, "unique_id": f"pm_{s}_{key}", "default_entity_id": f"sensor.project_manager_{s}_{key}", "state_topic": state,
-                      "value_template": "{{ value_json.%s }}" % key, "icon": icon, "state_class": "measurement", **common}
-            if attr:
-                name_ = "notification" if attr == "latest_notification" else "tasks"
+                      "value_template": TEXT_SENSORS.get(key, "{{ value_json.%s }}" % key), "icon": icon, **common}
+            if key not in TEXT_SENSORS:
+                entity["state_class"] = "measurement"
+            if attrs:
+                pairs = ", ".join(f"'{name_}': value_json.{field}" for name_, field in attrs.items())
                 entity["json_attributes_topic"] = state
-                entity["json_attributes_template"] = "{{ {'%s': value_json.%s, 'workspace': value_json.workspace} | tojson }}" % (name_, attr)
+                entity["json_attributes_template"] = "{{ {%s, 'workspace': value_json.workspace} | tojson }}" % pairs
             out[f"{disc}/sensor/project_manager_{s}/{key}/config"] = entity
         out[f"{disc}/event/project_manager_{s}/notification/config"] = {
             "name": "Notification", "unique_id": f"pm_{s}_notification", "default_entity_id": f"event.project_manager_{s}_notification",

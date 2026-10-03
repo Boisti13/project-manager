@@ -2,6 +2,14 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.48.0 — 2026-10-03
+
+### Added
+- **Task titles in Home Assistant**: a new sensor **Next task** whose state is the title of the most urgent task (overdue first, then due today, then the next days); the *Overdue*, *Due today* and *Due soon* sensors get a plain `titles` attribute (just the titles) next to `tasks`. The summary (`GET /api/v1/summary/`) has the same as `overdue_titles`, `due_today_titles`, `due_soon_titles`, `next_task`, `next_task_title`; the REST YAML in Settings includes them.
+
+### Changed
+- README: a **Home Assistant** section — both ways compared, the sensors and events, quick setup for REST and MQTT, an example automation.
+
 ## v1.47.1 — 2026-10-03
 
 ### Fixed

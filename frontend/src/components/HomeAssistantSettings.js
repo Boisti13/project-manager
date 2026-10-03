@@ -33,15 +33,19 @@ export function restYaml(url) {
       - name: "Tasks overdue"
         unique_id: project_manager_overdue
         value_template: "{{ value_json.overdue }}"
-        json_attributes: [overdue_tasks]
+        json_attributes: [overdue_titles, overdue_tasks]
       - name: "Tasks due today"
         unique_id: project_manager_due_today
         value_template: "{{ value_json.due_today }}"
-        json_attributes: [due_today_tasks]
+        json_attributes: [due_today_titles, due_today_tasks]
       - name: "Tasks due soon"
         unique_id: project_manager_due_soon
         value_template: "{{ value_json.due_soon }}"
-        json_attributes: [due_soon_tasks]
+        json_attributes: [due_soon_titles, due_soon_tasks]
+      - name: "Next task"
+        unique_id: project_manager_next_task
+        value_template: "{{ value_json.next_task_title or '—' }}"
+        json_attributes: [next_task]
       - name: "Task notifications"
         unique_id: project_manager_unread
         value_template: "{{ value_json.unread_notifications }}"

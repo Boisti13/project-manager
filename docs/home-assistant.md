@@ -54,15 +54,19 @@ calls `GET /api/v1/summary/` with a personal API token and turns the answer into
          - name: "Tasks overdue"
            unique_id: project_manager_overdue
            value_template: "{{ value_json.overdue }}"
-           json_attributes: [overdue_tasks]
+           json_attributes: [overdue_titles, overdue_tasks]
          - name: "Tasks due today"
            unique_id: project_manager_due_today
            value_template: "{{ value_json.due_today }}"
-           json_attributes: [due_today_tasks]
+           json_attributes: [due_today_titles, due_today_tasks]
          - name: "Tasks due soon"
            unique_id: project_manager_due_soon
            value_template: "{{ value_json.due_soon }}"
-           json_attributes: [due_soon_tasks]
+           json_attributes: [due_soon_titles, due_soon_tasks]
+         - name: "Next task"
+           unique_id: project_manager_next_task
+           value_template: "{{ value_json.next_task_title or '—' }}"
+           json_attributes: [next_task]
          - name: "Task notifications"
            unique_id: project_manager_unread
            value_template: "{{ value_json.unread_notifications }}"
@@ -71,7 +75,9 @@ calls `GET /api/v1/summary/` with a personal API token and turns the answer into
 
 4. *Developer tools → YAML → Check configuration*, then restart Home Assistant.
    The sensors `sensor.tasks_overdue`, `sensor.tasks_due_today`, … appear;
-   their attributes hold the tasks (title, project, deadline, priority, link).
+   their attributes hold just the titles (`overdue_titles`, …) and the tasks
+   with project, deadline, priority and link (`overdue_tasks`, …).
+   `sensor.next_task` shows the title of the most urgent task.
 
 Options:
 
@@ -128,9 +134,10 @@ Device **Project Manager (anna)** with:
 
 | Entity | |
 |---|---|
-| `sensor.project_manager_anna_overdue` | overdue tasks; attribute `tasks` |
-| `sensor.project_manager_anna_due_today` | due today; attribute `tasks` |
-| `sensor.project_manager_anna_due_soon` | due in the next 3 days; attribute `tasks` |
+| `sensor.project_manager_anna_overdue` | overdue tasks; attributes `titles` (just the titles) and `tasks` (with project, deadline, priority, link) |
+| `sensor.project_manager_anna_due_today` | due today; attributes `titles`, `tasks` |
+| `sensor.project_manager_anna_due_soon` | due in the next 3 days; attributes `titles`, `tasks` |
+| `sensor.project_manager_anna_next_task` | the **title** of the most urgent task — overdue first, then due today, then the next days (`—` when nothing is due); attribute `task` |
 | `sensor.project_manager_anna_unread_notifications` | unread notifications; attribute `notification` (the latest) |
 | `sensor.project_manager_anna_open_assigned` | open tasks assigned to anna |
 | `event.project_manager_anna_notification` | fires with `event_type` **assigned**, **mention**, **comment**, **unblocked** (what it waited for is done) or **deadlines** (the daily reminder) |
@@ -191,22 +198,27 @@ your sensor's name):
         data: { color_name: red, brightness_pct: 40 }
 ```
 
-Today's tasks on a dashboard (Markdown card):
+Today's tasks on a dashboard — just the titles (Markdown card):
 
 ```yaml
 type: markdown
 title: Today
 content: >
-  {% for t in state_attr('sensor.project_manager_anna_overdue', 'tasks') or [] %}
-  - ⚠ **{{ t.title }}** ({{ t.project }}, {{ t.deadline }})
+  {% for title in state_attr('sensor.project_manager_anna_overdue', 'titles') or [] %}
+  - ⚠ **{{ title }}**
   {% endfor %}
-  {% for t in state_attr('sensor.project_manager_anna_due_today', 'tasks') or [] %}
-  - {{ t.title }} ({{ t.project }})
+  {% for title in state_attr('sensor.project_manager_anna_due_today', 'titles') or [] %}
+  - {{ title }}
   {% endfor %}
 ```
 
-(With the REST sensors, the attributes are `overdue_tasks` / `due_today_tasks`
-on `sensor.tasks_overdue` / `sensor.tasks_due_today`.)
+The next task as a tile or in an announcement: the state of
+`sensor.project_manager_anna_next_task` is its title, e.g.
+`message: "Next up: {{ states('sensor.project_manager_anna_next_task') }}"`.
+
+With more detail, use `tasks` instead of `titles`: `{{ t.title }} ({{ t.project }}, {{ t.deadline }})`.
+(With the REST sensors, the attributes are `overdue_titles` / `overdue_tasks`
+… on `sensor.tasks_overdue`, and `sensor.next_task`.)
 
 ## What's in the data
 
@@ -227,6 +239,11 @@ on `sensor.tasks_overdue` / `sensor.tasks_due_today`.)
   ],
   "due_today_tasks": [],
   "due_soon_tasks": [],
+  "overdue_titles": ["Order antenna modules"],
+  "due_today_titles": [],
+  "due_soon_titles": [],
+  "next_task": {"id": 12, "title": "Order antenna modules", "…": "…"},
+  "next_task_title": "Order antenna modules",
   "latest_notification": {"kind": "mention", "task_id": 12, "task_title": "Order antenna modules",
                           "actor": "bob", "excerpt": "@anna, go ahead", "created_at": "2026-10-03T07:12:00Z", "read": false},
   "updated_at": "2026-10-03T08:00:00Z"

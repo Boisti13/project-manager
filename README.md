@@ -42,7 +42,7 @@ The web app shows the same links under *Settings*.
 - **Comments with @mentions, history and notifications** for working together; descriptions and comments with **formatting and clickable links**
 - **Archive** finished projects (still searchable), **share a project read-only** with a link — no account needed
 - **Calendar feed** for Outlook, Apple Calendar, Thunderbird or Android — all tasks or one workspace
-- **[Home Assistant](docs/home-assistant.md)**: overdue / due-today sensors and notification events — fetched (REST) or pushed over **MQTT** with auto-discovery
+- **[Home Assistant](#home-assistant)**: next task, overdue / due-today sensors with the titles, notification events — fetched (REST) or pushed over **MQTT** with auto-discovery
 - **Phone-friendly**, installable to the home screen; **dark mode**
 - **Windows and Linux app** (x86_64 and ARM64; installer, AppImage, .deb) with a local copy: works offline, syncs when back online, updates itself
 - **Secure logins**: optional **two-factor login** with an authenticator app (with recovery codes), and repeated wrong passwords are slowed down
@@ -54,6 +54,74 @@ The web app shows the same links under *Settings*.
 | ![Timeline view](docs/screenshots/timeline-desktop.png) | ![Changing several tasks at once](docs/screenshots/bulk-edit-desktop.png) | ![Tasks on a phone](docs/screenshots/tasks-phone.png) |
 
 More in the **[user guide](docs/user-guide.md)**.
+
+## Home Assistant
+
+Your tasks and notifications in [Home Assistant](https://www.home-assistant.io/):
+dashboards, announcements, a push to your phone when someone assigns you a
+task, a lamp that turns red while something is overdue. Set it up in the app
+under **Settings → Calendar & Home Assistant**. There are two ways, and you
+can use both:
+
+| | **Let Home Assistant fetch** (REST) | **Push over MQTT** |
+|---|---|---|
+| How | HA calls `GET /api/v1/summary/` with an API token every minute | the app sends to your broker (e.g. the Mosquitto add-on) |
+| Setup | an API token + YAML that Settings shows ready to copy | an admin enters the broker once; each user ticks *Send my notifications …* |
+| Sensors | from the YAML | appear by themselves (MQTT Discovery) as the device *Project Manager (you)* |
+| Events for automations | — | ✓ as they happen |
+| Daily deadline reminder | — | ✓ at a time you choose |
+| Network | HA must reach the app | the app must reach the broker |
+
+**What you get** (each optionally for one [workspace](docs/user-guide.md#workspaces)):
+
+| Sensor | State | Attributes |
+|---|---|---|
+| **Next task** | the **title** of the most urgent task — overdue first, then due today, then the next days | `task` (project, deadline, priority, link) |
+| **Overdue tasks** | how many | `titles` (just the titles), `tasks` (with project, deadline, priority, link) |
+| **Due today** | how many | `titles`, `tasks` |
+| **Due soon** (next 3 days) | how many | `titles`, `tasks` |
+| **Unread notifications** | how many | the latest notification |
+| **Assigned to me** | open tasks assigned to you | |
+
+Counted like the bell: open tasks assigned to you or to nobody, not in
+archived projects. With MQTT there's also an **event entity** that fires with
+`assigned`, `mention`, `comment`, `unblocked` (what a task waited for is
+done) and `deadlines` (the daily reminder), each with a ready-made message
+in your language, the task title and a link.
+
+**Quick setup — REST**: *Settings → Account → API tokens* → create one; put
+`project_manager_token: "Bearer pm_…"` into Home Assistant's `secrets.yaml`;
+copy the YAML from *Settings → Calendar & Home Assistant* into
+`configuration.yaml`; restart Home Assistant.
+
+**Quick setup — MQTT**: in Home Assistant install the **Mosquitto broker**
+add-on, set up the **MQTT** integration and create a login for the app; in
+the app (admin) enter broker address, port, login, the reminder time and the
+app's address, **Test connection**, tick *Send to Home Assistant over MQTT*,
+**Save**; then each user ticks **Send my notifications and task numbers to
+Home Assistant** on the same page. The status says *● Connected*.
+
+Example — a push when someone assigns or mentions you:
+
+```yaml
+automation:
+  - alias: "Tasks: assigned or mentioned"
+    triggers:
+      - trigger: state
+        entity_id: event.project_manager_anna_notification
+    conditions:
+      - "{{ trigger.to_state.attributes.event_type in ['assigned', 'mention'] }}"
+    actions:
+      - action: notify.mobile_app_annas_phone
+        data:
+          message: "{{ trigger.to_state.attributes.message }}"
+```
+
+The full guide — every field, more automations (morning reminder, overdue
+lamp, dashboard card with today's titles), the data format, MQTT topics and
+troubleshooting — is in **[docs/home-assistant.md](docs/home-assistant.md)**.
+
+![Settings → Calendar & Home Assistant](docs/screenshots/home-assistant-settings.png)
 
 ## Install
 

@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.12.0 — 2026-10-03
+
+### Changed
+- The Home Assistant REST YAML in Settings includes the task titles and the *Next task* sensor (server v1.48.0 interface).
+
 ## v0.11.1 — 2026-10-03
 
 ### Fixed

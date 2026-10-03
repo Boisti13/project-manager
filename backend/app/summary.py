@@ -113,6 +113,10 @@ def build(db: Session, user: User, workspace: Optional[Workspace] = None, base_u
     latest = notes[0] if notes else None
 
     items = lambda ts: [_item(scope, t, today, base_url) for t in ts[:LIST_MAX]]  # noqa: E731
+    titles = lambda ts: [t.title for t in ts[:LIST_MAX]]  # noqa: E731
+    # The most urgent: overdue first, then due today, then the next days.
+    upcoming = overdue + due_today + due_soon
+    nxt = _item(scope, upcoming[0], today, base_url) if upcoming else None
     return {
         "user": user.username,
         "workspace": workspace.name if workspace else None,
@@ -124,6 +128,12 @@ def build(db: Session, user: User, workspace: Optional[Workspace] = None, base_u
         "overdue_tasks": items(overdue),
         "due_today_tasks": items(due_today),
         "due_soon_tasks": items(due_soon),
+        # just the titles, for dashboards and announcements
+        "overdue_titles": titles(overdue),
+        "due_today_titles": titles(due_today),
+        "due_soon_titles": titles(due_soon),
+        "next_task": nxt,
+        "next_task_title": nxt["title"] if nxt else "",
         "latest_notification": None if latest is None else {
             "kind": latest.kind,
             "task_id": latest.task_id,

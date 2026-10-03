@@ -38,6 +38,9 @@ def test_summary_counts_and_lists(client, alice, bob):
     assert late["url"].endswith(f"/?task={late['id']}")
     assert [t["title"] for t in s["due_today_tasks"]] == ["Today"]
     assert [t["title"] for t in s["due_soon_tasks"]] == ["Soon"]
+    # just the titles, and the most urgent one
+    assert (s["overdue_titles"], s["due_today_titles"], s["due_soon_titles"]) == (["Late"], ["Today"], ["Soon"])
+    assert s["next_task_title"] == "Late" and s["next_task"]["title"] == "Late"
 
     # with an API token, as Home Assistant uses it
     token = post(client, alice, "/api/v1/auth/tokens/", name="Home Assistant")["token"]
@@ -151,6 +154,10 @@ def test_mqtt_discovery_events_states_and_opt_out(client, admin, alice, bob, bri
     ev = broker.last("homeassistant/event/project_manager_alice/notification/config")
     assert "assigned" in ev["event_types"] and ev["state_topic"] == "project-manager/alice/event"
     assert broker.last("project-manager/alice/state")["overdue"] == 0
+    nxt = broker.last("homeassistant/sensor/project_manager_alice/next_task/config")
+    assert "state_class" not in nxt and "next_task_title" in nxt["value_template"]
+    assert "'titles': value_json.overdue_titles" in overdue["json_attributes_template"]
+    assert broker.last("project-manager/alice/state")["next_task_title"] == ""
 
     # bob assigns her something late: an event and a new state
     task = post(client, bob, "/api/v1/tasks/", title="Order cables", assignee_id=alice.id, deadline=day(-1))
@@ -160,6 +167,7 @@ def test_mqtt_discovery_events_states_and_opt_out(client, admin, alice, bob, bri
     assert events[-1]["url"] == f"http://pm.lan/?task={task['id']}"
     state = broker.last("project-manager/alice/state")
     assert state["overdue"] == 1 and state["unread_notifications"] == 1
+    assert state["overdue_titles"] == ["Order cables"] and state["next_task_title"] == "Order cables"
     assert state["overdue_tasks"][0]["url"] == f"http://pm.lan/?task={task['id']}"
     # bob didn't opt in: nothing for him
     post(client, alice, "/api/v1/tasks/", title="For bob", assignee_id=bob.id)
