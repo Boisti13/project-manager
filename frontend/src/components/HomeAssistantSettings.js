@@ -59,24 +59,31 @@ function BrokerSettings({ onSaved }) {
   const [message, setMessage] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const data = await call('/api/v1/home-assistant/mqtt');
-      setForm(data.settings);
-      setStatus(data.status);
-    } catch (err) {
-      setMessage({ ok: false, text: err.message });
-    }
+  // What's saved on the server (the form may hold unsaved edits).
+  const [saved, setSaved] = useState(null);
+
+  useEffect(() => {
+    call('/api/v1/home-assistant/mqtt')
+      .then((data) => {
+        setForm(data.settings);
+        setSaved(data.settings);
+        setStatus(data.status);
+      })
+      .catch((err) => setMessage({ ok: false, text: err.message }));
   }, []);
+  // While MQTT is on (as saved), refresh the connection status every few
+  // seconds -- only the status, never the form someone is editing.
   useEffect(() => {
-    load();
-  }, [load]);
-  // While it's on, look again after a moment: connecting takes a second.
-  useEffect(() => {
-    if (!form?.enabled) return undefined;
-    const timer = setTimeout(load, 3000);
-    return () => clearTimeout(timer);
-  }, [form, load]);
+    if (!saved?.enabled) return undefined;
+    const timer = setInterval(async () => {
+      try {
+        setStatus((await call('/api/v1/home-assistant/mqtt')).status);
+      } catch {
+        // try again next time
+      }
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [saved]);
 
   if (!form) return message ? <p className="error-message">{message.text}</p> : null;
 
@@ -100,6 +107,7 @@ function BrokerSettings({ onSaved }) {
     run(async () => {
       const data = await call('/api/v1/home-assistant/mqtt', 'PUT', body());
       setForm(data.settings);
+      setSaved(data.settings);
       setStatus(data.status);
       setPassword('');
       setMessage({ ok: true, text: t('Saved.') });
@@ -170,7 +178,7 @@ function BrokerSettings({ onSaved }) {
         <button type="button" className="btn btn-secondary btn-small" onClick={test} disabled={busy || !form.host.trim()}>
           {t('Test connection')}
         </button>
-        {form.enabled && status && (
+        {saved?.enabled && status && (
           <span className={status.connected ? 'settings-ok' : 'ha-status-off'}>
             {status.connected
               ? t('● Connected')

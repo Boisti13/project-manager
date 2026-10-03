@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.11.1 — 2026-10-03
+
+### Fixed
+- The MQTT broker settings keep your changes until you save them (server v1.47.1 interface).
+
 ## v0.11.0 — 2026-10-03
 
 ### Added

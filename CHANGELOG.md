@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.47.1 — 2026-10-03
+
+### Fixed
+- *Settings → Calendar & Home Assistant → MQTT broker*: ticking *Send to Home Assistant over MQTT* (or changing any field) no longer gets undone after a few seconds before you click *Save*; the page now only refreshes the connection status, not the form.
+
 ## v1.47.0 — 2026-10-03
 
 ### Added
