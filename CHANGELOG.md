@@ -2,6 +2,18 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.47.0 — 2026-10-03
+
+### Added
+- **Home Assistant** (*Settings → Home Assistant*, guide in [docs/home-assistant.md](docs/home-assistant.md)), two ways, usable together:
+  - **Let Home Assistant fetch**: `GET /api/v1/summary/` (with an API token) gives unread notifications, overdue / due today / due soon with the tasks, and open tasks assigned to you — optionally for one workspace. Settings shows the ready-made REST sensor YAML for your server.
+  - **Push over MQTT** (switch on/off in Settings): an admin enters the broker (e.g. the Mosquitto add-on); each user opts in, optionally for one workspace. Sensors and a notification event entity appear by themselves (MQTT Discovery) as the device *Project Manager (you)*; events for *assigned*, *mentioned*, *comment*, *ready to start*, and a daily deadline reminder at a set time. Test connection, connection status, the server's clock shown for the reminder; the broker password isn't shown again.
+- Example automations: push to your phone, morning reminder, a lamp for overdue tasks, a dashboard card.
+
+### Under the hood
+- `app/summary.py`, `app/mqtt.py` (background bridge, reconnects by itself; idle when off), routers `summary`, `homeassistant`; migration `0023`: `users.mqtt_enabled`, `users.mqtt_workspace_id`; new dependency `paho-mqtt`.
+- 6 new backend tests (MQTT with a fake broker client; also checked once against a real broker), 1 new frontend test, 1 new browser test.
+
 ## v1.46.0 — 2026-10-02
 
 ### Added

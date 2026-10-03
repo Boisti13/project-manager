@@ -60,6 +60,40 @@ class TwoFactorStatus(BaseModel):
     enabled: bool
     recovery_left: int
 
+class MqttSettings(BaseModel):
+    enabled: bool
+    host: str
+    port: int
+    username: str
+    password_set: bool  # the password itself isn't shown again
+    tls: bool
+    topic: str
+    discovery_prefix: str
+    reminder_time: str
+    app_url: str
+
+class MqttSettingsUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    host: Optional[str] = Field(default=None, max_length=255)
+    port: Optional[int] = Field(default=None, ge=1, le=65535)
+    username: Optional[str] = Field(default=None, max_length=255)
+    password: Optional[str] = Field(default=None, max_length=255)  # unset: keep; "": none
+    tls: Optional[bool] = None
+    topic: Optional[str] = Field(default=None, pattern=r"^[^#+/\s][^#+\s]*[^#+/\s]$|^[^#+/\s]$")
+    discovery_prefix: Optional[str] = Field(default=None, pattern=r"^[^#+/\s][^#+\s]*[^#+/\s]$|^[^#+/\s]$")
+    reminder_time: Optional[str] = Field(default=None, pattern=r"^$|^([01]\d|2[0-3]):[0-5]\d$")
+    app_url: Optional[str] = Field(default=None, max_length=255, pattern=r"^$|^https?://\S+$")
+
+class HomeAssistantMe(BaseModel):
+    available: bool  # MQTT switched on by an admin
+    enabled: bool  # this user's notifications go to MQTT
+    workspace_id: Optional[int] = None
+    topic: str  # <topic>/<user>, where this user's state and events go
+
+class HomeAssistantMeUpdate(BaseModel):
+    enabled: bool
+    workspace_id: Optional[int] = None
+
 class UserAdminUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_admin: Optional[bool] = None

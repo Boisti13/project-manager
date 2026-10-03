@@ -42,6 +42,7 @@ The web app shows the same links under *Settings*.
 - **Comments with @mentions, history and notifications** for working together; descriptions and comments with **formatting and clickable links**
 - **Archive** finished projects (still searchable), **share a project read-only** with a link — no account needed
 - **Calendar feed** for Outlook, Apple Calendar, Thunderbird or Android — all tasks or one workspace
+- **[Home Assistant](docs/home-assistant.md)**: overdue / due-today sensors and notification events — fetched (REST) or pushed over **MQTT** with auto-discovery
 - **Phone-friendly**, installable to the home screen; **dark mode**
 - **Windows and Linux app** (x86_64 and ARM64; installer, AppImage, .deb) with a local copy: works offline, syncs when back online, updates itself
 - **Secure logins**: optional **two-factor login** with an authenticator app (with recovery codes), and repeated wrong passwords are slowed down
@@ -80,6 +81,7 @@ new server: [DEPLOYMENT.md](DEPLOYMENT.md).
 | [User guide](docs/user-guide.md) | Using the app: tasks, views, filters, templates, review, shortcuts, settings |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Installing and running a server: updates, HTTPS, backups and restore, troubleshooting |
 | [Windows & Linux app](desktop/README.md) | Installing, connecting, working offline, updates |
+| [Home Assistant](docs/home-assistant.md) | Tasks and notifications in Home Assistant: REST sensors or MQTT, automations |
 | [API](docs/API.md) | REST API, tokens, keeping a copy in sync |
 | [Development](docs/development.md) | Setup, tests, architecture, branches and versions |
 | [CHANGELOG.md](CHANGELOG.md) | What changed in each release ([releases](https://github.com/Boisti13/project-manager/releases)) |

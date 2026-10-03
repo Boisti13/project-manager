@@ -13,3 +13,5 @@ bcrypt==5.0.0
 pyjwt==2.15.0
 # QR codes for setting up two-factor login (pure Python)
 segno==1.6.6
+# Home Assistant over MQTT (optional, Settings -> Home Assistant)
+paho-mqtt==2.1.0

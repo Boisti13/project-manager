@@ -484,3 +484,64 @@
   list-style: none;
   font-size: 15px;
 }
+
+/* Home Assistant (HomeAssistantSettings) */
+.settings-section h3 {
+  margin: 18px 0 6px;
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.ha-steps {
+  margin: 4px 0 8px;
+  padding-left: 20px;
+}
+
+.ha-yaml {
+  max-height: 260px;
+  overflow: auto;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-bg, rgba(127, 127, 127, 0.06));
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-text-primary);
+}
+
+.ha-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.ha-broker {
+  margin-top: 16px;
+  padding: 4px 14px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.ha-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px 14px;
+  margin: 8px 0;
+}
+
+.ha-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.ha-status-off {
+  font-size: 13px;
+  color: var(--color-warning-text, #b26a00);
+}

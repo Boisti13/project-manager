@@ -16,6 +16,7 @@ import { t } from '../i18n';
 import TemplateSettings from './TemplateSettings';
 import WorkspaceSettings from './WorkspaceSettings';
 import TwoFactorSettings from './TwoFactorSettings';
+import HomeAssistantSettings from './HomeAssistantSettings';
 
 function Settings() {
   const { currentUser } = useAuth();
@@ -122,6 +123,8 @@ function Settings() {
       {!IS_DESKTOP && <ApiTokenSettings />}
 
       {!IS_DESKTOP && <CalendarFeedSettings />}
+
+      <HomeAssistantSettings />
 
       <ArchiveSettings />
 

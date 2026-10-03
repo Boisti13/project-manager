@@ -55,15 +55,23 @@ def test_migrate_stamps_pre_alembic_database(scratch_db):
     from app.database import Base
     from app import models  # noqa: F401
 
+    from sqlalchemy.schema import CreateIndex, CreateTable
+
     eng = create_engine(db_url(scratch_db))
-    # Only the tables that existed at v1.0.0.
-    Base.metadata.create_all(eng, tables=[Base.metadata.tables[t] for t in ("users", "projects", "tasks")])
+    # Only the tables that existed at v1.0.0 (users without the later key to workspaces).
+    users = Base.metadata.tables["users"]
+    with eng.begin() as c:
+        c.execute(CreateTable(users, include_foreign_key_constraints=[]))
+        for index in users.indexes:
+            c.execute(CreateIndex(index))
+    Base.metadata.create_all(eng, tables=[Base.metadata.tables[t] for t in ("projects", "tasks")])
     with eng.begin() as c:
         # v1.0.0 tables didn't have the later columns.
         c.execute(text("ALTER TABLE projects DROP COLUMN color, DROP COLUMN parent_id, DROP COLUMN is_private, DROP COLUMN uid, "
                        "DROP COLUMN archived_at, DROP COLUMN share_token"))
         c.execute(text("ALTER TABLE users DROP COLUMN language, DROP COLUMN calendar_token, DROP COLUMN workspace_unassigned_everywhere, "
-                       "DROP COLUMN totp_secret, DROP COLUMN totp_enabled_at, DROP COLUMN totp_last_step, DROP COLUMN totp_recovery"))
+                       "DROP COLUMN totp_secret, DROP COLUMN totp_enabled_at, DROP COLUMN totp_last_step, DROP COLUMN totp_recovery, "
+                       "DROP COLUMN mqtt_enabled, DROP COLUMN mqtt_workspace_id"))
         c.execute(text("ALTER TABLE tasks DROP COLUMN completed_at, DROP COLUMN recurrence_unit, "
                        "DROP COLUMN recurrence_interval, DROP COLUMN recurrence_next_id, DROP COLUMN uid, "
                        "DROP COLUMN recurrence_weekdays, DROP COLUMN recurrence_monthly, DROP COLUMN recurrence_from, "
@@ -71,7 +79,7 @@ def test_migrate_stamps_pre_alembic_database(scratch_db):
     eng.dispose()
     r = run_backend("migrate.py", db_name=scratch_db)
     assert "stamping baseline 0001" in r.stdout
-    assert q(scratch_db, "SELECT version_num FROM alembic_version")[0][0] == "0022"
+    assert q(scratch_db, "SELECT version_num FROM alembic_version")[0][0] == "0023"
 
 
 def test_migrate_refuses_mismatched_pre_alembic_database(scratch_db):

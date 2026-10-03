@@ -1,8 +1,12 @@
+import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app import mqtt
 from app.routers import (
     users, tasks, projects, auth, system, settings, transfer, comments, notifications, labels, tokens, deletions, sync,
-    calendar, saved_filters, templates, shared, pins, workspaces,
+    calendar, saved_filters, templates, shared, pins, workspaces, summary, homeassistant,
 )
 from app.version import APP_VERSION
 
@@ -22,7 +26,17 @@ user can too -- except managing tokens and changing the password.
 See `docs/API.md` in the repository for examples.
 """
 
+@asynccontextmanager
+async def lifespan(_app):
+    # Home Assistant over MQTT runs in the background (idle unless switched on).
+    if os.environ.get("PM_MQTT_THREAD", "1") != "0":
+        mqtt.bridge.start()
+    yield
+    mqtt.bridge.shutdown()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="Project Manager API",
     version=APP_VERSION,
     description=API_DESCRIPTION,
@@ -56,6 +70,8 @@ ROUTES = [
     (shared.router, "/share", "share links"),
     (pins.router, "/pins", "pinned tasks"),
     (workspaces.router, "/workspaces", "workspaces"),
+    (summary.router, "/summary", "home assistant"),
+    (homeassistant.router, "/home-assistant", "home assistant"),
     (sync.router, "/sync", "sync"),
     (deletions.router, "/deletions", "sync"),
     (system.router, "/system", "system"),

@@ -254,4 +254,8 @@ pct exec 113 -- supervisorctl status
 
 **Locked out by two-factor login** (phone and recovery codes gone): another admin can switch it off under *Settings → User Management → Turn off 2FA*. The only admin: `sudo -u postgres psql projectmanager -c "UPDATE users SET totp_secret=NULL, totp_enabled_at=NULL, totp_last_step=NULL, totp_recovery=NULL WHERE username='NAME'"`.
 
+**Time zone**: "due today", overdue counts and the Home Assistant reminder go by the server's clock. LXCs often run on UTC; set yours with `timedatectl set-timezone Europe/Berlin` (in the container) and restart the app (`supervisorctl restart project-manager-backend` or the next update).
+
+**Home Assistant over MQTT: "Not connected"**: the server must reach the broker (`timeout 3 bash -c '</dev/tcp/<broker>/1883' && echo open`). If the broker is in another network (e.g. another site over ZeroTier), the server needs a route there — on your router, or in the container. See [docs/home-assistant.md](docs/home-assistant.md#troubleshooting).
+
 **Backend 500s after a model change**: check `cd backend && venv/bin/alembic current` shows `(head)`; if not, run `venv/bin/python migrate.py`.

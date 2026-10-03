@@ -50,6 +50,10 @@ class User(Base):
     totp_enabled_at = Column(DateTime, nullable=True)
     totp_last_step = Column(Integer, nullable=True)
     totp_recovery = Column(Text, nullable=True)
+    # Home Assistant over MQTT (app/mqtt.py): this user's notifications and
+    # numbers go to the broker, optionally only for one of their workspaces.
+    mqtt_enabled = Column(Boolean, nullable=False, default=False, server_default=false())
+    mqtt_workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="SET NULL", use_alter=True, name="users_mqtt_workspace_id_fkey"), nullable=True)
 
     tasks = relationship("Task", back_populates="assignee")
 

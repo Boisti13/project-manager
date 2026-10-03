@@ -476,6 +476,9 @@ own subscription.
 - **API tokens**: personal tokens for scripts and other apps
   (see [docs/API.md](API.md)).
 - **Calendar feed**: see [above](#calendar-feed).
+- **Home Assistant**: your numbers, task lists and notifications in Home
+  Assistant — fetched with an API token, or pushed over MQTT (each user opts
+  in; admins set up the broker). See [Home Assistant](home-assistant.md).
 - **Completed tasks**: after how many days done tasks are archived.
 - **Labels** and **Task templates**: rename, recolor, delete.
 - **Backup & export**: export a project (or everything) as a JSON file to

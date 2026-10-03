@@ -89,7 +89,7 @@ project-manager/
 ├── .github/workflows/release-apps.yml # attaches the apps to every server release
 ├── desktop/                 # Windows/Linux app (Tauri shell; offline layer in frontend/src/desktop)
 ├── backend/
-│   ├── app/                 # FastAPI application (routers/, models.py, schemas.py, access.py = who sees what, two_factor.py = TOTP, ...)
+│   ├── app/                 # FastAPI application (routers/, models.py, schemas.py, access.py = who sees what, two_factor.py = TOTP, summary.py + mqtt.py = Home Assistant, ...)
 │   ├── alembic/versions/    # Database migrations
 │   ├── tests/               # pytest suite (real PostgreSQL)
 │   └── migrate.py           # Applies migrations; stamps pre-Alembic databases

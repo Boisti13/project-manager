@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.11.0 — 2026-10-03
+
+### Added
+- *Settings → Home Assistant*: the REST sensor YAML for your server, the MQTT opt-in, and (for admins) the broker settings (server v1.47.0 interface; needs server v1.47.0).
+
 ## v0.10.0 — 2026-10-02
 
 ### Added
