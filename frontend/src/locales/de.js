@@ -885,6 +885,7 @@ const de = {
   "○ Connecting…": "○ Verbinde…",
   "○ Not connected: {error}": "○ Nicht verbunden: {error}",
   "● Connected": "● Verbunden",
+  "● Connected — but nobody sends yet: tick “Send my notifications and task numbers to Home Assistant” above.": "● Verbunden – aber noch schickt niemand etwas: Hake oben „Meine Benachrichtigungen und Aufgabenzahlen an Home Assistant schicken“ an.",
   "☑ Select": "☑ Auswählen",
   "☰ List": "☰ Liste",
   "⚠ HTTP (not encrypted)": "⚠ HTTP (unverschlüsselt)",

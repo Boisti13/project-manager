@@ -181,7 +181,9 @@ function BrokerSettings({ onSaved }) {
         {saved?.enabled && status && (
           <span className={status.connected ? 'settings-ok' : 'ha-status-off'}>
             {status.connected
-              ? t('● Connected')
+              ? status.users === 0
+                ? t('● Connected — but nobody sends yet: tick “Send my notifications and task numbers to Home Assistant” above.')
+                : t('● Connected')
               : status.last_error
               ? t('○ Not connected: {error}', { error: status.last_error })
               : t('○ Connecting…')}

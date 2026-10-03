@@ -7,6 +7,9 @@ All notable changes, newest first. Versions follow [semantic versioning](docs/de
 ### Fixed
 - *Settings → Calendar & Home Assistant → MQTT broker*: ticking *Send to Home Assistant over MQTT* (or changing any field) no longer gets undone after a few seconds before you click *Save*; the page now only refreshes the connection status, not the form.
 
+### Changed
+- The broker status says *Connected — but nobody sends yet* until someone ticks *Send my notifications and task numbers to Home Assistant*, so it's clear why nothing shows up in Home Assistant yet.
+
 ## v1.47.0 — 2026-10-03
 
 ### Added
