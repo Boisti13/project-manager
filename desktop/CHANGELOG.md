@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.13.0 — 2026-10-04
+
+### Added
+- Date and time in the top bar (on narrow windows just the time), so you always know where you are in the day (server v1.49.0 interface).
+
 ## v0.12.0 — 2026-10-03
 
 ### Changed
