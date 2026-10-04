@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.14.3 — 2026-10-04
+
+### Changed
+- *Change address* sits in front of the server's address in the settings (server v1.50.3 interface).
+
 ## v0.14.2 — 2026-10-04
 
 ### Changed

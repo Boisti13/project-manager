@@ -75,12 +75,12 @@ function DesktopSettings() {
         <div className="info-row">
           <span className="info-label">{t('Server')}</span>
           <span className="info-value">
-            {server}{' '}
             {newServer === null && (
-              <button type="button" className="link-btn" onClick={() => setNewServer(server)}>
+              <button type="button" className="link-btn desktop-change-server" onClick={() => setNewServer(server)}>
                 {t('Change address')}
               </button>
             )}
+            {server}
           </span>
         </div>
         {newServer !== null && (

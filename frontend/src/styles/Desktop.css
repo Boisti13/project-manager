@@ -158,3 +158,9 @@
   flex-basis: 100%;
   margin: 0;
 }
+
+/* "Change address" in front of the server's address. */
+.desktop-change-server {
+  margin-right: 10px;
+  font-weight: normal;
+}

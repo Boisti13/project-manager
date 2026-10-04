@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.50.3 — 2026-10-04
+
+### Changed
+- Windows/Linux app settings: *Change address* sits in front of the server's address.
+
 ## v1.50.2 — 2026-10-04
 
 ### Changed
