@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import NotificationBell from './NotificationBell';
+import NavClock from './NavClock';
 import WorkspaceSwitcher from './WorkspaceSwitcher';
 import { useWorkspace } from '../context/WorkspaceContext';
 import SyncStatus from './desktop/SyncStatus';
@@ -60,6 +61,7 @@ function Nav() {
         </NavLink>
       </div>
       <div className="nav-user">
+        <NavClock />
         <WorkspaceSwitcher />
         {IS_DESKTOP && <SyncStatus />}
         <NotificationBell />

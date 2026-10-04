@@ -2,6 +2,14 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.49.0 — 2026-10-04
+
+### Added
+- **Date and time in the top bar** (e.g. *Sun, Oct 4  14:32*, in German *So., 4. Okt.  14:32*), so you always know where you are in the day. It moves on at each full minute and catches up at once when you come back to the tab; on phones it shows just the time (the full date is in the tooltip).
+
+### Under the hood
+- `components/NavClock.js`; 2 new frontend tests.
+
 ## v1.48.0 — 2026-10-03
 
 ### Added

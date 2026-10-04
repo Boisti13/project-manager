@@ -50,6 +50,22 @@
   gap: 12px;
 }
 
+.nav-clock {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.nav-clock-time {
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .nav-username {
   color: rgba(255, 255, 255, 0.9);
   font-size: 13px;
@@ -117,6 +133,15 @@
 
   .nav-username {
     display: none;
+  }
+
+  /* Phones: just the time; the date is in the tooltip and on My day. */
+  .nav-clock-date {
+    display: none;
+  }
+
+  .nav-clock-time {
+    font-size: 14px;
   }
 
   /* The big app header is hidden on phones once logged in (see App.css);
