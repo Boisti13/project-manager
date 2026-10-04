@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.14.1 — 2026-10-04
+
+### Fixed
+- *Change address*: the field is wide enough for a whole address (server v1.50.1 interface).
+
 ## v0.14.0 — 2026-10-04
 
 ### Added

@@ -143,6 +143,17 @@
   color: var(--color-text-secondary);
 }
 
+/* Change address: the field takes the width (addresses are long). */
+.desktop-server-form {
+  margin: 8px 0 12px;
+}
+
+.archive-form.desktop-server-form input {
+  flex: 1 1 280px;
+  min-width: 0;
+  max-width: 480px;
+}
+
 .desktop-server-form .settings-help {
   flex-basis: 100%;
   margin: 0;

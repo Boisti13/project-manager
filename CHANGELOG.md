@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.50.1 — 2026-10-04
+
+### Fixed
+- Windows/Linux app, *Change address*: the field is wide enough for a whole address (it showed only `http://192.`).
+
 ## v1.50.0 — 2026-10-04
 
 ### Added
