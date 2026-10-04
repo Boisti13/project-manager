@@ -2,7 +2,7 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
-## Unreleased
+## v1.49.2 — 2026-10-04
 
 ### Under the hood
 - **Development tools in [`tools/`](tools)**, one set instead of scripts scattered over sessions and PCs: `preview_server.py` (the app with sample data, dated relative to today), `screenshots.py` (all 45 docs screenshots, including the close-ups, named or all at once; replaces `scripts/screenshots.py`), `check_links.py`, `translations.py` (`missing` / `add` / `remove`). See [docs/development.md → Preview and screenshots](docs/development.md#preview-and-screenshots).
