@@ -75,7 +75,7 @@ pytest e2e
 
 Like the backend tests they use `PM_TEST_DATABASE_URL` or start a throwaway PostgreSQL; `PM_E2E_BUILD=path` tests another build, `PW_CHANNEL=chrome` uses an installed Chrome. Each test makes its own project and tasks, so they don't depend on each other. When one fails, a screenshot lands in `e2e/artifacts/` and the server's output in `e2e/server.log`.
 
-**Translations** — every UI text goes through `t('English text')` (or `tn(n, 'one …', '{n} …')` for plurals) from `frontend/src/i18n.js`; the German text for it lives in `frontend/src/locales/de.js`, keyed by the English text. `i18n.test.js` fails when a text used in the code has no German entry, or when the placeholders (`{name}`) differ. Server error messages stay English.
+**Translations** — every UI text goes through `t('English text')` (or `tn(n, 'one …', '{n} …')` for plurals) from `frontend/src/i18n.js`; the German text for it lives in `frontend/src/locales/de.js`, keyed by the English text. `i18n.test.js` fails when a text used in the code has no German entry, or when the placeholders (`{name}`) differ. `python tools/translations.py missing` lists the gaps and `add` merges new entries (see [Preview and screenshots](#preview-and-screenshots)). Server error messages are English; the frontend shows the known ones in German through `t()` too.
 
 **CI** — [GitHub Actions](../.github/workflows/ci.yml) runs the backend tests (PostgreSQL 16, Python 3.10 and 3.12), the frontend tests and production build, the browser tests (screenshots of failures are kept as a download), and shellcheck on every push to `main`/`dev` and on pull requests. [desktop.yml](../.github/workflows/desktop.yml) builds the Windows installer and the Linux AppImages and .deb packages (x86_64 and ARM64).
 
@@ -123,6 +123,7 @@ project-manager/
 │       ├── loginErrors.js   # Failed login answers, incl. "two-factor code needed"
 │       └── projects.js      # Project tree, colors, grouping tasks by project/category; the workspace scope
 ├── e2e/                     # Browser tests (Playwright): serve.py runs backend + build, test_*.py
+├── tools/                   # Preview with sample data, screenshots, link check, translations (see "Preview and screenshots")
 ├── install.sh               # Installer for a Debian/Ubuntu LXC or VM (idempotent)
 ├── proxmox/
 │   └── project-manager-lxc.sh # Run on the PVE host: creates an LXC and runs install.sh
@@ -170,18 +171,31 @@ git push origin v1.4.0
 
 A tag alone shows up under *Tags* on GitHub; create a GitHub Release from it (with the CHANGELOG section as notes) for it to appear under *Releases*. A workflow then attaches the newest Windows/Linux app to it ([`scripts/attach-apps.sh`](../scripts/attach-apps.sh)), so the *Latest* release always has the downloads. The Windows/Linux app has its own versions and `desktop-vX.Y.Z` tags — see [desktop/README.md](../desktop/README.md#building).
 
-## Screenshots
+## Preview and screenshots
 
-The screenshots in `docs/screenshots/` come from a local instance with sample data (never real data), taken with Playwright in English at fixed window sizes, in light mode unless the name says `-dark`.
+The screenshots in `docs/screenshots/` come from a local instance with sample data (never real data), taken with Playwright in English at fixed window sizes, in light mode unless the name says `-dark`. The tools for it are in [`tools/`](../tools):
 
-[`scripts/screenshots.py`](../scripts/screenshots.py) re-takes the full-page ones (everything with the top bar). It needs an **empty** instance — it registers the users itself — e.g. `e2e/serve.py` on a new database, and `pip install playwright && playwright install chromium`:
+| Tool | |
+|---|---|
+| `tools/preview_server.py` | the app with **sample data** on http://localhost:8765 — a throwaway PostgreSQL, the backend and a production build of the frontend (`frontend/build`, or `PM_PREVIEW_BUILD=path`). Users `preview` / `preview-pass-1` (admin) and `anna`; projects, categories, labels, comments, notifications, workspaces, an archived and a shared project, a template, sample backups — **dated relative to today**, so the screenshots look the same whenever they're taken. Its data lives in `tools/.preview/` (git-ignored; delete `tools/.preview/pgdata` if PostgreSQL won't start after a crash). |
+| `tools/screenshots.py` | takes every screenshot of the docs from the running preview (`--list` names them; `python tools/screenshots.py tasks-desktop board-desktop` takes just those). Fails on JavaScript errors in the page. Uses an installed Chrome, or Playwright's Chromium with `PW_CHANNEL=`. |
+| `tools/check_links.py` | checks that the relative links and `#anchors` in the Markdown docs lead somewhere |
+| `tools/translations.py` | `missing` lists `t()` texts without German; `add new.json` merges `{"English": "Deutsch"}` entries into `frontend/src/locales/de.js` (kept sorted); `remove "text"` drops unused ones |
+
+Setup (once; keep the virtual environment **outside** a cloud-synced folder):
 
 ```bash
-createdb pm_screens                                       # a throwaway database, never real data
-(cd backend && DB_NAME=pm_screens python migrate.py)
-DB_NAME=pm_screens python e2e/serve.py 8099 &             # serves frontend/build — build it first
-python scripts/screenshots.py http://localhost:8099       # or only some: … tasks-desktop board-desktop
-python scripts/screenshots.py http://localhost:8099 --no-seed myday-phone   # again, same instance
+python -m venv ~/.venvs/project-manager
+~/.venvs/project-manager/bin/pip install -r tools/requirements.txt        # Windows: Scripts\pip
+~/.venvs/project-manager/bin/python -m playwright install chromium         # only without Chrome
 ```
 
-The sample data is dated relative to today. Close-ups (bell, mention, quick entry, …) aren't covered; take those by hand. Run it after every visible change and commit the screenshots that changed.
+Then, with a frontend build in place:
+
+```bash
+python tools/preview_server.py &          # the venv's python
+python tools/screenshots.py               # or just the ones that changed
+python tools/check_links.py
+```
+
+New screenshot? Add a line to `SHOTS` in `tools/screenshots.py` (name, page, window size, 2 for a phone, theme, full page, and an action for anything to click first) and reference the file from the docs. Update the screenshots of everything a change makes look different, in the same commit.

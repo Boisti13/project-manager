@@ -11,6 +11,8 @@ from pathlib import Path
 import pytest
 from sqlalchemy import text
 
+from conftest import alembic_head
+
 REPO = Path(__file__).resolve().parents[2]
 
 
@@ -112,7 +114,7 @@ def test_restore_roundtrip(client, alice, backup_dir):
 
     rc, out = script("restore-db.sh", snapshot)
     assert rc == 0, out
-    assert state() == ("0023", ["before"])
+    assert state() == (alembic_head(), ["before"])
     assert any("before-restore" in n for n in dumps(backup_dir))  # safety backup
 
 
@@ -229,7 +231,7 @@ def test_fix_encoding_converts_sql_ascii(sql_ascii_db, tmp_path, backup_dir):
     assert rc == 0, out
     assert _q(sql_ascii_db, "SELECT pg_encoding_to_char(encoding) FROM pg_database WHERE datname = current_database()")[0][0] == "UTF8"
     assert _q(sql_ascii_db, "SELECT title FROM tasks")[0][0] == "Werkstatt aufräumen"
-    assert _q(sql_ascii_db, "SELECT version_num FROM alembic_version")[0][0] == "0023"
+    assert _q(sql_ascii_db, "SELECT version_num FROM alembic_version")[0][0] == alembic_head()
     if os.name == "posix":  # needs a UTF-8 locale for case-folding umlauts
         assert _q(sql_ascii_db, "SELECT count(*) FROM tasks WHERE title ILIKE '%AUFRÄUMEN%'")[0][0] == 1
     assert "kept as" in out

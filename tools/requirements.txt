@@ -1,0 +1,5 @@
+# Development tools (tools/*.py): the backend's requirements plus these.
+#   python -m venv .venv && .venv/bin/pip install -r tools/requirements.txt   (Windows: .venv\Scripts\pip)
+#   .venv/bin/python -m playwright install chromium   (only if Chrome isn't installed; then PW_CHANNEL=)
+-r ../backend/requirements-dev.txt
+playwright==1.63.0

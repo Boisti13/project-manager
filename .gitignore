@@ -73,3 +73,6 @@ desktop/src-tauri/icons/
 # Browser tests (e2e/)
 e2e/artifacts/
 e2e/server.log
+
+# Development tools: preview database, sample backups, tokens
+tools/.preview/

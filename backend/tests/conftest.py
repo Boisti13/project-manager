@@ -187,3 +187,13 @@ def bob(client, admin):
 @pytest.fixture
 def backup_dir():
     return Path(BACKUP_DIR)
+
+
+def alembic_head() -> str:
+    """The newest migration, so tests don't need updating for each new one."""
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    cfg = Config()  # just the migrations folder, not alembic.ini
+    cfg.set_main_option("script_location", str(Path(__file__).resolve().parent.parent / "alembic"))
+    return ScriptDirectory.from_config(cfg).get_current_head()

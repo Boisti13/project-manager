@@ -2,6 +2,13 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## Unreleased
+
+### Under the hood
+- **Development tools in [`tools/`](tools)**, one set instead of scripts scattered over sessions and PCs: `preview_server.py` (the app with sample data, dated relative to today), `screenshots.py` (all 45 docs screenshots, including the close-ups, named or all at once; replaces `scripts/screenshots.py`), `check_links.py`, `translations.py` (`missing` / `add` / `remove`). See [docs/development.md → Preview and screenshots](docs/development.md#preview-and-screenshots).
+- **`CLAUDE.md`**: the working rules for this repository — pull first, `dev` only, what to bump and update with a change, tests, the release routine.
+- The tests find the newest migration themselves (no more hardcoded revision numbers).
+
 ## v1.49.1 — 2026-10-04
 
 ### Changed
@@ -9,7 +16,7 @@ All notable changes, newest first. Versions follow [semantic versioning](docs/de
 - Screenshots in the README and user guide re-taken with the clock in the top bar.
 
 ### Under the hood
-- `scripts/screenshots.py` re-takes the full-page screenshots from a throwaway instance with sample data (see [docs/development.md](docs/development.md#screenshots)).
+- `scripts/screenshots.py` re-takes the full-page screenshots from a throwaway instance with sample data (see [docs/development.md](docs/development.md#preview-and-screenshots); since replaced by `tools/screenshots.py`).
 
 ## v1.49.0 — 2026-10-04
 
