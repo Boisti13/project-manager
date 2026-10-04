@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { engine, getServer } from '../../desktop';
+import { changeServer, engine, getServer } from '../../desktop';
 import { DESKTOP_OS, DESKTOP_VERSION } from '../../desktop/platform';
 import { canUpdate, checkForUpdate, installKind, installUpdate, subscribeUpdates, updateStatus } from '../../desktop/updater';
 import { parseServerDate } from '../../taskFilters';
@@ -30,6 +30,27 @@ function DesktopSettings() {
     installKind().then(setKind);
   }, []);
   const gap = compareFeatures(s.serverVersion);
+  // Changing the server's address (same server, e.g. a new IP).
+  const [server, setServer] = useState(getServer());
+  const [newServer, setNewServer] = useState(null); // null: not editing
+  const [serverMsg, setServerMsg] = useState(null);
+  const [moving, setMoving] = useState(false);
+
+  const saveServer = async (e) => {
+    e.preventDefault();
+    setMoving(true);
+    setServerMsg(null);
+    try {
+      await changeServer(newServer);
+      setServer(getServer());
+      setNewServer(null);
+      setServerMsg({ ok: true, text: t('Connected to {server}. Your local copy and unsent changes were kept.', { server: getServer() }) });
+    } catch (err) {
+      setServerMsg({ ok: false, text: err.message });
+    } finally {
+      setMoving(false);
+    }
+  };
 
   const when = (value) => (value ? parseServerDate(value).toLocaleString(locale()) : '—');
 
@@ -53,8 +74,37 @@ function DesktopSettings() {
       <div className="settings-info">
         <div className="info-row">
           <span className="info-label">{t('Server')}</span>
-          <span className="info-value">{getServer()}</span>
+          <span className="info-value">
+            {server}{' '}
+            {newServer === null && (
+              <button type="button" className="link-btn" onClick={() => setNewServer(server)}>
+                {t('Change address')}
+              </button>
+            )}
+          </span>
         </div>
+        {newServer !== null && (
+          <form className="archive-form desktop-server-form" onSubmit={saveServer}>
+            <input
+              value={newServer}
+              onChange={(e) => setNewServer(e.target.value)}
+              aria-label={t('New server address')}
+              placeholder={t('e.g. 192.168.1.20 or pm.example.com')}
+              autoFocus
+              required
+            />
+            <button type="submit" className="btn btn-primary btn-small" disabled={moving}>
+              {moving ? t('Connecting…') : t('Save')}
+            </button>
+            <button type="button" className="btn btn-secondary btn-small" onClick={() => setNewServer(null)}>
+              {t('Cancel')}
+            </button>
+            <small className="settings-help">
+              {t('For the same server under a new address (e.g. a new IP). The app checks that it is the same server and keeps your local copy and unsent changes.')}
+            </small>
+          </form>
+        )}
+        {serverMsg && <p className={serverMsg.ok ? 'settings-ok' : 'error-message'}>{serverMsg.text}</p>}
         <div className="info-row">
           <span className="info-label">{t('Connected as')}</span>
           <span className="info-value">{currentUser?.username}</span>
@@ -65,6 +115,9 @@ function DesktopSettings() {
             {s.authError ? t('Signed out by the server (token revoked?)') : s.online === false ? t('Offline') : t('Online')}
             {' · '}
             {tn(s.pending, 'one change waiting', '{n} changes waiting')}
+            {s.online === false && !s.authError && (
+              <small className="desktop-moved-hint">{t('Server moved to a new address? Use “Change address” above.')}</small>
+            )}
           </span>
         </div>
         <div className="info-row">

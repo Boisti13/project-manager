@@ -129,6 +129,39 @@ export async function connect(serverInput, username, password, otp = '') {
   return me;
 }
 
+/**
+ * The same server under a new address (e.g. it got a new IP): checks that the
+ * app's token works there and belongs to the same user, then switches over --
+ * keeping the token, the local copy and changes not sent yet. Another server
+ * needs Log Out and Connect instead.
+ */
+export async function changeServer(serverInput) {
+  const server = normalizeServer(serverInput);
+  if (!server) throw new Error(t('Enter the server address.'));
+  const token = getDesktopToken();
+  let health;
+  try {
+    health = await serverFetch('/api/v1/health', {}, { server, token: '' });
+  } catch {
+    throw new Error(t('Can’t reach {server}. Check the address and your network (or ZeroTier).', { server }));
+  }
+  if (!health.ok) throw new Error(t('{server} doesn’t look like a Project Manager server.', { server }));
+  const res = await serverFetch('/api/v1/auth/me', {}, { server, token });
+  const me = res.ok ? await res.json() : null;
+  await whenReady();
+  const previous = store.getMeta('me');
+  if (!me || (previous && previous.id !== me.id)) {
+    throw new Error(t('The app’s token doesn’t work on {server}, so it’s another server (or the token was revoked). To use it, log out and connect there.', { server }));
+  }
+  engine.stop();
+  setConnection(server, token);
+  store.setMeta('server', server);
+  store.setMeta('me', me);
+  await store.flush();
+  await engine.start();
+  return me;
+}
+
 /** Forget the token; with wipe, also the local copy (and unsent changes). */
 export async function disconnect({ wipe = false } = {}) {
   engine.stop();

@@ -2,7 +2,7 @@
 
 ## Current Deployment
 
-**LXC 113** on PVE .103 (http://192.168.100.113) — Ubuntu 22.04, bare metal (no Docker).
+**LXC 113** on PVE .103 (http://192.168.100.114) — Ubuntu 22.04, bare metal (no Docker).
 
 | Component | How it runs |
 |---|---|

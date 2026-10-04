@@ -6,6 +6,7 @@ Versions of the app for Windows and Linux (`desktop-v…` tags); the server has 
 ## v0.14.0 — 2026-10-04
 
 ### Added
+- **Change the server's address** (*Settings → Windows/Linux app → Server → Change address*) when the server moved, e.g. to a new IP: the app checks it's the same server and keeps the local copy and unsent changes. While it can't reach the server, the settings point to it.
 - **Ctrl+K searches everything** (also offline, in the app's local copy) and **quick add on My day** (server v1.50.0 interface).
 
 ## v0.13.2 — 2026-10-04

@@ -56,7 +56,7 @@ Mint 21, Fedora 36, Raspberry Pi OS Bookworm or newer). If the server uses
 ## Using it
 
 1. Install the app (see above).
-2. On first start, enter the **server address** (e.g. `192.168.100.113`),
+2. On first start, enter the **server address** (e.g. `192.168.100.114`),
    your username and password — and, with two-factor login switched on,
    the code from your authenticator app (from v0.9.0). The password is used
    once to create an **app token** — it shows up in the web app under
@@ -73,7 +73,14 @@ Mint 21, Fedora 36, Raspberry Pi OS Bookworm or newer). If the server uses
    **.deb** can't replace itself: there the settings link to the new
    version's download page instead. (v0.1.0 has no updater: install v0.2.0
    once by hand.)
-5. **App and server versions** (from v0.3.0): the app's interface is built
+5. **The server moved** (e.g. it got a new IP address): *Settings →
+   Windows app* (or *Linux app*) *→ Server → Change address* (from v0.14.0).
+   The app checks that the new address is the same server — the app's token
+   has to work there, for the same user — and keeps the local copy and the
+   changes not sent yet. While the server can't be reached, the settings say
+   *Offline* with a hint to this. A different server needs *Log Out* and
+   *Connect* instead.
+6. **App and server versions** (from v0.3.0): the app's interface is built
    from a certain server version (*Settings → Windows/Linux app → App version*,
    e.g. "interface of server 1.40.0"). When the server has gained features
    since then and there's no app update to bring them yet, the top bar shows

@@ -46,7 +46,7 @@ calls `GET /api/v1/summary/` with a personal API token and turns the answer into
 
    ```yaml
    rest:
-     - resource: http://192.168.100.113/api/v1/summary/
+     - resource: http://192.168.100.114/api/v1/summary/
        headers:
          Authorization: !secret project_manager_token
        scan_interval: 60
@@ -116,7 +116,7 @@ the device **Project Manager (username)**. Needs Home Assistant 2025.10 or newer
 | Topic | `project-manager` — where the app publishes (`project-manager/<user>/…`) |
 | Discovery prefix | `homeassistant` (Home Assistant's default) |
 | Daily deadline reminder at | e.g. `07:30` — the **server's** clock (the page shows its current time); empty: none |
-| Address of this app | e.g. `http://192.168.100.113` — for links to tasks in events and sensors |
+| Address of this app | e.g. `http://192.168.100.114` — for links to tasks in events and sensors |
 | TLS | if the broker has TLS set up |
 
 **Test connection** tries the settings without saving; after **Save** the
@@ -235,7 +235,7 @@ With more detail, use `tasks` instead of `titles`: `{{ t.title }} ({{ t.project 
   "open_assigned": 7,
   "overdue_tasks": [
     {"id": 12, "title": "Order antenna modules", "project": "6GHub / Ordering",
-     "deadline": "2026-10-02", "priority": 2, "overdue": true, "url": "http://192.168.100.113/?task=12"}
+     "deadline": "2026-10-02", "priority": 2, "overdue": true, "url": "http://192.168.100.114/?task=12"}
   ],
   "due_today_tasks": [],
   "due_soon_tasks": [],

@@ -31,7 +31,7 @@ Screenshots use sample data.
 
 ## Getting started
 
-Open the server's address in a browser (e.g. `http://192.168.100.113`). The
+Open the server's address in a browser (e.g. `http://192.168.100.114`). The
 **first account registered becomes the admin**; after that registration is
 closed and admins add further users under *Settings → Updates & users → User Management*
 (or open registration there).

@@ -61,8 +61,8 @@ invalid input (`{"detail": …}`).
 
 ```bash
 TOKEN=pm_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-API=https://192.168.100.113/api/v1
-curl -so ca.crt http://192.168.100.113/ca.crt     # once; or trust the CA system-wide
+API=https://192.168.100.114/api/v1
+curl -so ca.crt http://192.168.100.114/ca.crt     # once; or trust the CA system-wide
 alias curl='curl --cacert ca.crt'                 # Windows curl.exe: also --ssl-no-revoke
 
 # who am I
@@ -94,7 +94,7 @@ import requests
 api = requests.Session()
 api.headers["Authorization"] = "Bearer pm_…"
 api.verify = "ca.crt"  # the server's CA certificate (http://<server>/ca.crt)
-base = "https://192.168.100.113/api/v1"
+base = "https://192.168.100.114/api/v1"
 
 open_tasks = [t for t in api.get(f"{base}/tasks/").json() if t["status"] != "done"]
 api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via script"})

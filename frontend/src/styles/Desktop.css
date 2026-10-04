@@ -136,3 +136,14 @@
   color: var(--color-warning-text);
   background-color: var(--color-warning-bg);
 }
+
+.desktop-moved-hint {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-text-secondary);
+}
+
+.desktop-server-form .settings-help {
+  flex-basis: 100%;
+  margin: 0;
+}
