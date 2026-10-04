@@ -26,8 +26,14 @@ Each version is also on its own release tagged `desktop-v…`, and the latest
 build under *Actions → Desktop apps → Artifacts*. The Windows app and the
 AppImages update themselves; a `.deb` is updated by installing the new one.
 
-- **Windows**: run the installer. It installs for the current user; no admin
-  rights needed. The installer isn't code-signed yet, so on first run Windows
+- **Windows**: run the installer. It asks whether to install **just for you**
+  (in your user folder, `%LOCALAPPDATA%\Project Manager`; no admin rights
+  needed, updates install without a prompt) or **for all users** (in
+  `C:\Program Files\Project Manager`; needs admin rights, and Windows asks
+  for them again on every update). Either way each Windows user keeps their
+  own connection and local copy. To move an existing install, uninstall it
+  (leave *Delete the application data* unticked to keep the local copy) and
+  run the installer again. The installer isn't code-signed yet, so on first run Windows
   SmartScreen warns ("Windows protected your PC"): click **More info → Run
   anyway**. With **Smart App Control** switched on, Windows blocks unsigned
   apps outright; it has to be off to install the app.
@@ -163,7 +169,7 @@ CHANGELOG section) and, per platform (`windows-x86_64`, `linux-x86_64`,
 installs only files whose signature matches the public key built into it
 (`plugins.updater.pubkey` in `tauri.conf.json`). On Windows the installer
 runs in passive mode: it shows progress, needs no clicks and restarts the
-app; an AppImage is replaced in place. A `.deb` isn't updated this way (it
+app (an install for all users first asks for admin rights); an AppImage is replaced in place. A `.deb` isn't updated this way (it
 would need root): the app only reports the new version.
 
 Signing updates is free and unrelated to Windows code signing. The key pair

@@ -1,6 +1,6 @@
 [package]
 name = "project-manager-desktop"
-version = "0.13.0"
+version = "0.13.1"
 description = "Project Manager for Windows and Linux: works offline, syncs with your server"
 edition = "2021"
 publish = false

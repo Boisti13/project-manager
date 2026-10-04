@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.13.1 — 2026-10-04
+
+### Changed
+- **Windows: install for all users** — the installer now asks whether to install just for you (user folder, no admin rights, silent updates, as before) or for all users in *Program Files* (admin rights; updates ask for them too). Existing installs stay where they are; see the README to move one.
+
 ## v0.13.0 — 2026-10-04
 
 ### Added
