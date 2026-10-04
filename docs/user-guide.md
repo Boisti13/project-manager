@@ -41,8 +41,8 @@ weekdays, the task history and the CSV export. Each user picks the language
 under *Settings → Account*; until then it follows the browser. The 🌙
 button in the top bar switches to **dark mode** (remembered per browser;
 by default it follows the system). Next to it, the top bar shows the
-**date and time** (on phones just the time), so you always know where you
-are in the day.
+**date and time**, so you always know where you are in the day (not on
+phones, which show the time themselves).
 
 When the server is updated while the app is open in a browser tab, a bar
 says *Project Manager was updated to version …* — **Reload** to get the new

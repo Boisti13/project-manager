@@ -2,6 +2,15 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.49.1 — 2026-10-04
+
+### Changed
+- **No clock on phones**: the date and time from v1.49.0 are only shown on wider screens. On phones the time took the room the top bar needs (*Log Out* wrapped onto two lines), and the phone shows the time anyway.
+- Screenshots in the README and user guide re-taken with the clock in the top bar.
+
+### Under the hood
+- `scripts/screenshots.py` re-takes the full-page screenshots from a throwaway instance with sample data (see [docs/development.md](docs/development.md#screenshots)).
+
 ## v1.49.0 — 2026-10-04
 
 ### Added

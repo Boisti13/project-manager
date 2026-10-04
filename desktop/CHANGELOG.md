@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.13.2 — 2026-10-04
+
+### Changed
+- No date and time in the top bar when the window is phone-narrow (server v1.49.1 interface).
+
 ## v0.13.1 — 2026-10-04
 
 ### Changed
@@ -11,7 +16,7 @@ Versions of the app for Windows and Linux (`desktop-v…` tags); the server has 
 ## v0.13.0 — 2026-10-04
 
 ### Added
-- Date and time in the top bar (on narrow windows just the time), so you always know where you are in the day (server v1.49.0 interface).
+- Date and time in the top bar, so you always know where you are in the day (server v1.49.0 interface).
 
 ## v0.12.0 — 2026-10-03
 

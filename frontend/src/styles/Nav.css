@@ -135,13 +135,9 @@
     display: none;
   }
 
-  /* Phones: just the time; the date is in the tooltip and on My day. */
-  .nav-clock-date {
+  /* Phones show the time themselves, and the bar has no room for it. */
+  .nav-clock {
     display: none;
-  }
-
-  .nav-clock-time {
-    font-size: 14px;
   }
 
   /* The big app header is hidden on phones once logged in (see App.css);

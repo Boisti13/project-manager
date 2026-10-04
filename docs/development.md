@@ -173,3 +173,15 @@ A tag alone shows up under *Tags* on GitHub; create a GitHub Release from it (wi
 ## Screenshots
 
 The screenshots in `docs/screenshots/` come from a local instance with sample data (never real data), taken with Playwright in English at fixed window sizes, in light mode unless the name says `-dark`.
+
+[`scripts/screenshots.py`](../scripts/screenshots.py) re-takes the full-page ones (everything with the top bar). It needs an **empty** instance — it registers the users itself — e.g. `e2e/serve.py` on a new database, and `pip install playwright && playwright install chromium`:
+
+```bash
+createdb pm_screens                                       # a throwaway database, never real data
+(cd backend && DB_NAME=pm_screens python migrate.py)
+DB_NAME=pm_screens python e2e/serve.py 8099 &             # serves frontend/build — build it first
+python scripts/screenshots.py http://localhost:8099       # or only some: … tasks-desktop board-desktop
+python scripts/screenshots.py http://localhost:8099 --no-seed myday-phone   # again, same instance
+```
+
+The sample data is dated relative to today. Close-ups (bell, mention, quick entry, …) aren't covered; take those by hand. Run it after every visible change and commit the screenshots that changed.
