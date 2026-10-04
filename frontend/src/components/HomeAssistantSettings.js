@@ -65,6 +65,8 @@ function BrokerSettings({ onSaved }) {
 
   // What's saved on the server (the form may hold unsaved edits).
   const [saved, setSaved] = useState(null);
+  // The address the server is reached at, used for links when app_url is empty.
+  const [detected, setDetected] = useState('');
 
   useEffect(() => {
     call('/api/v1/home-assistant/mqtt')
@@ -72,6 +74,7 @@ function BrokerSettings({ onSaved }) {
         setForm(data.settings);
         setSaved(data.settings);
         setStatus(data.status);
+        setDetected(data.detected_url || '');
       })
       .catch((err) => setMessage({ ok: false, text: err.message }));
   }, []);
@@ -167,8 +170,15 @@ function BrokerSettings({ onSaved }) {
           <input type="time" value={form.reminder_time} onChange={(e) => set('reminder_time', e.target.value)} />
         </label>
         <label>
-          {t('Address of this app (for links)')}
-          <input value={form.app_url} onChange={(e) => set('app_url', e.target.value)} placeholder={IS_DESKTOP ? getServer() || '' : window.location.origin} />
+          {t('Web address of this server (for links)')}
+          <input
+            value={form.app_url}
+            onChange={(e) => set('app_url', e.target.value)}
+            placeholder={detected ? t('automatic: {url}', { url: detected }) : IS_DESKTOP ? getServer() || '' : window.location.origin}
+          />
+          <small>
+            {t('Leave empty: the address the server is reached at, also after it moves. Only for a different one, e.g. a domain name.')}
+          </small>
         </label>
       </div>
       <label className="ha-check">

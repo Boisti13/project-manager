@@ -35,7 +35,7 @@ import paho.mqtt.client as paho
 from sqlalchemy import event
 from sqlalchemy.orm import Session
 
-from app import access, summary
+from app import access, server_url, summary
 from app.database import SessionLocal
 from app.models import AppSetting, Notification, Task, TaskComment, User
 from app.version import APP_VERSION
@@ -52,7 +52,7 @@ DEFAULTS = {
     "mqtt_topic": "project-manager",
     "mqtt_discovery_prefix": "homeassistant",
     "mqtt_reminder_time": "07:30",  # server local time; "" = no daily reminder
-    "mqtt_app_url": "",  # e.g. http://192.168.100.113, for links in events and sensors
+    "mqtt_app_url": "",  # links in events and sensors; "": the address the server is reached at (app/server_url.py)
 }
 CONNECTION_KEYS = ("mqtt_enabled", "mqtt_host", "mqtt_port", "mqtt_username", "mqtt_password", "mqtt_tls", "mqtt_topic")
 REMINDER_SENT_KEY = "mqtt_reminder_sent"  # date of the last daily reminder
@@ -329,6 +329,10 @@ class Bridge:
         if reason_code is not None and str(reason_code) not in ("0", "Success", "Normal disconnection"):
             self.last_error = str(reason_code)
 
+    def _app_url(self, db: Session) -> str:
+        """Where links point: the address set in the settings, else the one the server is reached at."""
+        return (self.cfg["mqtt_app_url"] or server_url.get(db)).rstrip("/")
+
     def _publish(self, topic: str, payload, retain: bool = False):
         if self.client is None or not self.connected:
             return
@@ -345,14 +349,14 @@ class Bridge:
         except ValueError:
             return None
 
-    def _discovery(self, user: User) -> dict:
+    def _discovery(self, user: User, app_url: str = "") -> dict:
         """topic -> config for the user's entities."""
         cfg, s = self.cfg, slug(user.username)
         base, disc = cfg["mqtt_topic"], cfg["mqtt_discovery_prefix"]
         device = {"identifiers": [f"project_manager_{s}"], "name": f"Project Manager ({user.username})",
                   "manufacturer": "Project Manager", "model": "Tasks", "sw_version": APP_VERSION}
-        if cfg["mqtt_app_url"]:
-            device["configuration_url"] = cfg["mqtt_app_url"]
+        if app_url:
+            device["configuration_url"] = app_url
         common = {"device": device, "availability_topic": f"{base}/status"}
         state = f"{base}/{s}/state"
         out = {}
@@ -385,13 +389,13 @@ class Bridge:
             self._publish(f"{self.cfg['mqtt_topic']}/{s}/state", "", retain=True)
         for s, user in users.items():
             if force or s not in self.announced:
-                for topic, entity in self._discovery(user).items():
+                for topic, entity in self._discovery(user, self._app_url(db)).items():
                     self._publish(topic, entity, retain=True)
         self.announced = set(users)
 
     def _publish_states(self, db: Session):
         for user in self._users(db):
-            data = summary.build(db, user, self._workspace(db, user), base_url=self.cfg["mqtt_app_url"].rstrip("/"))
+            data = summary.build(db, user, self._workspace(db, user), base_url=self._app_url(db))
             self._publish(f"{self.cfg['mqtt_topic']}/{slug(user.username)}/state", data, retain=True)
 
     def _publish_notifications(self, db: Session, ids):
@@ -417,8 +421,9 @@ class Bridge:
                 "actor": n.actor.username if n.actor else None,
                 "excerpt": n.excerpt,
             }
-            if self.cfg["mqtt_app_url"] and n.task_id:
-                payload["url"] = f"{self.cfg['mqtt_app_url'].rstrip('/')}/?task={n.task_id}"
+            app_url = self._app_url(db)
+            if app_url and n.task_id:
+                payload["url"] = f"{app_url}/?task={n.task_id}"
             self._publish(f"{self.cfg['mqtt_topic']}/{slug(user.username)}/event", payload)
 
     def _remind(self, db: Session):
@@ -433,7 +438,7 @@ class Bridge:
         if sent is not None and sent.value == today:
             return
         for user in self._users(db):
-            data = summary.build(db, user, self._workspace(db, user), base_url=self.cfg["mqtt_app_url"].rstrip("/"))
+            data = summary.build(db, user, self._workspace(db, user), base_url=self._app_url(db))
             if not data["overdue"] and not data["due_today"]:
                 continue
             words = TEXTS.get(user.language or "en", TEXTS["en"])

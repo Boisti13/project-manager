@@ -6,6 +6,7 @@ All notable changes, newest first. Versions follow [semantic versioning](docs/de
 
 ### Fixed
 - Windows/Linux app, *Change address*: the field is wide enough for a whole address (it showed only `http://192.`).
+- Home Assistant: the address for task links **fills itself in** — the server remembers the address it's reached at and uses it when the field is empty, so links keep working after the server gets a new IP. The field (now *Web address of this server*, it was the misleading *Address of this app*) is only needed for a different address, e.g. a domain name.
 
 ## v1.50.0 — 2026-10-04
 

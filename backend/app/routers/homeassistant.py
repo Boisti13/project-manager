@@ -3,7 +3,7 @@ and each user's opt-in. Polling instead needs nothing here: GET /summary."""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app import mqtt, schemas, summary
+from app import mqtt, schemas, server_url, summary
 from app.auth import get_current_admin_user, get_current_user
 from app.database import get_db
 from app.models import User
@@ -34,7 +34,7 @@ def _changes(data: schemas.MqttSettingsUpdate) -> dict:
 @router.get("/mqtt")
 def get_mqtt(current_user: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
     """The broker settings (without the password) and how the connection is doing."""
-    return {"settings": _out(mqtt.read_config(db)), "status": mqtt.bridge.status()}
+    return {"settings": _out(mqtt.read_config(db)), "status": mqtt.bridge.status(), "detected_url": server_url.get(db)}
 
 
 @router.put("/mqtt")
@@ -46,7 +46,7 @@ def update_mqtt(data: schemas.MqttSettingsUpdate, current_user: User = Depends(g
         raise HTTPException(status_code=400, detail="Enter the broker address first")
     mqtt.write_config(db, changes)
     mqtt.bridge.reload()
-    return {"settings": _out(mqtt.read_config(db)), "status": mqtt.bridge.status()}
+    return {"settings": _out(mqtt.read_config(db)), "status": mqtt.bridge.status(), "detected_url": server_url.get(db)}
 
 
 @router.post("/mqtt/test")

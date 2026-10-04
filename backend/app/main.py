@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app import mqtt
+from app import mqtt, server_url
 from app.routers import (
     users, tasks, projects, auth, system, settings, transfer, comments, notifications, labels, tokens, deletions, sync,
     calendar, saved_filters, templates, shared, pins, workspaces, summary, homeassistant,
@@ -44,6 +44,14 @@ app = FastAPI(
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
 )
+
+@app.middleware("http")
+async def remember_address(request, call_next):
+    """The address this server is reached at, for links leaving the app (app/server_url.py)."""
+    if request.url.path.startswith("/api/"):
+        server_url.note(request)
+    return await call_next(request)
+
 
 app.add_middleware(
     CORSMiddleware,

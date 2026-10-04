@@ -29,9 +29,9 @@ def token(user="preview"):
     return open(path).read().strip()
 
 
-def api(method, path, body=None):
+def api(method, path, body=None, headers=None):
     req = urllib.request.Request(BASE + path, method=method, data=None if body is None else json.dumps(body).encode(),
-                                 headers={"Authorization": f"Bearer {token()}", "Content-Type": "application/json"})
+                                 headers={"Authorization": f"Bearer {token()}", "Content-Type": "application/json", **(headers or {})})
     return json.loads(urllib.request.urlopen(req).read() or b"null")
 
 
@@ -227,8 +227,10 @@ def shot(page, ctx, name, path, full, action):
         return sec.get_by_role("button", name="Cancel").click()  # nothing is switched on
     if action == "home-assistant":
         # A sample broker address (192.0.2.x is reserved for documentation).
+        # As if reached at the server's real address: the field shows it as automatic.
+        api("GET", "/api/v1/auth/me", headers={"Host": "192.168.100.114"})
         api("PUT", "/api/v1/home-assistant/mqtt", {"enabled": True, "host": "192.0.2.10", "username": "project-manager",
-                                                   "password": "sample", "app_url": "http://192.168.100.113"})
+                                                   "password": "sample", "app_url": ""})
         api("PUT", "/api/v1/home-assistant/me", {"enabled": True})
         try:
             page.reload()

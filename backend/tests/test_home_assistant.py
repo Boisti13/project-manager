@@ -221,3 +221,43 @@ def test_mqtt_switched_off_does_nothing(client, admin, alice, bridge):
     bridge.drain()
     assert broker.last("project-manager/status") == "offline" and broker.disconnected
     assert bridge.connected is False
+
+
+def test_links_use_the_address_the_server_is_reached_at(client, admin, alice, bob, bridge):
+    from app import server_url
+
+    server_url.forget()
+    at = lambda user, host="192.168.100.114": {**user.headers, "Host": host}  # noqa: E731
+
+    def task_for_alice(title, host="192.168.100.114"):
+        r = client.post("/api/v1/tasks/", json={"title": title, "assignee_id": alice.id}, headers=at(bob, host))
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    # requests from the server itself don't count; others are remembered
+    client.get("/api/v1/auth/me", headers={**alice.headers, "Host": "localhost"})
+    client.get("/api/v1/auth/me", headers={**alice.headers, "Host": "192.168.100.114", "X-Forwarded-Proto": "http"})
+    r = client.get("/api/v1/home-assistant/mqtt", headers={**admin.headers, "Host": "192.168.100.114"})
+    assert r.json()["detected_url"] == "http://192.168.100.114"
+    assert r.json()["settings"]["app_url"] == ""
+
+    # MQTT with no address set: task links use the one the server is reached at
+    client.put("/api/v1/home-assistant/me", json={"enabled": True}, headers=at(alice))
+    client.put("/api/v1/home-assistant/mqtt", json={"enabled": True, "host": "broker"},
+               headers={**admin.headers, "Host": "192.168.100.114"})
+    bridge.drain()
+    task = task_for_alice("Linked")
+    bridge.drain()
+    broker = FakeClient.instances[-1]
+    assert broker.all("project-manager/alice/event")[-1]["url"] == f"http://192.168.100.114/?task={task['id']}"
+
+    # the server moved: links follow
+    task_for_alice("Moved", host="192.168.100.120")
+    bridge.drain()
+    assert broker.all("project-manager/alice/event")[-1]["url"].startswith("http://192.168.100.120/?task=")
+    # an address set by hand wins
+    client.put("/api/v1/home-assistant/mqtt", json={"app_url": "https://pm.example.com"}, headers=at(admin, "192.168.100.120"))
+    bridge.drain()
+    task_for_alice("Domain", host="192.168.100.120")
+    bridge.drain()
+    assert broker.all("project-manager/alice/event")[-1]["url"].startswith("https://pm.example.com/?task=")

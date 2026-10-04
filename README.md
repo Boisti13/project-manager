@@ -96,8 +96,7 @@ copy the YAML from *Settings → Calendar & Home Assistant* into
 
 **Quick setup — MQTT**: in Home Assistant install the **Mosquitto broker**
 add-on, set up the **MQTT** integration and create a login for the app; in
-the app (admin) enter broker address, port, login, the reminder time and the
-app's address, **Test connection**, tick *Send to Home Assistant over MQTT*,
+the app (admin) enter broker address, port, login and the reminder time, **Test connection**, tick *Send to Home Assistant over MQTT*,
 **Save**; then each user ticks **Send my notifications and task numbers to
 Home Assistant** on the same page. The status says *● Connected*.
 
