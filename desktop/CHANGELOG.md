@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.14.2 — 2026-10-04
+
+### Changed
+- *Settings → Updates* and *Settings → Users* are two pages (server v1.50.2 interface).
+
 ## v0.14.1 — 2026-10-04
 
 ### Fixed

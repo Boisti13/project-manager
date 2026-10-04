@@ -150,10 +150,10 @@ project-manager/
 
 - `main` — production. **Production runs `main`.**
 - `dev` — integration branch for ongoing work.
-- To test `dev` on the live instance, use Settings → Updates & users → *Switch to dev*, then switch back to `main` once it's merged.
+- To test `dev` on the live instance, use Settings → Updates → *Switch to dev*, then switch back to `main` once it's merged.
 - Merge `dev` → `main` (fast-forward) and tag a release when a set of changes is ready to ship.
 
-The server only ever pulls from GitHub (Settings → Updates & users or the manual steps in [DEPLOYMENT.md](../DEPLOYMENT.md)) — never push to it or edit files there directly.
+The server only ever pulls from GitHub (Settings → Updates or the manual steps in [DEPLOYMENT.md](../DEPLOYMENT.md)) — never push to it or edit files there directly.
 
 ## Versioning
 

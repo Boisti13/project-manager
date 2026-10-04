@@ -74,5 +74,8 @@ def test_settings_sub_pages(make_page):
     assert page.locator(".settings-menu a.active").inner_text().endswith("Calendar & Home Assistant")
     page.goto("/settings/nonsense")
     page.wait_for_url("**/settings/account")
-    page.locator(".settings-menu").get_by_role("link", name="Updates & users").click()
+    page.locator(".settings-menu").get_by_role("link", name="Users").click()
     page.get_by_role("heading", name="User Management").wait_for()
+    assert page.locator(".update-panel, .settings-section", has_text="Check for updates").count() == 0  # its own page
+    page.goto("/settings/system")  # the old address of Updates
+    page.wait_for_url("**/settings/updates")

@@ -12,11 +12,11 @@
 | Nginx | :80 — `/api/*` → backend, everything else → `frontend/build/` ([`deploy/nginx.conf`](deploy/nginx.conf)). Plain HTTP (the default): a private network, reached remotely over ZeroTier, which encrypts the traffic itself — see [HTTPS](#https) |
 | Backups | `/var/backups/project-manager/`, nightly at 03:15 via `/etc/cron.d/project-manager` and before every update; newest 3 of each kind kept (see [Backups & Export](#backups--export)) |
 
-**Production runs `main`.** Ongoing work happens on `dev`, which can be tried on the live instance via Settings → Updates & users → *Switch to dev*; merge to `main`, tag a release (see [docs/development.md](docs/development.md#versioning)) and switch back when ready to ship.
+**Production runs `main`.** Ongoing work happens on `dev`, which can be tried on the live instance via Settings → Updates → *Switch to dev*; merge to `main`, tag a release (see [docs/development.md](docs/development.md#versioning)) and switch back when ready to ship.
 
 ## Updating the Live Deployment
 
-### From the app (Settings → Updates & users)
+### From the app (Settings → Updates)
 
 Any logged-in user can pick a branch and **Check for updates**. Admins additionally get an **Update now** / **Switch to <branch>** button, which runs [`scripts/update.sh`](scripts/update.sh) in the background:
 
@@ -100,7 +100,7 @@ Until a device trusts it, the browser shows a warning you can click through. Com
 
 [`scripts/backup-db.sh`](scripts/backup-db.sh) writes a full `pg_dump` (custom format) of the app database to `/var/backups/project-manager/`, using the connection settings in `backend/.env`. It runs automatically:
 
-- before every update from **Settings → Updates & users** (label `before-update-from-<commit>`)
+- before every update from **Settings → Updates** (label `before-update-from-<commit>`)
 - before migrations when `install.sh` re-runs on an existing install (`before-reinstall`)
 - **every night at 03:15** (label `daily`), from `/etc/cron.d/project-manager` — written by `install.sh` and kept up to date by every update. Turn it off (and on) with **Settings → Backup & export → Back up automatically every night**; the cron job stays and just skips. Output goes to `/var/log/project-manager-backup.log`.
 
@@ -175,7 +175,7 @@ Once you've checked everything, remove the fallback with the `DROP DATABASE` com
 
 ## Fresh Install
 
-All options install without Docker: PostgreSQL, a Python venv under Supervisor, and Nginx serving the built frontend. The app lives in `/opt/project-manager` as a git checkout, so **Settings → Updates & users** works right away. The first account you register becomes the admin; after that, self-registration is closed — add users under **Settings → Updates & users → User Management**, or switch *Allow new registrations* on there.
+All options install without Docker: PostgreSQL, a Python venv under Supervisor, and Nginx serving the built frontend. The app lives in `/opt/project-manager` as a git checkout, so **Settings → Updates** works right away. The first account you register becomes the admin; after that, self-registration is closed — add users under **Settings → Users**, or switch *Allow new registrations* on there.
 
 ### Option A: New LXC from the Proxmox host (recommended)
 
@@ -252,7 +252,7 @@ pct exec 113 -- supervisorctl status
 
 **"Too many failed logins"**: after 5 wrong passwords (or two-factor codes) for an account from one address within 15 minutes, or 20 for any accounts, the login refuses for the rest of the 15 minutes; it lifts by itself. To lift it at once: `sudo -u postgres psql projectmanager -c "DELETE FROM login_failures"`. The address is the one Nginx passes on (`X-Real-IP`).
 
-**Locked out by two-factor login** (phone and recovery codes gone): another admin can switch it off under *Settings → Updates & users → User Management → Turn off 2FA*. The only admin: `sudo -u postgres psql projectmanager -c "UPDATE users SET totp_secret=NULL, totp_enabled_at=NULL, totp_last_step=NULL, totp_recovery=NULL WHERE username='NAME'"`.
+**Locked out by two-factor login** (phone and recovery codes gone): another admin can switch it off under *Settings → Users → Turn off 2FA*. The only admin: `sudo -u postgres psql projectmanager -c "UPDATE users SET totp_secret=NULL, totp_enabled_at=NULL, totp_last_step=NULL, totp_recovery=NULL WHERE username='NAME'"`.
 
 **Time zone**: "due today", overdue counts and the Home Assistant reminder go by the server's clock. LXCs often run on UTC; set yours with `timedatectl set-timezone Europe/Berlin` (in the container) and restart the app (`supervisorctl restart project-manager-backend` or the next update).
 

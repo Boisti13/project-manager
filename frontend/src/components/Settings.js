@@ -160,16 +160,12 @@ export function settingsPages({ admin = false, desktop = IS_DESKTOP } = {}) {
     },
     { key: 'backup', icon: '💾', label: t('Backup & export'), content: <BackupSettings /> },
     {
-      key: 'system',
+      key: 'updates',
       icon: '⚙',
-      label: admin ? t('Updates & users') : t('Updates'),
-      content: (
-        <>
-          <UpdatePanel />
-          {admin && <UserManagement />}
-        </>
-      ),
+      label: t('Updates'),
+      content: <UpdatePanel />,
     },
+    ...(admin ? [{ key: 'users', icon: '👥', label: t('Users'), content: <UserManagement /> }] : []),
     { key: 'about', icon: 'ℹ', label: t('About'), content: <About /> },
   ];
   // In the app its own settings (sync, updates, conflicts) come first.
@@ -180,7 +176,8 @@ function Settings() {
   const { currentUser } = useAuth();
   const { section } = useParams();
   const pages = settingsPages({ admin: !!currentUser?.is_admin });
-  const page = pages.find((p) => p.key === section);
+  // Old address of Updates (it held the users too until v1.50.2).
+  const page = pages.find((p) => p.key === (section === 'system' ? 'updates' : section));
   const menuRef = useRef(null);
   // Phones: the menu is a row of tabs to scroll -- keep the open one in view
   // (sideways only, the page stays where it is).
@@ -191,7 +188,7 @@ function Settings() {
       menu.scrollLeft = active.offsetLeft - menu.offsetLeft - (menu.clientWidth - active.offsetWidth) / 2;
     }
   }, [section]);
-  if (!page) return <Navigate to={`/settings/${pages[0].key}`} replace />;
+  if (!page || section === 'system') return <Navigate to={`/settings/${page ? page.key : pages[0].key}`} replace />;
 
   return (
     <div className="container">

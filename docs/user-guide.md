@@ -33,7 +33,7 @@ Screenshots use sample data.
 
 Open the server's address in a browser (e.g. `http://192.168.100.114`). The
 **first account registered becomes the admin**; after that registration is
-closed and admins add further users under *Settings → Updates & users → User Management*
+closed and admins add further users under *Settings → Users*
 (or open registration there).
 
 The interface is in **English or German** (*Deutsch*): texts, dates,
@@ -508,7 +508,8 @@ to bookmark or send to someone.
 | **Calendar & Home Assistant** | the [calendar feed](#calendar-feed); [Home Assistant](home-assistant.md): your numbers, task lists and notifications there — fetched with an API token, or pushed over MQTT (each user opts in; admins set up the broker) |
 | **Windows and Linux app** | the download links, the one for your system marked; in the app itself (*Windows app* / *Linux app*, first in the menu): connection, sync and updates |
 | **Backup & export** | export a project (or everything) as a JSON file to import into another account or installation, or all tasks as a CSV file for Excel; admins also make and restore backups here |
-| **Updates & users** | the running version and updates; for admins also user management — see [For admins](#for-admins) |
+| **Updates** | the running version and updates — see [For admins](#for-admins) |
+| **Users** (admins) | user management: add, deactivate, make admin, set passwords, open registration — see [For admins](#for-admins) |
 | **About** | a few numbers, the version, the connection (and the CA certificate with HTTPS) |
 
 In the Windows/Linux app, two-factor login, API tokens and the calendar feed
@@ -562,11 +563,11 @@ starts full-screen with its own icon. It needs a connection to the server
 
 ## For admins
 
-- **Users** (*Settings → Updates & users → User Management*): add accounts, set passwords,
+- **Users** (*Settings → Users*): add accounts, set passwords,
   make admins, deactivate users (locked out at once), switch off someone's
   [two-factor login](#two-factor-login) (*2FA* badge → *Turn off 2FA*), and
   open or close self-registration.
-- **Updates** (*Settings → Updates & users*): shows the running version; admins
+- **Updates** (*Settings → Updates*): shows the running version; admins
   update or switch branches with a live log (backup first, then fetch,
   migrate, rebuild, restart).
 - **Backups** (*Settings → Backup & export*): a backup every night and
@@ -576,4 +577,6 @@ starts full-screen with its own icon. It needs a connection to the server
 Details — installing, HTTPS, restoring, moving to a new server — are in
 [DEPLOYMENT.md](../DEPLOYMENT.md).
 
-![Settings](screenshots/settings-desktop.png)
+| | |
+|---|---|
+| ![Settings → Updates](screenshots/settings-desktop.png) | ![Settings → Users](screenshots/settings-users-desktop.png) |

@@ -787,7 +787,6 @@ const de = {
   "Update Task": "Aufgabe speichern",
   "Update {version}": "Update {version}",
   "Updates": "Updates",
-  "Updates & users": "Updates & Benutzer",
   "Updating…": "Wird aktualisiert …",
   "Upload backup…": "Backup hochladen …",
   "Upload failed: {error}": "Upload fehlgeschlagen: {error}",
