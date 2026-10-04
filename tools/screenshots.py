@@ -63,6 +63,9 @@ SHOTS = [
     ("myday-desktop", "/today", (1280, 1240), 1, "light", False, None),
     ("myday-phone", "/today", (390, 844), 2, "light", False, None),
     ("myday-de-phone", "/today", (390, 844), 2, "light", False, "german"),
+    ("quickadd-desktop", "/today", (1280, 900), 1, "light", False, "quick-add"),
+    ("search-desktop", "/", (1280, 760), 1, "light", False, "search"),
+    ("search-phone", "/", (390, 760), 2, "light", False, "search"),
     ("shortcuts-desktop", "/", (1100, 760), 1, "light", False, "keys"),
     ("review-desktop", "/review", (1280, 1000), 1, "light", False, None),
     ("review-phone", "/review", (390, 844), 2, "light", False, None),
@@ -246,6 +249,19 @@ def shot(page, ctx, name, path, full, action):
         d = page.locator(".bell-dropdown").bounding_box()
         return page.screenshot(path=out, clip={"x": d["x"] - 8, "y": 0, "width": d["width"] + 16,
                                                "height": min(d["y"] + d["height"] + 8, 900)})
+    if action == "quick-add":
+        page.get_by_label("Add a task").fill("Order spare antennas fri !high #hardware")
+        page.locator(".quick-add .quick-chip").nth(2).wait_for()
+        page.wait_for_timeout(200)
+        b = page.locator(".quick-add").bounding_box()
+        return page.screenshot(path=out, clip={"x": b["x"] - 8, "y": b["y"] - 8, "width": b["width"] + 16, "height": b["height"] + 16})
+    if action == "search":
+        page.locator(".search-btn").click()
+        page.locator(".search-input").fill("order")
+        page.locator(".search-item").nth(3).wait_for()
+        page.keyboard.press("ArrowDown")
+        page.wait_for_timeout(300)
+        return page.screenshot(path=out)
     return page.screenshot(path=out, full_page=full)
 
 

@@ -120,6 +120,7 @@ project-manager/
 │       ├── views.js         # Board columns, calendar grid and deadlines by day
 │       ├── workspaces.js    # Which projects a workspace shows (state: context/WorkspaceContext.js)
 │       ├── quickEntry.js    # "… tomorrow !high #label @name" in a new task's title → its fields
+│       ├── search.js        # The search window (Ctrl+K): ranking tasks and projects
 │       ├── loginErrors.js   # Failed login answers, incl. "two-factor code needed"
 │       └── projects.js      # Project tree, colors, grouping tasks by project/category; the workspace scope
 ├── e2e/                     # Browser tests (Playwright): serve.py runs backend + build, test_*.py

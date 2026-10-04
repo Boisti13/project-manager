@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.14.0 — 2026-10-04
+
+### Added
+- **Ctrl+K searches everything** (also offline, in the app's local copy) and **quick add on My day** (server v1.50.0 interface).
+
 ## v0.13.2 — 2026-10-04
 
 ### Changed

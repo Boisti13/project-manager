@@ -2,6 +2,19 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.50.0 — 2026-10-04
+
+### Added
+- **Search everything with Ctrl+K** (⌘K on a Mac) or the new 🔍 in the top bar, from any page: tasks by title, description and comments, projects and categories by name — also in other workspaces and archived projects. Every word has to match, case and umlauts don't matter; ↑/↓, Enter, Esc. Opening something from another workspace switches there first.
+- **Add tasks on My day**: a field at the top with quick entry (*Order spare antennas fri !high #hardware*), the same chips as in the task form, and a project choice that's remembered. The task is yours unless you write *@name*; **n** jumps to the field.
+
+### Changed
+- The keyboard shortcut list (**?**) and the user guide include Ctrl+K and *n* on My day.
+
+### Under the hood
+- `frontend/src/search.js` (tested), `components/SearchPalette.js`, `components/QuickAdd.js`; the quick-entry chips are one shared component (`QuickChips.js`). `tools/screenshots.py` takes the new screenshots; `tools/translations.py` prints UTF-8 on Windows consoles.
+- 7 new frontend tests, 2 new browser tests.
+
 ## v1.49.2 — 2026-10-04
 
 ### Under the hood

@@ -17,6 +17,7 @@ import { useSyncRefresh } from '../desktop/useSyncRefresh';
 import UndoToast from './UndoToast';
 import { usePins } from './usePins';
 import { PinIcon } from './icons';
+import QuickAdd from './QuickAdd';
 
 export const START_KEY = 'pm.startWithMyDay';
 const UNASSIGNED_KEY = 'pm.myDayUnassigned';
@@ -204,6 +205,8 @@ function MyDay() {
           {t('All tasks →')}
         </Link>
       </div>
+
+      <QuickAdd projectIndex={projectIndex} labels={data.labels} onAdded={load} />
 
       <div className="myday-counts">
         {counts.map(([key, n, label, tone]) => (

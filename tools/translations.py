@@ -66,6 +66,7 @@ def used_keys():
 
 
 def main(args):
+    sys.stdout.reconfigure(encoding="utf-8")  # Windows consoles default to cp1252
     if not args or args[0] not in ("missing", "add", "remove"):
         sys.exit(__doc__)
     entries = read()

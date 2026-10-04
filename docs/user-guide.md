@@ -62,6 +62,15 @@ comments**. It shows your tasks and, if you like, unassigned ones
 (with [Undo](#undo)); titles open the task in the list. *Open My day when I
 start the app* makes it the start page.
 
+**Add a task right here**: the field at the top takes a title with
+[quick entry](#quick-entry) — *Order spare antennas fri !high #hardware* —
+and adds it on **Enter**. It's yours unless you write *@name*; the project
+next to it is remembered on this device. The chips under the field show what
+was recognized (× keeps a word as plain text), and a line confirms the new
+task with a link to it. **n** jumps to the field.
+
+![Quick add on My day](screenshots/quickadd-desktop.png)
+
 **Pinned tasks** come first: things you want in view whatever their
 deadline. Pin a task with the pin button on its row here, with *Pin to My
 day* in its ⋯ menu on the Tasks page, or with **p** on the keyboard; pinned
@@ -219,7 +228,19 @@ the calendar or on the timeline opens it in the list.
 
 ### Finding tasks
 
-- **Search** looks through titles, descriptions, comments and labels
+- **Search everything — Ctrl+K** (⌘K on a Mac), or the 🔍 in the top bar,
+  from any page: a search window over tasks (titles, descriptions, comments)
+  and projects and categories, also in other workspaces and archived
+  projects. Every word has to match; case and umlauts don't matter (*grosse*
+  finds *Größe*). **↑/↓** choose, **Enter** opens the task in the list (or the
+  project's tasks), **Esc** closes. Something in another workspace switches
+  there first.
+
+  | | |
+  |---|---|
+  | ![The search window](screenshots/search-desktop.png) | ![On a phone](screenshots/search-phone.png) |
+
+- **Search** on the Tasks page looks through titles, descriptions, comments and labels
   (subtasks included) and highlights the matches; **/** jumps to it.
 - **Filters** for status (including *Waiting for other tasks*), project,
   assignee, label and deadline (overdue, due in 7 days, none), and a **sort**
@@ -272,6 +293,8 @@ checklist you repeat, for example.
 ### Keyboard shortcuts
 
 On the Tasks page (not while typing in a field); **?** shows the list.
+**Ctrl+K** works on every page, also while typing; **n** on My day jumps to
+the quick-add field.
 
 | Key | |
 |---|---|
@@ -288,6 +311,7 @@ On the Tasks page (not while typing in a field); **?** shows the list.
 | **Del** | Delete it (the selected ones, when selecting) |
 | **Esc** | Clear the selection |
 | **Ctrl+Enter** | Save the form |
+| **Ctrl+K** / **⌘K** | Search everything (every page) |
 | **w** | Next workspace (on every page, once you have [workspaces](#workspaces)) |
 
 ![The list of shortcuts](screenshots/shortcuts-desktop.png)

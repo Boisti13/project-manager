@@ -3,12 +3,12 @@ import LabelPicker from './LabelPicker';
 import DependencyPicker from './DependencyPicker';
 import { parseBulk, countNested } from '../bulkParse';
 import '../styles/TaskForm.css';
-import { t, tn, locale } from '../i18n';
+import { t, tn } from '../i18n';
 import { STATUSES, statusName, PRIORITIES, priorityName } from '../names';
 import { parseQuickEntry, quickEntryTree } from '../quickEntry';
-import { labelTextColor } from '../labels';
+import QuickChips, { quickChipText } from './QuickChips';
 import { useAuth } from '../context/AuthContext';
-import { WORKDAYS, weekdayName, weekdayOf, ordinal, recurrenceHow } from '../recurrence';
+import { WORKDAYS, weekdayName, weekdayOf, ordinal } from '../recurrence';
 import { parseEstimate, formatEstimate } from '../estimate';
 
 const bulkPlaceholder = () =>
@@ -33,32 +33,6 @@ function unitWord(unit, n) {
 }
 
 // "Fri, Oct 9"; with the year when it isn't this one ("1.10." after October 1st is next year's).
-const chipDate = (iso) => {
-  const d = new Date(`${iso}T00:00:00`);
-  const year = d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {};
-  return d.toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short', ...year });
-};
-
-// What a recognized part of a quick entry sets, as shown on its chip.
-function quickChipText(token) {
-  switch (token.kind) {
-    case 'deadline':
-      return `📅 ${chipDate(token.value)}`;
-    case 'start':
-      return `▶ ${t('from {date}', { date: chipDate(token.value) })}`;
-    case 'range':
-      return `📅 ${chipDate(token.value[0])} – ${chipDate(token.value[1])}`;
-    case 'repeat':
-      return `↻ ${recurrenceHow(token.value.unit, token.value.interval, { recurrence_weekdays: token.value.weekdays })}`;
-    case 'priority':
-      return `⚑ ${priorityName(token.value)}`;
-    case 'label':
-      return token.label.name;
-    default:
-      return `👤 ${token.user.username}`;
-  }
-}
-
 /** The bulk tree as the API takes it (without the quick-entry details). */
 const stripQuick = (items) => items.map(({ quick, ...item }) => ({ ...item, children: stripQuick(item.children) }));
 
@@ -437,31 +411,7 @@ function TaskForm({
               autoFocus
               placeholder={task ? t('Enter task title') : t('e.g. Call supplier tomorrow !high #hardware')}
             />
-            {quick && quick.tokens.length > 0 ? (
-              <div className="quick-chips" aria-live="polite">
-                {quick.tokens.map((tok) => (
-                  <span
-                    key={tok.key}
-                    className={`quick-chip quick-${tok.kind}`}
-                    style={tok.kind === 'label' ? { backgroundColor: tok.label.color, color: labelTextColor(tok.label.color) } : undefined}
-                  >
-                    {quickChipText(tok)}
-                    <button
-                      type="button"
-                      onClick={() => setQuickIgnored((prev) => new Set([...prev, tok.key]))}
-                      title={t('Keep “{text}” in the title', { text: tok.text })}
-                      aria-label={t('Keep “{text}” in the title', { text: tok.text })}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            ) : (
-              quick && (
-                <small className="form-hint">{t('Quick: tomorrow, fri, 5.10., every monday, from 5.10. · !high · #label · @name')}</small>
-              )
-            )}
+            <QuickChips quick={quick} onIgnore={(key) => setQuickIgnored((prev) => new Set([...prev, key]))} />
           </div>
 
           <div className="form-group">

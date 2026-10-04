@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import NotificationBell from './NotificationBell';
 import NavClock from './NavClock';
+import SearchPalette from './SearchPalette';
 import WorkspaceSwitcher from './WorkspaceSwitcher';
 import { useWorkspace } from '../context/WorkspaceContext';
 import SyncStatus from './desktop/SyncStatus';
@@ -32,6 +33,19 @@ function Nav() {
     }
     navigate('/login');
   };
+
+  // The search window (SearchPalette): Ctrl+K / ⌘K on every page, even while typing.
+  const [searching, setSearching] = useState(false);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key.toLowerCase() === 'k' && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
+        e.preventDefault();
+        setSearching((open) => !open);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <nav className={workspaces.length ? 'app-nav has-workspaces' : 'app-nav'}>
@@ -62,6 +76,15 @@ function Nav() {
       </div>
       <div className="nav-user">
         <NavClock />
+        <button
+          type="button"
+          className="search-btn"
+          onClick={() => setSearching(true)}
+          title={t('Search everything (Ctrl+K)')}
+          aria-label={t('Search everything (Ctrl+K)')}
+        >
+          🔍
+        </button>
         <WorkspaceSwitcher />
         {IS_DESKTOP && <SyncStatus />}
         <NotificationBell />
@@ -73,6 +96,7 @@ function Nav() {
           {t('Log Out')}
         </button>
       </div>
+      {searching && <SearchPalette onClose={() => setSearching(false)} />}
     </nav>
   );
 }
