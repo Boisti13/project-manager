@@ -10,6 +10,10 @@ The build defaults to frontend/build (made with `npm run build`). The
 database and sample backups live in tools/.preview/ (git-ignored); the
 sample users' tokens are written there for the screenshot script. Delete
 tools/.preview/pgdata if PostgreSQL won't start (e.g. after a crash).
+
+With PM_TEST_DATABASE_URL set (as for the backend tests), that PostgreSQL is
+used instead of pgserver, with a database `pmui` that is replaced on every
+start. That's the way on Linux, where pgserver only offers a Unix socket.
 """
 import datetime as _dt
 import json as _json
@@ -17,8 +21,7 @@ import os
 import subprocess
 import sys
 import time as _time
-
-import pgserver
+from urllib.parse import quote, urlparse
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(TOOLS)
@@ -30,17 +33,31 @@ os.makedirs(DATA, exist_ok=True)
 if not os.path.isfile(os.path.join(BUILD, "index.html")):
     sys.exit(f"No frontend build at {BUILD} -- run `npm run build` in frontend/ or set PM_PREVIEW_BUILD.")
 
-# psycopg's binary build can be blocked (e.g. by Windows application
-# control); its pure-Python mode with pgserver's libpq always works.
-os.environ["PATH"] = os.path.join(os.path.dirname(pgserver.__file__), "pginstall", "bin") + os.pathsep + os.environ["PATH"]
-os.environ.setdefault("PSYCOPG_IMPL", "python")
+SERVER_URL = os.environ.get("PM_TEST_DATABASE_URL")
+if SERVER_URL:
+    from sqlalchemy import create_engine as _engine, text as _text
 
-srv = pgserver.get_server(os.path.join(DATA, "pgdata"), cleanup_mode=None)
-port = srv.get_uri().rsplit(":", 1)[1].split("/")[0]
-srv.psql("DROP DATABASE IF EXISTS pmui;")
-srv.psql("CREATE DATABASE pmui;")
-os.environ.update(DB_HOST="127.0.0.1", DB_PORT=port, DB_USER="postgres", DB_PASSWORD="", DB_NAME="pmui",
-                  SECRET_KEY="local-preview-only-not-a-real-secret-key", PM_MQTT_THREAD="0")
+    _u = urlparse(SERVER_URL)
+    DB = dict(DB_HOST=_u.hostname or "localhost", DB_PORT=str(_u.port or 5432),
+              DB_USER=_u.username or "postgres", DB_PASSWORD=_u.password or "")
+    _admin = _engine(SERVER_URL.replace("postgresql://", "postgresql+psycopg://", 1), isolation_level="AUTOCOMMIT")
+    with _admin.connect() as _conn:
+        _conn.execute(_text("DROP DATABASE IF EXISTS pmui WITH (FORCE)"))
+        _conn.execute(_text("CREATE DATABASE pmui"))
+    _admin.dispose()
+else:
+    import pgserver
+
+    # psycopg's binary build can be blocked (e.g. by Windows application
+    # control); its pure-Python mode with pgserver's libpq always works.
+    os.environ["PATH"] = os.path.join(os.path.dirname(pgserver.__file__), "pginstall", "bin") + os.pathsep + os.environ["PATH"]
+    os.environ.setdefault("PSYCOPG_IMPL", "python")
+
+    srv = pgserver.get_server(os.path.join(DATA, "pgdata"), cleanup_mode=None)
+    srv.psql("DROP DATABASE IF EXISTS pmui;")
+    srv.psql("CREATE DATABASE pmui;")
+    DB = dict(DB_HOST="127.0.0.1", DB_PORT=srv.get_uri().rsplit(":", 1)[1].split("/")[0], DB_USER="postgres", DB_PASSWORD="")
+os.environ.update(DB, DB_NAME="pmui", SECRET_KEY="local-preview-only-not-a-real-secret-key", PM_MQTT_THREAD="0")
 
 # Sample backups for the Settings screenshot.
 BK = os.path.join(DATA, "backups")
@@ -158,7 +175,7 @@ for pid, wid in ((hub, ws_work), (fair, ws_work), (flat, ws_private)):
     c.put(f"/api/v1/workspaces/projects/{pid}", json={"workspace_id": wid}, headers=H)
 
 # Spread the history out, so "time ago" texts look real.
-eng = create_engine(f"postgresql+psycopg://postgres@127.0.0.1:{port}/pmui")
+eng = create_engine(f"postgresql+psycopg://{quote(DB['DB_USER'])}:{quote(DB['DB_PASSWORD'])}@{DB['DB_HOST']}:{DB['DB_PORT']}/pmui")
 with eng.begin() as conn:
     conn.execute(text("update tasks set completed_at = now() - interval '45 days' where id = :i"), {"i": old})
     conn.execute(text("update task_comments set created_at = now() - interval '5 hours' where author_id = (select id from users where username='anna')"))
