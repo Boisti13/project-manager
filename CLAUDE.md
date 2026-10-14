@@ -60,6 +60,9 @@ cd frontend && CI=true npx react-scripts test --watchAll=false && CI=true npm ru
 PW_CHANNEL=chrome python -m pytest e2e -q
 ```
 
+- Linux: pgserver only offers a Unix socket there, so set
+  `PM_TEST_DATABASE_URL` to a local PostgreSQL whose user has
+  `timezone = UTC` (like CI).
 - Windows: if psycopg's binary is blocked, set `PSYCOPG_IMPL=python` and put
   pgserver's `pginstall/bin` on `PATH` (it ships libpq).
 - `npm run build` (not `npx react-scripts build`) — it stamps the version
