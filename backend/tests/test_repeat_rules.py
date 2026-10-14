@@ -48,13 +48,14 @@ def post(client, user, **data):
 
 def test_api_rules_and_next_occurrence(client, alice):
     h = alice.headers
-    t = post(client, alice, title="Sync", deadline="2026-10-01T00:00:00", recurrence_unit="week",
+    # a Thursday in the future: from the schedule, the next date skips ahead past today
+    t = post(client, alice, title="Sync", deadline="2099-10-01T00:00:00", recurrence_unit="week",
              recurrence_weekdays=[3, 0, 3], recurrence_monthly="last_day", recurrence_from="schedule")
     # stored normalized: sorted weekdays, monthly mode dropped for weeks, "schedule" is the default
     assert (t["recurrence_weekdays"], t["recurrence_monthly"], t["recurrence_from"]) == ([0, 3], None, None)
     client.put(f"/api/v1/tasks/{t['id']}", json={"status": "done"}, headers=h)
     nxt = max((x for x in client.get("/api/v1/tasks/", headers=h).json() if x["title"] == "Sync"), key=lambda x: x["id"])
-    assert nxt["deadline"].startswith("2026-10-05") and nxt["recurrence_weekdays"] == [0, 3]
+    assert nxt["deadline"].startswith("2099-10-05") and nxt["recurrence_weekdays"] == [0, 3]
 
     m = post(client, alice, title="Report", deadline="2026-10-30T00:00:00", recurrence_unit="month",
              recurrence_monthly="last_workday", recurrence_weekdays=[1])
