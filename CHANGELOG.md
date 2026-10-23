@@ -2,7 +2,10 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
-## Unreleased
+## v1.50.4 — 2026-10-23
+
+### Fixed
+- Windows/Linux app, *Settings → About*: *Connection* shows HTTPS when the app talks to its server over `https://` (it always said “HTTP (not encrypted)”, because it looked at the app's own local page).
 
 ### Under the hood
 - Repeat-rules test no longer depends on the date: it used a deadline of 2026-10-01 and has failed since 2026-10-05, because the next date from the schedule skips ahead past today. It now uses a Thursday in 2099.

@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.14.4 — 2026-10-23
+
+### Fixed
+- *Settings → About*: *Connection* says HTTPS when the server address starts with `https://` (it always said HTTP) (server v1.50.4 interface).
+
 ## v0.14.3 — 2026-10-04
 
 ### Changed

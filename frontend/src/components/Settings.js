@@ -12,6 +12,7 @@ import CalendarFeedSettings from './CalendarFeedSettings';
 import DesktopSettings from './desktop/DesktopSettings';
 import AppDownloads from './AppDownloads';
 import { IS_DESKTOP, DESKTOP_OS } from '../desktop/platform';
+import { getServer } from '../desktop/server';
 import '../styles/Settings.css';
 import { t } from '../i18n';
 import TemplateSettings from './TemplateSettings';
@@ -83,7 +84,10 @@ function About() {
           <div className="info-row">
             <span className="info-label">{t('Connection')}</span>
             <span className="info-value">
-              {window.location.protocol === 'https:' ? (
+              {/* The desktop app's page is local; what counts is its server's address. */}
+              {IS_DESKTOP ? (
+                getServer().startsWith('https://') ? t('🔒 HTTPS (encrypted)') : t('⚠ HTTP (not encrypted)')
+              ) : window.location.protocol === 'https:' ? (
                 <>
                   {t('🔒 HTTPS (encrypted)')} ·{' '}
                   <a href="/ca.crt" download="project-manager-ca.crt">
