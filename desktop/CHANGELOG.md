@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.14.5 — 2026-10-23
+
+### Changed
+- Server v1.50.5 interface (the web page's *CA certificate* link; nothing changes in the app).
+
 ## v0.14.4 — 2026-10-23
 
 ### Fixed

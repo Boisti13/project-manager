@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.50.5 — 2026-10-23
+
+### Fixed
+- *Settings → About*: the *CA certificate* link only shows when the server hands out its own CA (`scripts/setup-https.sh`). Behind a proxy with a public certificate (e.g. Let's Encrypt) it led to the app's own page instead of a certificate.
+
 ## v1.50.4 — 2026-10-23
 
 ### Fixed

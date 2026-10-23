@@ -20,12 +20,19 @@ import WorkspaceSettings from './WorkspaceSettings';
 import TwoFactorSettings from './TwoFactorSettings';
 import HomeAssistantSettings from './HomeAssistantSettings';
 
+// Only a server with its own HTTPS (scripts/setup-https.sh) hands out its CA
+// at /ca.crt; behind a proxy with a public certificate that address is just
+// the app's page, and there's nothing to install.
+export const isCaCertificate = (response) =>
+  !!response?.ok && /x509|pkix-cert|pem/i.test(response.headers.get('content-type') || '');
+
 // Settings → About: a few numbers, the version, how you're connected.
 function About() {
   const { currentUser } = useAuth();
   const [stats, setStats] = useState({ tasks: 0, projects: 0, users: 0 });
   const [version, setVersion] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasCa, setHasCa] = useState(false);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -48,6 +55,12 @@ function About() {
       .then((r) => r.json())
       .then((d) => setVersion(d.version))
       .catch(() => setVersion(null));
+
+    if (!IS_DESKTOP && window.location.protocol === 'https:') {
+      fetch('/ca.crt', { method: 'HEAD' })
+        .then((r) => setHasCa(isCaCertificate(r)))
+        .catch(() => setHasCa(false));
+    }
   }, []);
 
   return (
@@ -89,10 +102,15 @@ function About() {
                 getServer().startsWith('https://') ? t('🔒 HTTPS (encrypted)') : t('⚠ HTTP (not encrypted)')
               ) : window.location.protocol === 'https:' ? (
                 <>
-                  {t('🔒 HTTPS (encrypted)')} ·{' '}
-                  <a href="/ca.crt" download="project-manager-ca.crt">
-                    {t('CA certificate')}
-                  </a>
+                  {t('🔒 HTTPS (encrypted)')}
+                  {hasCa && (
+                    <>
+                      {' '}·{' '}
+                      <a href="/ca.crt" download="project-manager-ca.crt">
+                        {t('CA certificate')}
+                      </a>
+                    </>
+                  )}
                 </>
               ) : (
                 t('⚠ HTTP (not encrypted)')

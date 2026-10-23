@@ -79,7 +79,7 @@ When on, the app is served over **HTTPS with a certificate from a local certific
 
 ### Trusting the certificate on your devices (once per device)
 
-Download the CA certificate — `http://<server>/ca.crt`, or **Settings → About → CA certificate** — and install it as a *trusted root*:
+Download the CA certificate — `http://<server>/ca.crt`, or **Settings → About → CA certificate** (shown only when the server has its own HTTPS like this) — and install it as a *trusted root*:
 
 - **Windows**: open the file → *Install Certificate…* → *Local Machine* (or *Current User*) → *Place all certificates in the following store* → **Trusted Root Certification Authorities** → Finish. Restart the browser. (Chrome and Edge use the Windows store; Firefox: *Settings → Privacy & Security → Certificates → View Certificates → Authorities → Import*, tick *Trust this CA to identify websites*.)
 - **Linux** (also for the Linux app): Debian/Ubuntu/Mint/Raspberry Pi OS: `sudo cp ca.crt /usr/local/share/ca-certificates/project-manager.crt && sudo update-ca-certificates`; Fedora: `sudo cp ca.crt /etc/pki/ca-trust/source/anchors/ && sudo update-ca-trust`. Firefox and Chrome keep their own list: import it there as well (Firefox as above; Chrome: *Settings → Privacy and security → Security → Manage certificates → Authorities → Import*).
