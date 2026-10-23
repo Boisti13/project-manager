@@ -510,7 +510,7 @@ to bookmark or send to someone.
 | **Backup & export** | export a project (or everything) as a JSON file to import into another account or installation, or all tasks as a CSV file for Excel; admins also make and restore backups here |
 | **Updates** | the running version and updates — see [For admins](#for-admins) |
 | **Users** (admins) | user management: add, deactivate, make admin, set passwords, open registration — see [For admins](#for-admins) |
-| **About** | a few numbers, the version, the connection (and the CA certificate with HTTPS) |
+| **About** | a few numbers, the version, whether the connection is encrypted (in the Windows/Linux app: whether its server address is `https://`), and the CA certificate when the server has its own HTTPS |
 
 In the Windows/Linux app, two-factor login, API tokens and the calendar feed
 link aren't shown — they need a password login; use the web app for them.

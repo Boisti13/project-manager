@@ -92,7 +92,7 @@ Until a device trusts it, the browser shows a warning you can click through. Com
 ### Other names, reverse proxies
 
 - **Extra names** (e.g. a DNS entry `pm.lan` in your router): `cd /opt/project-manager && PM_TLS_NAMES="pm.lan" scripts/setup-https.sh && systemctl reload nginx`. The names are remembered (`/etc/project-manager/tls/names`), so later updates keep them; `PM_TLS_NAMES=""` removes them again.
-- **Behind another reverse proxy** that terminates TLS: leave HTTPS off here and let the proxy forward to port 80; the app sends `X-Forwarded-Proto` through.
+- **Behind another reverse proxy** that terminates TLS: leave HTTPS off here and let the proxy forward to port 80; the app sends `X-Forwarded-Proto` through. The traffic is then encrypted up to the proxy only. *Settings → About* shows HTTPS and no *CA certificate* link (there is none to install), and the Windows/Linux apps use the proxy's `https://` name as their server address.
 
 ## Backups & Export
 

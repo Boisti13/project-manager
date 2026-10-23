@@ -52,6 +52,9 @@ The Linux builds need a system from about 2022 on (Debian 12, Ubuntu 22.04,
 Mint 21, Fedora 36, Raspberry Pi OS Bookworm or newer). If the server uses
 **HTTPS with its own CA**, add the CA to the system's trusted certificates
 (see [DEPLOYMENT.md → HTTPS](../DEPLOYMENT.md#trusting-the-certificate-on-your-devices-once-per-device)).
+Behind a reverse proxy with a public certificate (e.g. Let's Encrypt) there is
+nothing to install: enter the `https://` name as the server address.
+*Settings → About → Connection* shows whether that address is encrypted.
 
 ## Using it
 

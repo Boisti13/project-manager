@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## Unreleased
+
+### Under the hood
+- Docs: user guide, desktop README and DEPLOYMENT describe what *Settings → About* shows about the connection, and how to use the apps behind a reverse proxy with a public certificate.
+
 ## v1.50.5 — 2026-10-23
 
 ### Fixed
