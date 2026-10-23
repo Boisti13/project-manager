@@ -29,16 +29,17 @@ def test_start_date_is_saved_checked_and_in_the_history(client, alice):
 
 
 def test_repeating_tasks_move_their_start_along(client, alice):
-    t = post(client, alice, "/api/v1/tasks/", title="Weekly report", start_date="2026-10-05T00:00:00",
-             deadline="2026-10-07T00:00:00", recurrence_unit="week")
+    # far in the future: a past deadline makes the next one skip ahead past today
+    t = post(client, alice, "/api/v1/tasks/", title="Weekly report", start_date="2099-10-05T00:00:00",
+             deadline="2099-10-07T00:00:00", recurrence_unit="week")
     post(client, alice, "/api/v1/tasks/", title="Collect numbers", parent_task_id=t["id"],
-         start_date="2026-10-05T00:00:00", deadline="2026-10-06T00:00:00", estimate_minutes=30)
+         start_date="2099-10-05T00:00:00", deadline="2099-10-06T00:00:00", estimate_minutes=30)
     put(client, alice, f"/api/v1/tasks/{t['id']}", status="done")
     tasks = client.get("/api/v1/tasks/", headers=alice.headers).json()
     nxt = [x for x in tasks if x["title"] == "Weekly report" and x["id"] != t["id"]][0]
-    assert nxt["start_date"].startswith("2026-10-12") and nxt["deadline"].startswith("2026-10-14")
+    assert nxt["start_date"].startswith("2099-10-12") and nxt["deadline"].startswith("2099-10-14")
     sub = [x for x in tasks if x["parent_task_id"] == nxt["id"]][0]
-    assert sub["start_date"].startswith("2026-10-12") and sub["estimate_minutes"] == 30
+    assert sub["start_date"].startswith("2099-10-12") and sub["estimate_minutes"] == 30
 
 
 def test_calendar_feed_spans_start_to_deadline(client, alice):

@@ -82,12 +82,17 @@ def test_calendar_shows_deadlines_and_takes_a_drop_on_another_day(page, api):
 
 
 def test_timeline_shows_bars_and_moves_them_by_dragging(page, api):
+    # dates from next Monday on: the timeline opens scrolled to today
+    monday = datetime.date.today() + datetime.timedelta(days=7 - datetime.date.today().weekday())
+    def day(n):
+        return (monday + datetime.timedelta(days=n)).isoformat()
+
     project = api.project()
-    first = api.task("Plan the stand", project_id=project["id"], start_date="2026-10-05T00:00:00",
-                     deadline="2026-10-07T00:00:00")
-    api.task("Build the stand", project_id=project["id"], start_date="2026-10-12T00:00:00",
-             deadline="2026-10-14T00:00:00", blocked_by_ids=[first["id"]])
-    api.task("Hand over", project_id=project["id"], deadline="2026-10-16T00:00:00")
+    first = api.task("Plan the stand", project_id=project["id"], start_date=day(0) + "T00:00:00",
+                     deadline=day(2) + "T00:00:00")
+    api.task("Build the stand", project_id=project["id"], start_date=day(7) + "T00:00:00",
+             deadline=day(9) + "T00:00:00", blocked_by_ids=[first["id"]])
+    api.task("Hand over", project_id=project["id"], deadline=day(11) + "T00:00:00")
     api.task("Someday", project_id=project["id"])
     page.goto(f"/?project={project['id']}&view=timeline")
     page.locator(".tl-bar").first.wait_for()
@@ -103,8 +108,8 @@ def test_timeline_shows_bars_and_moves_them_by_dragging(page, api):
     page.mouse.down()
     page.mouse.move(box["x"] + box["width"] / 2 + 34 * 2 + 3, box["y"] + box["height"] / 2, steps=8)
     page.mouse.up()
-    wait_for(lambda: api.find("Plan the stand")["start_date"].startswith("2026-10-07"))
-    assert api.find("Plan the stand")["deadline"].startswith("2026-10-09")
+    wait_for(lambda: api.find("Plan the stand")["start_date"].startswith(day(2)))
+    assert api.find("Plan the stand")["deadline"].startswith(day(4))
     page.locator(".undo-toast", has_text="Moved “Plan the stand”").wait_for()
 
     # drag the end one day later
@@ -114,12 +119,12 @@ def test_timeline_shows_bars_and_moves_them_by_dragging(page, api):
     page.mouse.down()
     page.mouse.move(handle_x + 34 + 3, box["y"] + box["height"] / 2, steps=6)
     page.mouse.up()
-    wait_for(lambda: api.find("Plan the stand")["deadline"].startswith("2026-10-10"))
-    assert api.find("Plan the stand")["start_date"].startswith("2026-10-07")  # start stays
+    wait_for(lambda: api.find("Plan the stand")["deadline"].startswith(day(5)))
+    assert api.find("Plan the stand")["start_date"].startswith(day(2))  # start stays
 
     # Undo puts the dates back
     page.locator(".undo-btn").click()
-    wait_for(lambda: api.find("Plan the stand")["deadline"].startswith("2026-10-09"))
+    wait_for(lambda: api.find("Plan the stand")["deadline"].startswith(day(4)))
 
     # a click (no drag) opens the task in the list
     bar.click()

@@ -8,6 +8,7 @@ All notable changes, newest first. Versions follow [semantic versioning](docs/de
 - Windows/Linux app, *Settings → About*: *Connection* shows HTTPS when the app talks to its server over `https://` (it always said “HTTP (not encrypted)”, because it looked at the app's own local page).
 
 ### Under the hood
+- Two more tests no longer depend on the date: the repeating-task start-date test now uses 2099, and the timeline browser test uses dates from next Monday on (the timeline opens scrolled to today, so October 2026 bars were off-screen).
 - Repeat-rules test no longer depends on the date: it used a deadline of 2026-10-01 and has failed since 2026-10-05, because the next date from the schedule skips ahead past today. It now uses a Thursday in 2099.
 - Docs: on Linux, run the backend tests against a real PostgreSQL (`PM_TEST_DATABASE_URL`) — pgserver only offers a Unix socket there, which the tests can't use. Its time zone should be UTC, as in CI.
 - `tools/preview_server.py` works on Linux: with `PM_TEST_DATABASE_URL` set it uses that PostgreSQL (database `pmui`) instead of pgserver.
