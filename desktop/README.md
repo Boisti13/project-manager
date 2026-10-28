@@ -182,6 +182,16 @@ runs in passive mode: it shows progress, needs no clicks and restarts the
 app (an install for all users first asks for admin rights); an AppImage is replaced in place. A `.deb` isn't updated this way (it
 would need root): the app only reports the new version.
 
+**The update notice keeps coming back after updating?** Then Windows has the
+app twice: once *just for you* (`%LOCALAPPDATA%\Project Manager`) and once
+*for all users* (`C:\Program Files\Project Manager`). The installer offers
+both, and an update can land in the other copy than the one you start, so
+the one you open never changes. *Settings → Apps* then lists two
+*Project Manager* entries with different versions: uninstall the older one
+and start the app again from the Start menu (re-pin it if it was pinned to
+the taskbar). Your data and login stay — both copies keep them in
+`%LOCALAPPDATA%\com.boisti13.projectmanager`, not in the install folder.
+
 Signing updates is free and unrelated to Windows code signing. The key pair
 is a minisign key; the private key and its password are stored as the
 repository secrets **`TAURI_SIGNING_PRIVATE_KEY`** and

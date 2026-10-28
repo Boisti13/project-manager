@@ -6,6 +6,7 @@ All notable changes, newest first. Versions follow [semantic versioning](docs/de
 
 ### Under the hood
 - Docs: user guide, desktop README and DEPLOYMENT describe what *Settings → About* shows about the connection, and how to use the apps behind a reverse proxy with a public certificate.
+- Desktop README: what to do when the update notice keeps coming back — the Windows app installed twice (just for you and for all users), with the update going into the copy you don't start.
 
 ## v1.50.5 — 2026-10-23
 
