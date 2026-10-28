@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.14.6 — 2026-10-28
+
+### Fixed
+- Windows: the app could end up installed twice, *just for you* and *for all users*. Updates went into one copy while the Start menu kept opening the other, old one, so the update notice never went away. After installing, the installer now removes the other copy: quietly when it is the one *just for you*, after asking when it is the one *for all users* (that needs administrator rights). Your data and login stay (server v1.50.5 interface).
+
 ## v0.14.5 — 2026-10-23
 
 ### Changed

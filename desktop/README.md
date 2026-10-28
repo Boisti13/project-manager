@@ -33,7 +33,9 @@ AppImages update themselves; a `.deb` is updated by installing the new one.
   for them again on every update). Either way each Windows user keeps their
   own connection and local copy. To move an existing install, uninstall it
   (leave *Delete the application data* unticked to keep the local copy) and
-  run the installer again. The installer isn't code-signed yet, so on first run Windows
+  run the installer again. If the other kind is already installed, the
+  installer removes that copy afterwards (asking first for the one for all
+  users), so there is only ever one. The installer isn't code-signed yet, so on first run Windows
   SmartScreen warns ("Windows protected your PC"): click **More info → Run
   anyway**. With **Smart App Control** switched on, Windows blocks unsigned
   apps outright; it has to be off to install the app.
@@ -115,6 +117,9 @@ nothing to install: enter the `https://` name as the server address.
 
 ## How it works
 
+- `desktop/src-tauri/windows/hooks.nsh` — a hook for the Windows installer:
+  after installing, it removes a copy installed the other way (just for you /
+  for all users).
 - `desktop/src-tauri/` — the [Tauri](https://tauri.app) shell: a native
   window with the system's web view (WebView2 on Windows, WebKitGTK on
   Linux) showing the React frontend. No server-side code; the plugins are the
@@ -183,7 +188,8 @@ app (an install for all users first asks for admin rights); an AppImage is repla
 would need root): the app only reports the new version.
 
 **The update notice keeps coming back after updating?** Then Windows has the
-app twice: once *just for you* (`%LOCALAPPDATA%\Project Manager`) and once
+app twice (versions before 0.14.6; since then the installer removes the other
+copy itself, asking first if it is the one for all users): once *just for you* (`%LOCALAPPDATA%\Project Manager`) and once
 *for all users* (`C:\Program Files\Project Manager`). The installer offers
 both, and an update can land in the other copy than the one you start, so
 the one you open never changes. *Settings → Apps* then lists two
