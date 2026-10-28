@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.14.7 — 2026-10-28
+
+### Changed
+- Windows: the program is called `Project Manager.exe` (was `project-manager-desktop.exe`), so pinning the running app to Start or the taskbar shows *Project Manager* instead of the file name. A pin made from the old file stops working after the update: pin the app again (server v1.50.5 interface).
+
 ## v0.14.6 — 2026-10-28
 
 ### Fixed

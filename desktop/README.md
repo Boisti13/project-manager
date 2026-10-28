@@ -117,6 +117,9 @@ nothing to install: enter the `https://` name as the server address.
 
 ## How it works
 
+- `desktop/src-tauri/tauri.windows.conf.json` — Windows-only settings: the
+  program is `Project Manager.exe`, so pins show a proper name (on Linux the
+  binary keeps the name `project-manager-desktop`).
 - `desktop/src-tauri/windows/hooks.nsh` — a hook for the Windows installer:
   after installing, it removes a copy installed the other way (just for you /
   for all users).
