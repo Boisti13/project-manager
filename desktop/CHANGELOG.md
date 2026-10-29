@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.14.8 — 2026-10-29
+
+### Fixed
+- Windows: when the Start menu entry was missing, the app couldn't be found in Start or Windows search, and updates never brought it back (they only repoint an existing entry). Every install and update now creates it if it's missing (server v1.50.5 interface).
+
 ## v0.14.7 — 2026-10-28
 
 ### Changed

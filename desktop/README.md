@@ -121,8 +121,8 @@ nothing to install: enter the `https://` name as the server address.
   program is `Project Manager.exe`, so pins show a proper name (on Linux the
   binary keeps the name `project-manager-desktop`).
 - `desktop/src-tauri/windows/hooks.nsh` — a hook for the Windows installer:
-  after installing, it removes a copy installed the other way (just for you /
-  for all users).
+  after every install and update it puts back a missing Start menu entry and
+  removes a copy installed the other way (just for you / for all users).
 - `desktop/src-tauri/` — the [Tauri](https://tauri.app) shell: a native
   window with the system's web view (WebView2 on Windows, WebKitGTK on
   Linux) showing the React frontend. No server-side code; the plugins are the

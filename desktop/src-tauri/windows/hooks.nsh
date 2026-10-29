@@ -1,12 +1,31 @@
 ; Hooks for the Windows installer (bundle.windows.nsis.installerHooks), see
 ; https://v2.tauri.app/distribute/windows-installer/#installer-hooks
 
-; The installer offers "just for me" (%LOCALAPPDATA%) and "for all users"
-; (Program Files). A copy in the other place stayed behind with its own Start
-; menu entry and was never updated, so the app kept saying an update is
-; available. After a successful install, remove that other copy. Both keep
-; their data in %LOCALAPPDATA%\<bundle id>, which the uninstaller leaves alone.
+; Runs after every install and update.
 !macro NSIS_HOOK_POSTINSTALL
+  ; Updates only repoint an existing Start menu shortcut and never create
+  ; one, so once it was gone the app stayed missing from Start and Windows
+  ; search (2026-10-29). Put it back whenever it's missing (/NS: no shortcuts).
+  ${If} $NoShortcutMode <> 1
+    !if "${STARTMENUFOLDER}" != ""
+      ${IfNot} ${FileExists} "$SMPROGRAMS\$AppStartMenuFolder\${PRODUCTNAME}.lnk"
+        CreateDirectory "$SMPROGRAMS\$AppStartMenuFolder"
+        CreateShortcut "$SMPROGRAMS\$AppStartMenuFolder\${PRODUCTNAME}.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
+        !insertmacro SetLnkAppUserModelId "$SMPROGRAMS\$AppStartMenuFolder\${PRODUCTNAME}.lnk"
+      ${EndIf}
+    !else
+      ${IfNot} ${FileExists} "$SMPROGRAMS\${PRODUCTNAME}.lnk"
+        CreateShortcut "$SMPROGRAMS\${PRODUCTNAME}.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
+        !insertmacro SetLnkAppUserModelId "$SMPROGRAMS\${PRODUCTNAME}.lnk"
+      ${EndIf}
+    !endif
+  ${EndIf}
+
+  ; The installer offers "just for me" (%LOCALAPPDATA%) and "for all users"
+  ; (Program Files). A copy in the other place stayed behind with its own Start
+  ; menu entry and was never updated, so the app kept saying an update is
+  ; available. Remove that other copy. Both keep their data in
+  ; %LOCALAPPDATA%\<bundle id>, which the uninstaller leaves alone.
   StrCpy $R0 ""
   ${If} $MultiUser.InstallMode == "AllUsers"
     ReadRegStr $R0 HKCU "${UNINSTKEY}" "InstallLocation"
