@@ -11,7 +11,7 @@ def test_changes_are_logged_with_names(client, admin, alice, bob):
     t = client.post("/api/tasks/", json={"title": "Order cables", "project_id": six}, headers=h).json()
     client.put(f"/api/tasks/{t['id']}", json={
         "title": "Order CAT6 cables", "status": "in_progress", "assignee_id": bob.id, "project_id": ordering,
-        "deadline": "2026-10-01T00:00:00", "priority": 2, "description": "20 pcs",
+        "deadline": "2099-10-01T00:00:00", "priority": 2, "description": "20 pcs",
         "recurrence_unit": "month",
     }, headers=h)
     # saving the form again without changes logs nothing
@@ -25,20 +25,20 @@ def test_changes_are_logged_with_names(client, admin, alice, bob):
         ("description", "alice", None, None),
         ("status", "alice", "todo", "in_progress"),
         ("priority", "alice", "0", "2"),
-        ("deadline", "alice", None, "2026-10-01"),
+        ("deadline", "alice", None, "2099-10-01"),
         ("assignee", "alice", None, "bob"),
         ("project", "alice", "6GHub", "6GHub / Ordering"),
         ("recurrence", "alice", None, "month:1"),
     }
     assert log[9] == ("status", "bob", "in_progress", "done")
-    assert log[10][0] == "next_created" and log[10][3] == "2026-11-01"
+    assert log[10][0] == "next_created" and log[10][3] == "2099-11-01"
     assert len(log) == 11
 
     nxt = max((x for x in client.get("/api/tasks/", headers=h).json() if x["title"] == "Order CAT6 cables"),
               key=lambda x: x["id"])
     assert activity(client, alice, nxt["id"]) == [
         ("created", "bob", None, None),
-        ("repeat_of", "bob", str(t["id"]), "2026-11-01"),
+        ("repeat_of", "bob", str(t["id"]), "2099-11-01"),
     ]
 
 

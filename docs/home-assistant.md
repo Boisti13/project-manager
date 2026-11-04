@@ -116,7 +116,7 @@ the device **Project Manager (username)**. Needs Home Assistant 2025.10 or newer
 | Topic | `project-manager` — where the app publishes (`project-manager/<user>/…`) |
 | Discovery prefix | `homeassistant` (Home Assistant's default) |
 | Daily deadline reminder at | e.g. `07:30` — the **server's** clock (the page shows its current time); empty: none |
-| Web address of this server | for links to tasks in events and sensors. **Leave it empty**: the server uses the address it's reached at (e.g. `http://192.168.100.114`) and follows when that changes; the field shows it as *automatic*. Fill it in only for a different one, e.g. a domain name. |
+| Web address of this server | for links to tasks in events and sensors. **Leave it empty**: the server uses the address it's reached at (e.g. `http://192.168.100.114`) and follows when that changes; the field shows it as *automatic*. Fill it in only for a different one, e.g. a domain name — and behind a reverse proxy that ends HTTPS, which the server itself only sees as `http://`. A change reaches the device's link in Home Assistant and the task links at once. |
 | TLS | if the broker has TLS set up |
 
 **Test connection** tries the settings without saving; after **Save** the

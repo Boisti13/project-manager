@@ -180,6 +180,13 @@ def test_mqtt_discovery_events_states_and_opt_out(client, admin, alice, bob, bri
     bridge.drain()
     assert broker.all("project-manager/alice/event")[-1]["message"] == "bob hat dich erwähnt: Order cables"
 
+    # a new app address reaches the device link and the task links without reconnecting
+    client.put("/api/v1/home-assistant/mqtt", json={"app_url": "https://pm.example.org"}, headers=admin.headers)
+    bridge.drain()
+    assert FakeClient.instances[-1] is broker
+    assert broker.last("homeassistant/sensor/project_manager_alice/overdue/config")["device"]["configuration_url"] == "https://pm.example.org"
+    assert broker.last("project-manager/alice/state")["overdue_tasks"][0]["url"] == f"https://pm.example.org/?task={task['id']}"
+
     # opting out removes her device
     client.put("/api/v1/home-assistant/me", json={"enabled": False}, headers=alice.headers)
     bridge.drain()

@@ -2,9 +2,14 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
-## Unreleased
+## v1.50.6 — 2026-11-04
+
+### Fixed
+- Home Assistant over MQTT: changing *Web address of this server* now updates the device's link in Home Assistant at once. Before, the device kept the old address until the server reconnected to the broker (e.g. after a restart).
 
 ### Under the hood
+- Docs: *Web address of this server* should be filled in behind a reverse proxy that ends HTTPS (the server only sees `http://`).
+- Tests: the activity-log test no longer depends on today's date (its recurring task's next deadline moved once the fixed date was in the past).
 - Docs: user guide, desktop README and DEPLOYMENT describe what *Settings → About* shows about the connection, and how to use the apps behind a reverse proxy with a public certificate.
 - Desktop README: what to do when the update notice keeps coming back — the Windows app installed twice (just for you and for all users), with the update going into the copy you don't start.
 

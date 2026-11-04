@@ -275,7 +275,8 @@ class Bridge:
             if new["mqtt_enabled"] and new["mqtt_host"]:
                 self._connect(new)
         elif new["mqtt_enabled"] and self.connected:
-            self._announce(db)  # who opted in may have changed
+            # who opted in may have changed; a new app address goes into every device's link
+            self._announce(db, force=old["mqtt_app_url"] != new["mqtt_app_url"])
             self._dirty_since = time.time() - self.debounce
 
     def _connect(self, cfg: dict):
