@@ -37,6 +37,7 @@ The web app shows the same links under *Settings*.
 - **Repeating tasks**: every N days/weeks/months, on chosen weekdays, the last workday of the month, the 2nd Tuesday …
 - **List, board, calendar and timeline (Gantt)** views — drag bars to move dates, arrows for dependencies; search, filters and **saved filters**
 - **Workspaces** to keep work and private apart — one switch, every view follows
+- **Mind maps** for brainstorming, per project: type ideas with Tab and Enter, drag them around, fold branches, and turn the good ones into tasks (with subtasks) in one click
 - **My day** start page with your **pinned tasks** and a field to **add tasks right there**, and a **weekly review** with open work per project; date and time always in the top bar
 - **Quick**: **Ctrl+K searches everything** from any page; type and press Enter — *"Call supplier tomorrow !high #hardware @anna"* sets the deadline, priority, label and assignee — several tasks at once (one per line), **templates**, **keyboard shortcuts**, **change several tasks at once**, **Undo**
 - **Comments with @mentions, history and notifications** for working together; descriptions and comments with **formatting and clickable links**
@@ -52,6 +53,7 @@ The web app shows the same links under *Settings*.
 |---|---|---|
 | ![My day](docs/screenshots/myday-desktop.png) | ![Board view](docs/screenshots/board-desktop.png) | ![Weekly review](docs/screenshots/review-desktop.png) |
 | ![Timeline view](docs/screenshots/timeline-desktop.png) | ![Changing several tasks at once](docs/screenshots/bulk-edit-desktop.png) | ![Tasks on a phone](docs/screenshots/tasks-phone.png) |
+| ![Mind map](docs/screenshots/mindmap-desktop.png) | ![Mind maps per project](docs/screenshots/mindmaps-desktop.png) | ![Mind map on a phone](docs/screenshots/mindmap-phone.png) |
 
 More in the **[user guide](docs/user-guide.md)**.
 

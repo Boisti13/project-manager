@@ -100,7 +100,8 @@ nothing to install: enter the `https://` name as the server address.
 - Everything you can see stays available offline, including comments.
 - Links in descriptions and comments open in your normal browser.
 - **Offline you can**: create, edit, tick off and delete tasks and subtasks
-  (also several at once), reorder them, and write, edit and delete comments.
+  (also several at once), reorder them, write, edit and delete comments, and
+  make and change mind maps.
   The changes wait in a queue and are sent in order once the server is
   reachable — within a few seconds of any change, every 30 seconds, and when
   the window gets focus.

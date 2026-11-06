@@ -377,6 +377,14 @@ function ProjectList() {
                     >
                       {t('+ Category')}
                     </button>
+                    <Link
+                      className="task-action-btn"
+                      to={`/mindmaps?project=${project.id}`}
+                      title={t('Mind maps of {name}', { name: project.name })}
+                      aria-label={t('Mind maps of {name}', { name: project.name })}
+                    >
+                      ✺
+                    </Link>
                     <button
                       className="task-action-btn"
                       onClick={() => exportProjects(project)}

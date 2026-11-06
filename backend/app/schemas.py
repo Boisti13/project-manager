@@ -116,7 +116,7 @@ class ApiTokenCreated(ApiTokenInfo):
     token: str  # shown once
 
 class DeletionEntry(BaseModel):
-    entity: Literal["task", "comment", "project", "label"]
+    entity: Literal["task", "comment", "project", "label", "mindmap"]
     id: int
     uid: Optional[str] = None
     deleted_at: datetime
@@ -451,6 +451,7 @@ class SyncIds(BaseModel):
     tasks: List[int]
     projects: List[int]
     labels: List[int]
+    mindmaps: List[int] = []
 
 class SyncResponse(BaseModel):
     cursor: str  # pass as ?since= next time
@@ -459,8 +460,51 @@ class SyncResponse(BaseModel):
     projects: List[Project]
     labels: List[Label]
     comments: List[Comment]
+    mindmaps: List["MindMap"] = []
     users: List[SyncUser]
     deletions: List["DeletionEntry"]
     ids: SyncIds
+
+
+
+# Mind maps (routers/mindmaps.py)
+MIND_NODE_ID = r"^[A-Za-z0-9_-]{1,40}$"
+
+class MindNode(BaseModel):
+    """One idea. `parent` is another node's id, or None for a main branch
+    (attached to the map's centre, which is the map's title). Siblings keep
+    the order of the list."""
+    id: str = Field(pattern=MIND_NODE_ID)
+    parent: Optional[str] = Field(default=None, pattern=MIND_NODE_ID)
+    text: str = Field(default="", max_length=500)
+    note: Optional[str] = Field(default=None, max_length=10000)
+    color: Optional[str] = Field(default=None, pattern=HEX_COLOR)
+    side: Optional[Literal["left", "right"]] = None  # main branches only; None: automatic
+    collapsed: bool = False
+    task_uid: Optional[uuid.UUID] = None  # the task made from this idea
+
+class MindMapCreate(BaseModel):
+    uid: Optional[uuid.UUID] = None  # client-chosen; sending it again returns the existing map
+    project_id: int
+    title: str = Field(min_length=1, max_length=200)
+    nodes: List[MindNode] = []
+
+class MindMapUpdate(BaseModel):
+    project_id: Optional[int] = None
+    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    nodes: Optional[List[MindNode]] = None
+
+class MindMapSummary(BaseModel):
+    id: int
+    uid: str
+    project_id: int
+    title: str
+    node_count: int
+    created_by_id: Optional[int] = None
+    created_at: datetime
+    updated_at: datetime
+
+class MindMap(MindMapSummary):
+    nodes: List[MindNode]
 
 SyncResponse.model_rebuild()

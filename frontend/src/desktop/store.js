@@ -1,9 +1,9 @@
 // The Windows app's local copy of the data: tasks, projects, labels,
-// comments and users, the queue of changes not sent yet (outbox) and a few
+// comments, mind maps and users, the queue of changes not sent yet (outbox) and a few
 // values (cursor, current user, settings). Kept in memory for the UI and
 // written through to IndexedDB, which the app's WebView keeps on disk.
 
-export const COLLECTIONS = ['tasks', 'projects', 'labels', 'comments', 'users'];
+export const COLLECTIONS = ['tasks', 'projects', 'labels', 'comments', 'mindmaps', 'users'];
 const ALL_STORES = [...COLLECTIONS, 'outbox', 'meta'];
 
 export class Store {
@@ -119,12 +119,14 @@ export class IdbPersistence {
   open() {
     if (!this.db) {
       this.db = new Promise((resolve, reject) => {
-        const req = indexedDB.open(this.name, 1);
+        // Version 2 added mind maps; an upgrade only adds the stores that are missing.
+        const req = indexedDB.open(this.name, 2);
         req.onupgradeneeded = () => {
           const db = req.result;
-          for (const c of COLLECTIONS) db.createObjectStore(c, { keyPath: 'id' });
-          db.createObjectStore('outbox', { keyPath: 'seq' });
-          db.createObjectStore('meta', { keyPath: 'key' });
+          const has = (name) => db.objectStoreNames.contains(name);
+          for (const c of COLLECTIONS) if (!has(c)) db.createObjectStore(c, { keyPath: 'id' });
+          if (!has('outbox')) db.createObjectStore('outbox', { keyPath: 'seq' });
+          if (!has('meta')) db.createObjectStore('meta', { keyPath: 'key' });
         };
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);

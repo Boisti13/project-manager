@@ -106,6 +106,7 @@ project-manager/
 │       ├── names.js         # Status and priority names
 │       ├── estimate.js      # Time estimates: parse "1h 30m", format, add up
 │       ├── review.js        # Weekly review: done, overdue, due next week, per project
+│       ├── mindmap.js       # Mind maps: tree changes, sides, colours, layout, arrow-key moves
 │       ├── clipboard.js     # Copy text, also on plain-HTTP servers
 │       ├── markdown.js      # The Markdown subset of descriptions and comments → React elements
 │       ├── version.js       # The version the interface was built as, compared with the server's

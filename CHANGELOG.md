@@ -2,6 +2,18 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.51.0 — 2026-11-06
+
+### Added
+- **Mind maps** for brainstorming (✺ *Ideas* in the menu, and on every project in *Projects*): each map belongs to a project or category and starts with its topic in the centre. Add ideas with **Tab** (below) and **Enter** (next to it), or just start typing; move between them with the arrow keys, fold branches in and out, give ideas a colour and a note, and drag an idea onto another to move it there (or to the other side of the centre). Undo/redo, zoom and pan with the mouse, trackpad or two fingers; everything is saved as you go.
+- **Ideas become tasks**: *Make it a task* creates a task in the map's project, optionally with the ideas below it as subtasks. The idea then shows the task's status (✓ when done, crossed out) and links to it.
+- The Windows and Linux app has the mind maps offline too, like tasks: made and changed without a connection, sent with the next sync.
+- API: `/api/v1/mindmaps/` (list, create, read, change, delete); `GET /sync/` sends `mindmaps` and their ids, `/deletions/` lists deleted ones (`entity: "mindmap"`).
+
+### Under the hood
+- Database migration `0024`: table `mind_maps` (the ideas of a map are one JSON list).
+- Sample data and screenshots for the mind maps; a browser test that types, drags, undoes and makes tasks.
+
 ## v1.50.6 — 2026-11-04
 
 ### Fixed

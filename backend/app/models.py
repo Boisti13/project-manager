@@ -284,7 +284,7 @@ class Deletion(Base):
     __tablename__ = "deletions"
 
     id = Column(Integer, primary_key=True, index=True)
-    entity = Column(String(20), nullable=False)  # task | comment | project | label
+    entity = Column(String(20), nullable=False)  # task | comment | project | label | mindmap
     entity_id = Column(Integer, nullable=False)
     uid = Column(Uuid(as_uuid=False), nullable=True)
     deleted_at = Column(DateTime, default=utcnow, index=True)
@@ -389,3 +389,22 @@ class Notification(Base):
 
     task = relationship("Task")
     actor = relationship("User", foreign_keys=[actor_id])
+
+
+class MindMap(Base):
+    """A mind map for brainstorming, tied to a project (or category); see
+    routers/mindmaps.py. The nodes are one JSON document (a flat list, each
+    with its parent's id), saved as a whole: a map is edited by one person
+    at a time, and offline clients send it back in one piece."""
+    __tablename__ = "mind_maps"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uid = uid_column()
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String(200), nullable=False)
+    nodes = Column(Text, nullable=False, default="[]", server_default="[]")
+    created_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    project = relationship("Project")

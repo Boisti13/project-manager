@@ -17,6 +17,8 @@ import './App.css';
 import WeeklyReview from './components/WeeklyReview';
 import VersionWatch from './components/VersionWatch';
 import SharedProject from './components/SharedProject';
+import MindMaps from './components/MindMaps';
+import MindMapEditor from './components/MindMapEditor';
 
 // The Windows app loads its pages from files, where only #/… addresses work.
 const Router = IS_DESKTOP ? HashRouter : BrowserRouter;
@@ -96,6 +98,22 @@ function AppShell() {
             element={
               <ProtectedRoute>
                 <WeeklyReview />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mindmaps"
+            element={
+              <ProtectedRoute>
+                <MindMaps />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mindmaps/:id"
+            element={
+              <ProtectedRoute>
+                <MindMapEditor />
               </ProtectedRoute>
             }
           />

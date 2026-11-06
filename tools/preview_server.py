@@ -169,6 +169,21 @@ c.post(f"/api/v1/projects/{hub}/share", headers=H)
 c.post("/api/v1/templates/", json={"name": "Demo setup", "task_id": demo}, headers=H)
 c.post("/api/v1/saved-filters/", json={"name": "Hardware", "query": f"label={hw}"}, headers=H)
 c.post("/api/v1/saved-filters/", json={"name": "Mine by deadline", "query": "assignee=me&sort=deadline"}, headers=H)
+# A mind map in 6GHub (first map: /mindmaps/1); one idea is the setup-guide task already.
+guide_uid = c.get(f"/api/tasks/{guide}", headers=H).json()["uid"]
+N = lambda i, text, parent=None, **kw: {"id": i, "parent": parent, "text": text, **kw}  # noqa: E731
+c.post("/api/v1/mindmaps/", json={"project_id": hub, "title": "Demonstrator ideas", "nodes": [
+    N("show", "Live demo"), N("s1", "Video call over 6G", "show"), N("s2", "Latency meter on a big screen", "show"),
+    N("s3", "Robot arm, remote controlled", "show", note="Ask the robotics lab if we can borrow one."),
+    N("vis", "Visitors"), N("v1", "Partners", "vis"), N("v2", "School classes", "vis"), N("v3", "Press", "vis"),
+    N("doc", "Documentation", side="left"), N("d1", "Setup guide with photos", "doc", task_uid=guide_uid),
+    N("d2", "One-page flyer", "doc"), N("d3", "Short video", "doc"),
+    N("hw", "Hardware", side="left", color="#795548"), N("h1", "Antenna modules", "hw"), N("h2", "Spare power supplies", "hw"),
+    N("h3", "Transport boxes", "hw", collapsed=True), N("h31", "Foam inserts", "h3"), N("h32", "Labels", "h3"),
+]}, headers=H)
+c.post("/api/v1/mindmaps/", json={"project_id": docs, "title": "Setup guide outline", "nodes": [
+    N("a", "Unpacking"), N("b", "Cabling"), N("c", "First start")]}, headers=H)
+c.post("/api/v1/mindmaps/", json={"project_id": flat, "title": "Balcony plants", "nodes": [N("a", "Herbs")]}, headers=H)
 W = lambda name, color: c.post("/api/v1/workspaces/", json={"name": name, "color": color}, headers=H).json()["id"]  # noqa: E731
 ws_work, ws_private = W("Work", "#2196f3"), W("Private", "#4caf50")
 for pid, wid in ((hub, ws_work), (fair, ws_work), (flat, ws_private)):

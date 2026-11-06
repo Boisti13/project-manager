@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.15.0 — 2026-11-06
+
+### Added
+- **Mind maps** (✺ *Ideas*) also work offline: new maps, ideas, moves, notes and colours are kept in the local copy and sent with the next sync. A map made offline gets its server id after the sync and stays open. Needs server v1.51.0; with an older server the maps stay on this computer (server v1.51.0 interface).
+
 ## v0.14.8 — 2026-10-29
 
 ### Fixed

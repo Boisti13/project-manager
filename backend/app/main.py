@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import mqtt, server_url
 from app.routers import (
     users, tasks, projects, auth, system, settings, transfer, comments, notifications, labels, tokens, deletions, sync,
-    calendar, saved_filters, templates, shared, pins, workspaces, summary, homeassistant,
+    calendar, saved_filters, templates, shared, pins, workspaces, summary, homeassistant, mindmaps,
 )
 from app.version import APP_VERSION
 
@@ -78,6 +78,7 @@ ROUTES = [
     (shared.router, "/share", "share links"),
     (pins.router, "/pins", "pinned tasks"),
     (workspaces.router, "/workspaces", "workspaces"),
+    (mindmaps.router, "/mindmaps", "mind maps"),
     (summary.router, "/summary", "home assistant"),
     (homeassistant.router, "/home-assistant", "home assistant"),
     (sync.router, "/sync", "sync"),

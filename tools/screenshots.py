@@ -68,6 +68,10 @@ SHOTS = [
     ("search-desktop", "/", (1280, 760), 1, "light", False, "search"),
     ("search-phone", "/", (390, 760), 2, "light", False, "search"),
     ("shortcuts-desktop", "/", (1100, 760), 1, "light", False, "keys"),
+    ("mindmaps-desktop", "/mindmaps", (1280, 640), 1, "light", False, None),
+    ("mindmap-desktop", "/mindmaps/1", (1440, 860), 1, "light", False, "mindmap"),
+    ("mindmap-desktop-dark", "/mindmaps/1", (1440, 860), 1, "dark", False, "mindmap"),
+    ("mindmap-phone", "/mindmaps/1", (390, 844), 2, "light", True, "mindmap"),
     ("review-desktop", "/review", (1280, 1000), 1, "light", False, None),
     ("review-phone", "/review", (390, 844), 2, "light", False, None),
     ("template-desktop", "/", (1200, 900), 1, "light", False, "template"),
@@ -116,6 +120,11 @@ def shot(page, ctx, name, path, full, action):
         page.locator(".bulk-bar").evaluate("el => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 8)")
         page.wait_for_timeout(300)
         return page.screenshot(path=out)
+    if action == "mindmap":
+        page.locator(".mm-node", has_text="Robot arm").wait_for()
+        page.locator(".mm-node", has_text="Robot arm").click()
+        page.wait_for_timeout(300)
+        return page.screenshot(path=out, full_page=full)
     if action == "markdown":
         return page.locator(".task-item", has_text="Order antenna modules").first.screenshot(path=out)
     if action == "mention":

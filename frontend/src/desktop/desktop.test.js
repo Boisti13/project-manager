@@ -21,6 +21,8 @@ function fakeServer() {
     tasks: new Map(),
     comments: new Map(),
     deletions: [],
+    maps: new Map(),
+    hasMaps: true, // servers before 1.51 send no mind maps
     requests: [],
     uidIndex: new Map(),
     addTask(fields) {
@@ -62,7 +64,8 @@ function fakeServer() {
         cursor: String(clock - 1).padStart(6, '0'), full: !since, tasks: changed, projects: [], labels: [],
         comments: [...srv.comments.values()].filter((c) => ids.has(c.task_id) || !since || c.created_at > since),
         users: [], deletions: srv.deletions.filter((d) => !since || d.deleted_at > since),
-        ids: { tasks: [...srv.tasks.keys()], projects: [], labels: [] },
+        ids: { tasks: [...srv.tasks.keys()], projects: [], labels: [], ...(srv.hasMaps ? { mindmaps: [...srv.maps.keys()] } : {}) },
+        ...(srv.hasMaps ? { mindmaps: [...srv.maps.values()].filter((x) => !since || x.updated_at > since) } : {}),
       });
     }
     if (method === 'GET' && p === 'health') return reply(200, { status: 'ok', version: srv.version });
@@ -99,6 +102,25 @@ function fakeServer() {
       srv.comments.set(id, c);
       srv.edit(taskId, {});
       return reply(200, c);
+    }
+    if (method === 'POST' && p === 'mindmaps/') {
+      const found = [...srv.maps.values()].find((x) => x.uid === body.uid);
+      if (found) return reply(200, found);
+      const id = nextId++;
+      const map = { id, created_at: tick(), ...body, updated_at: tick() };
+      srv.maps.set(id, map);
+      return reply(200, map);
+    }
+    if ((m = /^mindmaps\/(-?\d+)$/.exec(p))) {
+      const id = Number(m[1]);
+      if (!srv.maps.has(id)) return reply(404, { detail: 'Mind map not found' });
+      if (method === 'DELETE') {
+        srv.maps.delete(id);
+        srv.deletions.push({ entity: 'mindmap', id, uid: null, deleted_at: tick() });
+        return reply(200, { ok: true });
+      }
+      Object.assign(srv.maps.get(id), body, { updated_at: tick() });
+      return reply(200, srv.maps.get(id));
     }
     return reply(404, { detail: `no route ${method} ${p}` });
   };
@@ -340,4 +362,67 @@ test('helpers', () => {
 test('the app version matches the Tauri config', () => {
   const conf = path.join(__dirname, '..', '..', '..', 'desktop', 'src-tauri', 'tauri.conf.json');
   assert.strictEqual(JSON.parse(fs.readFileSync(conf, 'utf8')).version, DESKTOP_VERSION);
+});
+
+test('mind maps: made and edited offline, sent as one create, then updates', async () => {
+  const { srv, store, engine, call } = setup();
+  await engine.sync();
+  store.put('projects', { id: 7, uid: 'p7', name: 'Launch' });
+  srv.online = false;
+  assert.strictEqual(call('POST', '/api/mindmaps/', { project_id: 99, title: 'X' }).status, 400);
+  const made = call('POST', '/api/mindmaps/', { project_id: 7, title: '  Ideas  ' }).data;
+  assert.ok(made.id < 0);
+  assert.strictEqual(made.title, 'Ideas');
+  const nodes = [{ id: 'a', parent: null, text: 'Flyer' }];
+  call('PUT', `/api/mindmaps/${made.id}`, { nodes });
+  assert.deepStrictEqual(call('GET', '/api/mindmaps/?project_id=7').data.map((x) => [x.title, x.node_count]), [['Ideas', 1]]);
+  assert.deepStrictEqual(call('GET', '/api/mindmaps/?project_id=8').data, []);
+  assert.strictEqual(store.outbox.length, 1); // folded into the create
+
+  srv.online = true;
+  await engine.sync();
+  const [onServer] = [...srv.maps.values()];
+  assert.deepStrictEqual(onServer.nodes, nodes);
+  const local = store.all('mindmaps');
+  assert.deepStrictEqual(local.map((x) => x.id), [onServer.id]); // the temporary copy was replaced
+
+  srv.online = false;
+  call('PUT', `/api/mindmaps/${onServer.id}`, { title: 'One' });
+  call('PUT', `/api/mindmaps/${onServer.id}`, { title: 'Two', nodes: [] });
+  assert.strictEqual(store.outbox.length, 1); // one update per map
+  srv.online = true;
+  await engine.sync();
+  assert.strictEqual(srv.maps.get(onServer.id).title, 'Two');
+  assert.deepStrictEqual(srv.maps.get(onServer.id).nodes, []);
+
+  call('DELETE', `/api/mindmaps/${onServer.id}`);
+  assert.strictEqual(call('GET', `/api/mindmaps/${onServer.id}`).status, 404);
+  await engine.sync();
+  assert.strictEqual(srv.maps.size, 0);
+});
+
+test('mind maps deleted on the server go; an old server leaves local ones alone', async () => {
+  const { srv, store, engine, call } = setup();
+  srv.maps.set(500, { id: 500, uid: 'm', project_id: 7, title: 'M', nodes: [], updated_at: '000001' });
+  await engine.sync();
+  assert.strictEqual(call('GET', '/api/mindmaps/500').data.title, 'M');
+  srv.hasMaps = false;
+  await engine.sync();
+  assert.strictEqual(store.all('mindmaps').length, 1);
+  srv.hasMaps = true;
+  srv.maps.delete(500);
+  await engine.sync();
+  assert.strictEqual(store.all('mindmaps').length, 0);
+});
+
+test('a map deleted offline before it was ever sent is never sent', async () => {
+  const { srv, store, engine, call } = setup();
+  store.put('projects', { id: 7, uid: 'p7', name: 'Launch' });
+  srv.online = false;
+  const made = call('POST', '/api/mindmaps/', { project_id: 7, title: 'Gone' }).data;
+  call('DELETE', `/api/mindmaps/${made.id}`);
+  assert.strictEqual(store.outbox.length, 0);
+  srv.online = true;
+  await engine.sync();
+  assert.ok(!srv.requests.some((r) => r.includes('mindmaps')));
 });

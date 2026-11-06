@@ -117,6 +117,7 @@ api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via
 | `/projects/{id}/share` | `POST`: a read-only link for the project (`share_token`; the same one if it exists), `DELETE`: stop sharing |
 | `/share/{token}` | **no login**: the shared project, its categories and tasks (no comments, history or people) |
 | `/labels/` | labels |
+| `/mindmaps/?project_id=…`, `/mindmaps/{id}` | mind maps of the projects you can see: `GET /` lists them (without the ideas, with `node_count`), `POST` (`project_id`, `title`, optional `nodes`, `uid` — sending the same `uid` again returns the existing map), `GET /{id}` with its `nodes`, `PUT` (`title`, `project_id`, `nodes` — the whole list each time), `DELETE` (tasks made from it stay). A node is `{id, parent, text, note?, color?, side?, collapsed?, task_uid?}`: `id` up to 40 of `A-Za-z0-9_-`, `parent` another node's id or `null` for a main branch, `side` (`left`/`right`, main branches only), `task_uid` the task made from it; siblings keep the list's order; at most 1000, no loops |
 | `/templates/`, `/templates/{id}`, `/templates/{id}/use` | task templates (shared): save a task with its subtasks (`name`, `task_id`), list them (with the `tree`), delete (who saved it, or an admin), and create the tasks (`title`, `project_id`, `parent_task_id`, `deadline`, `assignee_id`; returns their `ids`, the top one first) |
 | `/saved-filters/`, `/saved-filters/{id}` | the current user's saved task-list filters: `name` and `query` (the Tasks page URL query, e.g. `assignee=me&sort=deadline`); saving under an existing name replaces it |
 | `/notifications/`, `/notifications/read` | the current user's notifications |
@@ -126,7 +127,7 @@ api.post(f"{base}/tasks/{open_tasks[0]['id']}/comments", json={"body": "Done via
 | `/transfer/export`, `/transfer/import` | project export/import (JSON) |
 | `/calendar/feed`, `/calendar/feed/reset`, `/calendar/{token}.ics?scope=mine\|all&workspace={id}` | the user's calendar feed link, and the feed itself (no login: the token in the link is the key); `workspace` (optional): only that workspace of the user's |
 | `/sync/?since=…` | everything visible, or what changed since a cursor — for offline clients |
-| `/deletions/?since=…` | what was deleted (tasks, comments, projects, labels), for clients that keep a copy |
+| `/deletions/?since=…` | what was deleted (tasks, comments, projects, labels, mind maps), for clients that keep a copy |
 | `/settings/`, `/system/…` | instance settings, version/updates, backups (admins) |
 
 The full list with every field is in `/api/docs`.
@@ -157,17 +158,18 @@ it later:
 
 - **Without parameters**: a full snapshot of everything the user can see —
   `tasks` (flat; `parent_task_id` links subtasks), `projects` (with
-  categories), `labels`, `comments`, `users` (id, name, active) — and a
+  categories), `labels`, `comments`, `mindmaps` (with their nodes), `users`
+  (id, name, active) — and a
   **`cursor`**.
 - **With `?since=<cursor>`**: only what changed after that cursor (plus
   `deletions`), and a new `cursor`. Store it and pass it next time. The
   server looks a few seconds further back than the cursor so nothing
   committed during a sync is missed; you may get an object twice — just
   overwrite your copy by `id`/`uid`.
-- **`ids`** (always present): the ids of all tasks, projects and labels the
+- **`ids`** (always present): the ids of all tasks, projects, labels and mind maps the
   user can see *right now*. Drop local copies of anything not listed —
   that covers deletions and losing access to a private project. Getting
-  access to a private project sends its project and tasks as changed.
+  access to a private project sends its project, tasks and mind maps as changed.
 - Comments come along when they're new or edited, and all comments of every
   task in the response.
 

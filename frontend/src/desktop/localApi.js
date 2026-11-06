@@ -4,7 +4,8 @@
 //
 // handle(method, url, body) returns { status, data, changed } or null when
 // the call isn't handled locally (then desktopFetch passes it to the server:
-// settings, users, updates, backups, projects, labels, …).
+// settings, users, updates, backups, projects, labels, …). Mind maps are
+// answered locally too.
 
 const nowIso = () => new Date().toISOString().slice(0, 19);
 
@@ -108,6 +109,19 @@ export class LocalApi {
       if (!Number.isFinite(id)) return null;
       if (M === 'PUT') return this.editComment(id, body || {});
       if (M === 'DELETE') return this.deleteComment(id);
+      return null;
+    }
+    if (a === 'mindmaps') {
+      if (!b) {
+        if (M === 'GET') return json(200, this.listMaps(query.get('project_id')));
+        if (M === 'POST') return this.createMap(body || {});
+        return null;
+      }
+      const id = Number(b);
+      if (!Number.isFinite(id) || c) return null;
+      if (M === 'GET') return this.store.get('mindmaps', id) ? json(200, clone(this.store.get('mindmaps', id))) : notFound('Mind map');
+      if (M === 'PUT') return this.updateMap(id, body || {});
+      if (M === 'DELETE') return this.deleteMap(id);
       return null;
     }
     if (M !== 'GET') return null;
@@ -367,6 +381,85 @@ export class LocalApi {
     if (!unsent) {
       store.enqueue({ kind: 'delete', entity: 'comment', commentId: id, taskId: comment.task_id, method: 'DELETE',
         path: `/api/v1/comments/${id}` });
+    }
+    return json(200, { ok: true }, true);
+  }
+
+  // ---------------------------------------------------------------- mind maps
+  // A map is saved as a whole (title and all nodes), so one queued create or
+  // update per map is enough: later edits replace its body.
+
+  listMaps(projectId) {
+    const pid = projectId == null || projectId === '' ? null : Number(projectId);
+    return this.store
+      .all('mindmaps')
+      .filter((m) => pid == null || m.project_id === pid)
+      .sort((x, y) => (y.updated_at || '').localeCompare(x.updated_at || '') || x.id - y.id)
+      .map(({ nodes, ...rest }) => ({ ...clone(rest), node_count: (nodes || []).length }));
+  }
+
+  createMap(body) {
+    const store = this.store;
+    const title = (body.title || '').split(/\s+/).filter(Boolean).join(' ');
+    if (!title) return json(422, { detail: 'Title is empty' });
+    if (body.project_id == null || !store.get('projects', body.project_id)) return json(400, { detail: 'Project not found' });
+    const now = nowIso();
+    const nodes = clone(body.nodes || []);
+    const map = {
+      id: store.nextTempId(), uid: body.uid || uuid(), project_id: body.project_id, title, nodes,
+      node_count: nodes.length, created_by_id: this.me?.id ?? null, created_at: now, updated_at: now, local: true,
+    };
+    store.put('mindmaps', map);
+    store.enqueue({
+      kind: 'create', entity: 'mindmap', tempId: map.id, title, method: 'POST', path: '/api/v1/mindmaps/',
+      body: { uid: map.uid, project_id: map.project_id, title, nodes },
+    });
+    return json(200, clone(map), true);
+  }
+
+  updateMap(id, body) {
+    const store = this.store;
+    const map = store.get('mindmaps', id);
+    if (!map) return notFound('Mind map');
+    const changes = {};
+    if (body.title != null) {
+      const title = body.title.split(/\s+/).filter(Boolean).join(' ');
+      if (!title) return json(422, { detail: 'Title is empty' });
+      changes.title = title;
+    }
+    if (body.project_id != null) {
+      if (!store.get('projects', body.project_id)) return json(400, { detail: 'Project not found' });
+      changes.project_id = body.project_id;
+    }
+    if (body.nodes) changes.nodes = clone(body.nodes);
+    const updated = { ...map, ...changes, node_count: (changes.nodes || map.nodes || []).length, updated_at: nowIso() };
+    store.put('mindmaps', updated);
+    const queued = store.outbox.find(
+      (o) => o.entity === 'mindmap' && o.kind !== 'delete' && (o.tempId === id || o.mapId === id)
+    );
+    if (queued) {
+      queued.body = { ...queued.body, ...changes };
+      queued.title = updated.title;
+      store.saveOp(queued);
+    } else {
+      store.enqueue({
+        kind: 'update', entity: 'mindmap', mapId: id, title: updated.title, method: 'PUT',
+        path: `/api/v1/mindmaps/${id}`, body: changes,
+      });
+    }
+    return json(200, clone(updated), true);
+  }
+
+  deleteMap(id) {
+    const store = this.store;
+    if (!store.get('mindmaps', id)) return notFound('Mind map');
+    store.remove('mindmaps', id);
+    const unsent = store.outbox.some((o) => o.kind === 'create' && o.entity === 'mindmap' && o.tempId === id);
+    for (const op of [...store.outbox]) {
+      if (op.entity === 'mindmap' && (op.tempId === id || op.mapId === id)) store.removeOp(op.seq);
+    }
+    if (!unsent) {
+      store.enqueue({ kind: 'delete', entity: 'mindmap', mapId: id, method: 'DELETE', path: `/api/v1/mindmaps/${id}` });
     }
     return json(200, { ok: true }, true);
   }

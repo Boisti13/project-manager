@@ -20,6 +20,7 @@ How to use Project Manager, page by page. Running a server is described in
 - [Projects and categories](#projects-and-categories): private projects, [archiving](#archiving-finished-projects), [sharing a read-only link](#sharing-a-project-read-only)
 - [Workspaces](#workspaces): work and private (or whatever you like) apart
 - [Notifications](#notifications)
+- [Mind maps](#mind-maps): brainstorming, ideas into tasks
 - [Weekly review](#weekly-review)
 - [Calendar feed](#calendar-feed)
 - [Settings](#settings): [two-factor login](#two-factor-login)
@@ -459,6 +460,48 @@ belongs to another says so (*in Work*), the top of the list sums it up
 | | |
 |---|---|
 | ![Notifications](screenshots/bell-desktop.png) | ![Notifications from another workspace](screenshots/bell-workspace-desktop.png) |
+
+## Mind maps
+
+✺ *Ideas* collects mind maps for brainstorming. Each map belongs to a
+project or category (*Projects* has a ✺ button per project for its maps)
+and follows its visibility: a private project's maps are private too. Start
+one with a topic and a project; the topic sits in the centre.
+
+![A mind map](screenshots/mindmap-desktop.png)
+
+| Key | What it does |
+|---|---|
+| **Tab** | new idea below the selected one |
+| **Enter** | new idea next to it (on the centre: a new main branch) |
+| typing, **F2**, double-click | edit the text (typing replaces it); **Enter** ends, **Shift+Enter** is a new line, **Esc** cancels |
+| **arrow keys** | move between ideas (← and → go towards and away from the centre) |
+| **Alt+↑ / ↓** | move the idea up or down among its neighbours |
+| **Space** | fold the ideas below in or out (the little circle shows how many are hidden) |
+| **Del** | delete the idea with the ideas below it |
+| **Ctrl+Z / Ctrl+Y** | undo / redo |
+
+The buttons above the map do the same, for phones and tablets.
+
+- **Moving ideas**: drag an idea onto another to move it there with
+  everything below it. Drag a main branch to the other side of the centre
+  to switch sides; new main branches go to the side with fewer ideas.
+- **Looking around**: drag the empty background (or scroll) to pan;
+  Ctrl+wheel, a trackpad pinch or two fingers zoom. *Fit* shows the whole map.
+- **Colour and note**: select an idea and use the panel on the right (below
+  the map on phones). Ideas below take the colour of their branch unless
+  they have their own; a note shows as ≡.
+- **Ideas into tasks**: *Make it a task* creates a task in the map's
+  project with the idea's text as title and its note as description;
+  *… with n subtasks* takes the ideas below it along as subtasks (ideas
+  that are tasks already are skipped). The idea then shows ☐, or ✓ and
+  crossed out once the task is done; the panel links to the task. Deleting
+  an idea or the map leaves its tasks alone.
+- Everything is saved a moment after each change (*Saved* top right). In
+  the [Windows and Linux app](../desktop/README.md#offline) mind maps also
+  work offline.
+
+![Mind maps of all projects](screenshots/mindmaps-desktop.png)
 
 ## Weekly review
 

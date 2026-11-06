@@ -1,13 +1,13 @@
 """Deletion records and "something changed" bumps, so clients that keep a
 copy of the data (offline apps, sync scripts) can follow along:
 - every deleted task (with its subtasks and their comments), comment,
-  project (with its categories) and label leaves a Deletion row;
+  project (with its categories and mind maps), mind map and label leaves a Deletion row;
 - tasks whose representation changes as a side effect (a label or
   project they belong to is deleted, a task they wait for is deleted) get
   a fresh updated_at."""
 from sqlalchemy.orm import Session
 
-from app.models import Deletion, Project, Task, TaskComment, User, task_dependencies, task_labels
+from app.models import Deletion, MindMap, Project, Task, TaskComment, User, task_dependencies, task_labels
 from app.timeutil import utcnow
 
 
@@ -50,9 +50,15 @@ def project_deleted(db: Session, project: Project, actor: User) -> None:
     for p in doomed:
         _record(db, "project", p, actor)
     ids = [p.id for p in doomed]
+    for m in db.query(MindMap).filter(MindMap.project_id.in_(ids)):
+        _record(db, "mindmap", m, actor)
     touch_tasks(db, (tid for (tid,) in db.query(Task.id).filter(Task.project_id.in_(ids))))
 
 
 def label_deleted(db: Session, label, actor: User) -> None:
     _record(db, "label", label, actor)
     touch_tasks(db, (tid for (tid,) in db.query(task_labels.c.task_id).filter(task_labels.c.label_id == label.id)))
+
+
+def mindmap_deleted(db: Session, mindmap: MindMap, actor: User) -> None:
+    _record(db, "mindmap", mindmap, actor)

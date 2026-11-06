@@ -159,7 +159,8 @@ export class SyncEngine {
   resolve(op) {
     const path = op.path
       .replace(/\/tasks\/(-\d+)/, (m, id) => `/tasks/${this.mapId('task', Number(id))}`)
-      .replace(/\/comments\/(-\d+)/, (m, id) => `/comments/${this.mapId('comment', Number(id))}`);
+      .replace(/\/comments\/(-\d+)/, (m, id) => `/comments/${this.mapId('comment', Number(id))}`)
+      .replace(/\/mindmaps\/(-\d+)/, (m, id) => `/mindmaps/${this.mapId('mindmap', Number(id))}`);
     let body = op.body;
     if (body) {
       body = { ...body };
@@ -269,6 +270,7 @@ export class SyncEngine {
     for (const op of store.outbox) {
       if (op.entity === 'task' && op.taskId != null) busy.add(`task:${op.taskId}`);
       if (op.entity === 'comment' && op.commentId != null) busy.add(`comment:${op.commentId}`);
+      if (op.entity === 'mindmap' && op.mapId != null) busy.add(`mindmap:${op.mapId}`);
     }
     const put = (coll, entity, obj) => {
       if (busy.has(`${entity}:${obj.id}`)) return;
@@ -288,7 +290,7 @@ export class SyncEngine {
     if (data.full) {
       // Everything the server has is in this answer: start over, except
       // what exists only locally so far.
-      for (const coll of ['tasks', 'projects', 'labels', 'comments']) {
+      for (const coll of ['tasks', 'projects', 'labels', 'comments', 'mindmaps']) {
         for (const o of store.all(coll)) if (o.id > 0 && !busy.has(`${coll.slice(0, -1)}:${o.id}`)) drop(coll, o.id);
       }
     }
@@ -296,6 +298,9 @@ export class SyncEngine {
     for (const p of data.projects) put('projects', 'project', p);
     for (const l of data.labels) put('labels', 'label', l);
     for (const c of data.comments) put('comments', 'comment', c);
+    // Servers before 1.51 have no mind maps: then leave the local ones alone.
+    const hasMaps = Array.isArray(data.ids.mindmaps);
+    for (const m of data.mindmaps || []) put('mindmaps', 'mindmap', m);
 
     // Anything not visible any more (deleted, or access removed) goes.
     const ids = {
@@ -303,8 +308,12 @@ export class SyncEngine {
       projects: new Set(data.ids.projects),
       labels: new Set(data.ids.labels),
     };
-    for (const coll of ['tasks', 'projects', 'labels']) {
-      for (const o of store.all(coll)) if (o.id > 0 && !ids[coll].has(o.id)) drop(coll, o.id);
+    if (hasMaps) ids.mindmaps = new Set(data.ids.mindmaps);
+    for (const coll of Object.keys(ids)) {
+      for (const o of store.all(coll)) {
+        // A map with an edit on its way stays until the server answered it.
+        if (o.id > 0 && !ids[coll].has(o.id) && !(coll === 'mindmaps' && busy.has(`mindmap:${o.id}`))) drop(coll, o.id);
+      }
     }
     for (const d of data.deletions || []) if (d.entity === 'comment') drop('comments', d.id);
     for (const c of store.all('comments')) if (!store.get('tasks', c.task_id)) drop('comments', c.id);
