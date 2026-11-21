@@ -1,8 +1,23 @@
 .App {
+  /* grow with the page (not just one screen high), so the sticky top bar
+     stays in view all the way down */
+  flex-shrink: 0;
   min-height: 100vh;
   background-color: var(--color-bg);
   display: flex;
   flex-direction: column;
+}
+
+/* Header + nav bar stay in view while the page scrolls (height in
+   --app-top-height, set by App.js). */
+.app-top {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+html {
+  scroll-padding-top: var(--app-top-height, 0px);
 }
 
 .App-header {

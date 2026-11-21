@@ -2,6 +2,11 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](docs/development.md#versioning); each release is tagged `vX.Y.Z` on `main`.
 
+## v1.51.1 — 2026-11-21
+
+### Changed
+- The header and the top bar (menu, search, workspace, notifications) **stay at the top while the page scrolls**, in the browser and in the Windows and Linux app; on phones the top bar did already. Bars that stick while scrolling (*Select* mode, the task form's *Save / Cancel*, the Settings menu) now stop below it, and jumping to a task no longer hides it underneath.
+
 ## v1.51.0 — 2026-11-06
 
 ### Added

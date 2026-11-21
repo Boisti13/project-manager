@@ -2,7 +2,7 @@
 
 .bulk-bar {
   position: sticky;
-  top: 0;
+  top: var(--app-top-height, 0px);
   z-index: 60;
   margin: 8px 0 12px;
   padding: 10px 12px;

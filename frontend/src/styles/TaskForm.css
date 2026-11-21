@@ -279,7 +279,7 @@
 /* Save / Cancel at the top, staying in view while the form scrolls */
 .form-actions-top {
   position: sticky;
-  top: 0;
+  top: var(--app-top-height, 0px);
   z-index: 15;
   align-items: center;
   margin: -6px 0 4px 0;

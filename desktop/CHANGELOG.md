@@ -3,6 +3,11 @@
 Versions of the app for Windows and Linux (`desktop-v…` tags); the server has its own
 [CHANGELOG](../CHANGELOG.md).
 
+## v0.15.1 — 2026-11-21
+
+### Changed
+- The header and the top bar stay at the top while the page scrolls (server v1.51.0 interface).
+
 ## v0.15.0 — 2026-11-06
 
 ### Added

@@ -44,6 +44,8 @@ button in the top bar switches to **dark mode** (remembered per browser;
 by default it follows the system). Next to it, the top bar shows the
 **date and time**, so you always know where you are in the day (not on
 phones, which show the time themselves).
+The header and the top bar **stay in view while you scroll**, so the menu,
+search and workspace switcher are always one click away.
 
 When the server is updated while the app is open in a browser tab, a bar
 says *Project Manager was updated to version …* — **Reload** to get the new

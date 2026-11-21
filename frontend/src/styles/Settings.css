@@ -556,7 +556,7 @@
 
 .settings-menu {
   position: sticky;
-  top: 16px;
+  top: calc(var(--app-top-height, 0px) + 16px);
   display: flex;
   flex-direction: column;
   gap: 2px;

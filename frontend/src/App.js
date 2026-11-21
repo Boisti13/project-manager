@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BrowserRouter, HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -52,16 +52,41 @@ function LanguageGate({ children }) {
   return <React.Fragment key={lang}>{children}</React.Fragment>;
 }
 
+// The header and nav bar stay at the top while the page scrolls. Their height
+// goes into --app-top-height, so other sticky bars (Select mode, the task
+// form's Save/Cancel, the Settings menu) and scrollIntoView stop below them.
+function useStickyTopHeight() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    const root = document.documentElement;
+    if (!el) return undefined;
+    const update = () => root.style.setProperty('--app-top-height', `${el.offsetHeight}px`);
+    update();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty('--app-top-height');
+    };
+  }, []);
+  return ref;
+}
+
 function AppShell() {
   const { currentUser } = useAuth();
+  const topRef = useStickyTopHeight();
 
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>📋 Project Manager</h1>
-        <p className="App-subtitle">{t('Organize your tasks hierarchically')}</p>
-      </header>
-      {currentUser && <Nav />}
+      <div className="app-top" ref={topRef}>
+        <header className="App-header">
+          <h1>📋 Project Manager</h1>
+          <p className="App-subtitle">{t('Organize your tasks hierarchically')}</p>
+        </header>
+        {currentUser && <Nav />}
+      </div>
       <VersionWatch />
       <main>
         <Routes>
